@@ -5,7 +5,7 @@ Source of truth: `docs/TDD.md` (TDD v1.1). Work follows the story cycle in `CLAU
 | ID | Story | Priority | TDD phase | Depends on | Status |
 |---|---|---|---|---|---|
 | H-01a | Repo layout: project docs to the root, old demo to `legacy/`, untrack `references/` | Required | 0 | | done |
-| H-01b | Classic script skeleton with PixiJS: `index.html`, `lib/pixi.min.js`, `js/config.js`, `js/main.js` paints the background | Required | 0 | H-01a | pending |
+| H-01b | Classic script skeleton with PixiJS: `index.html`, `lib/pixi.min.js`, `js/config.js`, `js/main.js` paints the background | Required | 0 | H-01a | done |
 | H-02 | Fixed world behind `getCell` and test helper | Required | 1 | H-01b | pending |
 | H-03 | Camera and DDA raycaster with max ray distance | Required | 1 | H-02 | pending |
 | H-04 | Flat wall strips render (static player) | Required | 1 | H-03 | pending |
@@ -53,7 +53,17 @@ Acceptance criteria:
 - `main.js` wraps startup in an async function: `new PIXI.Application()`, `await app.init(...)`, `document.body.appendChild(app.canvas)`.
 - Double click on `index.html` opens the canvas with the background color in Chrome, on both team machines, with no console errors.
 
-Open question: canvas size. Proposal: fixed 800 by 600 (TDD 6.5 example: 400 rays with 2 px strips) instead of the full window.
+Decisions:
+- Canvas size is fixed at 800 by 600 (team decision), not the full window. With 2 px strips that is the 400 rays of the TDD 6.5 example.
+- Screen size constants use Lode's names, `screenWidth` and `screenHeight`, so `lineHeight = screenHeight / perpWallDist` reads the same in the code and in the slides. Other config constants follow the same camelCase style.
+- `config.js` only holds what this story uses (`screenWidth`, `screenHeight`, `backgroundColor`). Each later story adds its own constants.
+- Colors come from the demo palette: page `#08111d`, canvas background `0x111e30`.
+- `lib/pixi.min.js` is copied byte for byte from `node_modules/pixi.js/dist/` (8.21.0, sha256 `c6d9d4c8...833db0`). It keeps its `sourceMappingURL` comment; the `.map` file is not copied, so DevTools may report it missing in the Developer Resources panel. That is not a page error.
+- No `preference` is passed to `app.init`: Pixi v8 picks WebGL by default.
+- Checked with headless Chrome on `file://`: the 800 by 600 canvas shows the background color, centered on the page.
+- `node --test tests/` has nothing to run yet; the test helper arrives in H-02.
+- Pixi v8 does not print its console banner by default (`hello: false`), so an empty console is the expected result.
+- Checked over the DevTools protocol on a clean Chrome 155 profile: no console messages, no exceptions, `PIXI.VERSION` is `8.21.0` and the canvas is 800 by 600. The "Unsafe attempt to load URL file:///... from frame with URL file:///..." message seen during validation comes from DevTools device mode or a browser extension, not from the page.
 
 ## H-02: Fixed world behind getCell
 
