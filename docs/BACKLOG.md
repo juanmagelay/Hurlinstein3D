@@ -1,0 +1,133 @@
+# Backlog
+
+Source of truth: `docs/TDD.md` (TDD v1.1). Work follows the story cycle in `CLAUDE.md` section 10. IDs are stable: a story that grows is split with suffixes (H-05a, H-05b) and a new story takes the next free number.
+
+| ID | Story | Priority | TDD phase | Depends on | Status |
+|---|---|---|---|---|---|
+| H-01a | Repo layout: project docs to the root, old demo to `legacy/`, untrack `references/` | Required | 0 | | done |
+| H-01b | Classic script skeleton with PixiJS: `index.html`, `lib/pixi.min.js`, `js/config.js`, `js/main.js` paints the background | Required | 0 | H-01a | pending |
+| H-02 | Fixed world behind `getCell` and test helper | Required | 1 | H-01b | pending |
+| H-03 | Camera and DDA raycaster with max ray distance | Required | 1 | H-02 | pending |
+| H-04 | Flat wall strips render (static player) | Required | 1 | H-03 | pending |
+| H-05 | Movement, rotation and per axis collisions | Required | 1 | H-04 | pending |
+| H-06 | Minimap (21 by 21 window) | Required | 2 | H-05 | pending |
+| H-07 | Chunk generator in `mapgen.js`, isolated and tested | Required | 3 | H-02 | pending |
+| H-08 | Infinite world: chunk Map with Cantor key, spawn in chunk (0, 0) | Required | 3 | H-06, H-07 | pending |
+| H-09 | Minimum scope closure: delete `legacy/`, README, TDD 7.2 and 7.3 check | Required | 3 | H-08 | pending |
+| D-01 | Distance darkening in brightness bands | Desirable | 4 | H-09 | pending |
+| D-02 | Wall color per chunk | Desirable | 4 | H-09 | pending |
+| D-03 | Base HUD and center crosshair | Desirable | 4 | H-09 | pending |
+| D-04 | Visible enemy: registered per cell, on the minimap and in 3D as a square with z-buffer | Desirable | 4 | D-03 | pending |
+| D-05 | Enemy state machine with DDA line of sight | Desirable | 4 | D-04 | pending |
+| D-06 | Health, contact damage, health bar and defeat | Desirable | 4 | D-05 | pending |
+| D-07 | Shooting with the center ray DDA, blocked by walls | Desirable | 4 | D-04 | pending |
+| D-08 | Ammo: magazine, reload, counter | Desirable | 4 | D-07 | pending |
+| D-09 | Procedural textures on a hidden canvas (wallX, texX), keeping flat color mode | Desirable | 4 | H-09 | pending |
+| D-10 | Raycast lighting (reuse `pointLightFactor` from the demo) | Desirable | 4 | H-09 | pending |
+| D-11 | Second room per chunk without breaking connectivity | Desirable | 4 | H-09 | pending |
+| D-12 | Strafing and mouse look, only if the team asks for it | Desirable | 4 | H-09 | pending |
+
+## H-01a: Repo layout
+
+Acceptance criteria:
+- `CLAUDE.md` lives at the repo root, and `docs/TDD.md` and `docs/img/figura-1-chunks.png` match the paths it uses.
+- The old demo lives in `legacy/` (src, tests, html files, scripts, package.json, package-lock.json, Vite config, README) with no content changes. Its 12 Vitest tests still pass when run from `legacy/`.
+- `references/` is removed from the git index and kept on disk (it was already in `.gitignore`).
+- `.write-test` is deleted.
+- The change set has only renames, deletions and one new file (`docs/BACKLOG.md`).
+
+Decisions:
+- H-01 was split into H-01a (layout) and H-01b (skeleton): it moved more than 40 files and created 5, too much to validate in 10 minutes.
+- Camera state moved from H-05 to H-03, because H-04 already needs a player to draw from.
+- Files were moved with `mv`; Git detects the renames. `references/` was untracked with `git rm -r --cached references`. It stays in history (commit 0293b23).
+- The root `node_modules/` (ignored) stays until H-01b copies `pixi.min.js` (pixi.js 8.21.0) from it. After that it can be deleted.
+- The legacy demo still runs with `cd legacy && npm install && npm run build`, then opening `legacy/dist/index.html`.
+- Tag `demo-presentacion` goes on f97195a ("Readme del repo"), the last demo commit on `dev`. Created by Juanma in GitHub Desktop.
+- `main` has 6690a65 (GitHub Pages paths for the legacy build), not merged into `dev`. Not needed for the new architecture.
+
+## H-01b: Classic script skeleton with PixiJS
+
+Acceptance criteria:
+- `index.html` loads `lib/pixi.min.js`, `js/config.js` and `js/main.js` with classic `<script>` tags, `main.js` last. No modules, no `fetch`.
+- `lib/pixi.min.js` is the official pixi.js 8.21.0 browser bundle and defines the `PIXI` global.
+- `main.js` wraps startup in an async function: `new PIXI.Application()`, `await app.init(...)`, `document.body.appendChild(app.canvas)`.
+- Double click on `index.html` opens the canvas with the background color in Chrome, on both team machines, with no console errors.
+
+Open question: canvas size. Proposal: fixed 800 by 600 (TDD 6.5 example: 400 rays with 2 px strips) instead of the full window.
+
+## H-02: Fixed world behind getCell
+
+Acceptance criteria:
+- `js/world.js` exposes `getCell(x, y)` over the 15 by 15 demo map, in cell units. Any coordinate outside the map, negatives included, returns 1 (wall).
+- A test helper loads the `js/` files in `index.html` order into a single `vm` context and returns names by evaluating them in that context.
+- `node --test tests/` passes: cells inside, outside and at negative coordinates.
+
+## H-03: Camera and DDA raycaster
+
+Acceptance criteria:
+- `js/player.js` holds six numbers: posX, posY, dirX, dirY, planeX, planeY. dir has length 1, plane has length 0.66 and is perpendicular to dir. Spawn is an air cell of the fixed map.
+- `js/raycaster.js`: per column, `cameraX = 2 * x / width - 1` and `rayDir = dir + plane * cameraX`, not normalized (TDD 3.2).
+- DDA per TDD 3.3: stops on a wall or past the max ray distance (24 cells). Returns hit, perpWallDist, side, mapX, mapY.
+- perpWallDist is read once after the loop: `sideDistX - deltaDistX` or `sideDistY - deltaDistY`, chosen by side (TDD 3.4).
+- Tests: axis aligned ray, zero ray component (Infinity deltaDist), max distance cutoff, perpWallDist against a hand computed value.
+
+## H-04: Flat wall strips render
+
+Acceptance criteria:
+- Ceiling and floor are drawn once, in their own Graphics.
+- The walls Graphics calls `clear()` each frame and groups rects by side, with one `fill()` per side (TDD 6.5).
+- Strip width comes from `config.js`. `lineHeight = screenHeight / perpWallDist`; drawStart and drawEnd are clipped to the screen.
+- A column with no hit shows the background color.
+- No Pixi objects are created inside the ticker (TDD 6.4).
+
+## H-05: Movement, rotation and collisions
+
+Acceptance criteria:
+- Keyboard listeners, registered once, keep a Set of pressed keys.
+- W and S move along dir, scaled by `ticker.deltaTime`. A and D rotate dir and plane with the rotation matrix.
+- Each axis is tested separately against `getCell`, so the player slides along walls (TDD 6.6).
+- Only W, A, S and D (TDD 2.2): no arrow keys, strafing or mouse.
+
+Open question: point collider (TDD 6.6 as written, like Lode) or a margin of about 0.2 cells (like the demo radius). Proposal: margin, so the player cannot press against a wall until lineHeight blows up.
+
+## H-06: Minimap
+
+Acceptance criteria:
+- 21 by 21 cell window centered on the player, read through `getCell`, cells grouped by color.
+- Dot for the position and a line for the direction.
+- Matches the first person view (TDD 6.7).
+
+Open question: placement. TDD 2.3.3 overlays the minimap on the view as part of the HUD; `CLAUDE.md` section 5 and the demo put it side by side. The TDD wins unless the team decides otherwise; the losing document gets fixed.
+
+## H-07: Chunk generator
+
+Acceptance criteria:
+- `js/mapgen.js` returns a 16 by 16 `Uint8Array` (index `ly * 16 + lx`, 0 air, 1 wall) per TDD 4.2: room of 4 to 8 cells per side, at least 2 wall cells of margin, doors at index 8 of each border, three segment corridors.
+- Tests: solid borders except doors, room inside the margins, every door connected to the room (flood fill in the test, never at runtime).
+- ASCII dump of a chunk in the console for a visual check.
+
+Open question: TDD 4.2 says "la celda del medio de cada borde, es decir la fila 8 o la columna 8". With 16 cells the middle falls between 7 and 8. Proposed wording: "la celda de índice 8 de cada borde". Pending team approval.
+
+## H-08: Infinite world
+
+Acceptance criteria:
+- Chunks live in a `Map` keyed by the Cantor pairing of cx and cy after mapping them to non negatives (TDD 6.8). Each chunk is generated once and kept for the session.
+- `getCell`: `cx = Math.floor(x / 16)`, local `x - cx * 16`; generates the chunk on demand.
+- Spawn at the center of the room in chunk (0, 0).
+- The fixed map is removed.
+- Tests: `getCell` with negatives and on chunk borders, Cantor uniqueness over a range with negatives, same answer on a second query.
+
+## H-09: Minimum scope closure
+
+Acceptance criteria:
+- `legacy/` is deleted.
+- English README: how to open, controls, which file implements each TDD section, course and university.
+- TDD 7.3 success criteria and TDD 7.2 risks checked one by one.
+
+## Desirables
+
+Open questions to settle before each story:
+- D-05: optional vision cone with the dot product, like the zombie radar from the presentation. To confirm.
+- D-06: the TDD does not define a victory condition. Ask.
+- D-08: the TDD does not define the reload key. Ask.
+- D-12: only if the team asks for it.
