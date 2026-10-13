@@ -14,18 +14,20 @@ Juanma es diseñador UX y estudia la licenciatura. Entiende bien la teoría de r
 - Nunca uses guiones largos ni guiones medios. Usá comas, dos puntos o paréntesis.
 - Títulos en sentence case: mayúscula solo en la primera palabra y en nombres propios.
 - Afirmá lo que hacés y por qué. Corregí los errores de forma directa, explicando la causa.
-- Nomenclatura de Lode, exclusiva y sin mezclar con otras: posX, posY, dirX, dirY, planeX, planeY, cameraX, rayDirX, rayDirY, mapX, mapY, deltaDistX, deltaDistY, sideDistX, sideDistY, stepX, stepY, side, hit, distPerp, alturaFranja, drawStart, drawEnd.
-- Comentarios del código en español, cortos, con la sección del TDD que implementan cuando corresponda (por ejemplo `// TDD 3.3`).
+- Idioma: el chat con Juanma va en español. Todo lo que vive en el repo va en inglés: nombres de variables, funciones, constantes, archivos y carpetas, comentarios, mensajes de error, README, `docs/BACKLOG.md` y mensajes de commit. La única excepción es `docs/TDD.md`, que es el documento académico y queda en español.
+- Nomenclatura de Lode, exclusiva y sin mezclar con otras: posX, posY, dirX, dirY, planeX, planeY, cameraX, rayDirX, rayDirY, mapX, mapY, deltaDistX, deltaDistY, sideDistX, sideDistY, stepX, stepY, side, hit, perpWallDist, lineHeight, drawStart, drawEnd.
+- Equivalencias con el TDD y la presentación, que están en español: distPerp es perpWallDist, alturaFranja es lineHeight y alturaPantalla es screenHeight. Usá los nombres del TDD cuando le expliques algo a Juanma y los de Lode en el código.
+- Comentarios del código en inglés, cortos, con la sección del TDD que implementan cuando corresponda (por ejemplo `// TDD 3.3`).
 
 ## 3. Fuentes de verdad
 
 1. `docs/TDD.md` (TDD v1.1, actualizado el 13/10/2026 con el feedback del profesor) es el contrato. Si el repo, este archivo o una idea tuya lo contradicen, gana el TDD. Leé la sección que corresponde antes de implementar cada historia.
 2. Lo que el TDD no define (por ejemplo, la condición de victoria o la tecla de recarga) se pregunta antes de implementarlo. No lo inventes.
 3. Si encontrás un error o una contradicción en el TDD, marcalo y proponé la corrección. No la apliques en silencio.
-4. Material de referencia local, fuera de git (puede no existir en otra máquina; si falta, trabajá con los resúmenes de este archivo):
-   - `referencias/presentacion-raycasting.pdf`: la presentación del equipo.
-   - `referencias/raycasting_dda_visualizer!!.html`: visualizador del DDA del profesor.
-   - `referencias/raycast_wolfenstein.html`: motor de referencia del profesor (reparte los rayos por ángulo; el proyecto usa el reparto de Lode, ver 4.3).
+4. Material de referencia local en `references/`, fuera de git (puede no existir en otra máquina; si falta, trabajá con los resúmenes de este archivo):
+   - `references/presentacion-raycasting.pdf`: la presentación del equipo.
+   - `references/raycasting_dda_visualizer!!.html`: visualizador del DDA del profesor.
+   - `references/raycast_wolfenstein.html`: motor de referencia del profesor (reparte los rayos por ángulo; el proyecto usa el reparto de Lode, ver 4.3).
 5. Para PixiJS, la documentación oficial de v8 (pixijs.com, con su versión para modelos en pixijs.com/llms-full.txt) o el propio `lib/pixi.min.js`. No asumas API de v6 o v7.
 
 ## 4. Base científica
@@ -66,27 +68,27 @@ Wolfenstein 3D (id Software, 1992, motor de John Carmack) es el juego más conoc
 - Inicialización: si rayDirX < 0, sideDistX = (posX - mapX) * deltaDistX; si no, (mapX + 1 - posX) * deltaDistX. Lo mismo en Y.
 - Bucle: si sideDistX < sideDistY, sideDistX += deltaDistX, mapX += stepX, side = 0; si no, sideDistY += deltaDistY, mapY += stepY, side = 1. Corta con pared (hit) o al superar la distancia máxima.
 - side 0: cruzó una línea vertical (cara X). side 1: una horizontal (cara Y).
-- distPerp se lee después del bucle, una sola, según side: sideDistX - deltaDistX o sideDistY - deltaDistY. No hay Pitágoras por paso.
+- perpWallDist se lee después del bucle, una sola, según side: sideDistX - deltaDistX o sideDistY - deltaDistY. No hay Pitágoras por paso.
 - Costo por cuadro: columnas por celdas atravesadas. El tamaño del mundo no entra en la cuenta.
 
 ### 4.5 Proyección
 
-- alturaFranja = alturaPantalla / distPerp (triángulos semejantes: H / d).
-- drawStart = -alturaFranja / 2 + alturaPantalla / 2 y drawEnd = alturaFranja / 2 + alturaPantalla / 2, recortados a la pantalla.
+- lineHeight = screenHeight / perpWallDist (triángulos semejantes: H / d).
+- drawStart = -lineHeight / 2 + screenHeight / 2 y drawEnd = lineHeight / 2 + screenHeight / 2, recortados a la pantalla.
 - La distancia perpendicular evita el ojo de pez; la euclídea curva las paredes hacia los bordes.
 - Iluminación falseada: la cara side 1 más oscura que la side 0, y opcionalmente oscurecimiento por distancia.
 
 ### 4.6 Para el alcance deseable
 
-- Texturas (Lode parte 2): wallX = posY + distPerp * rayDirY si side es 0, o posX + distPerp * rayDirX si side es 1, menos su parte entera; define texX. El mapeo vertical afín es correcto en perspectiva porque las paredes son verticales.
-- Sprites y z-buffer (Lode parte 3): distPerp por columna en un arreglo; el sprite se dibuja solo donde está más cerca que la pared. Se proyecta con la inversa de la matriz formada por plane y dir.
+- Texturas (Lode parte 2): wallX = posY + perpWallDist * rayDirY si side es 0, o posX + perpWallDist * rayDirX si side es 1, menos su parte entera; define texX. El mapeo vertical afín es correcto en perspectiva porque las paredes son verticales.
+- Sprites y z-buffer (Lode parte 3): perpWallDist por columna en un arreglo; el sprite se dibuja solo donde está más cerca que la pared. Se proyecta con la inversa de la matriz formada por plane y dir.
 - El mismo DDA sirve para el disparo (columna central: cameraX 0, rayDir igual a dir) y para la línea de visión de los enemigos.
 - Spatial hashing: en un mundo infinito, un Map con clave por coordenadas guarda solo lo explorado. El DDA elige qué celdas visita el rayo y el hash responde qué hay en cada una.
 
 ### 4.7 Errores conceptuales ya corregidos (no reintroducirlos)
 
 - rayDir no es unitario y no se normaliza.
-- distPerp se lee al terminar el bucle y es una sola, elegida por side.
+- perpWallDist se lee al terminar el bucle y es una sola, elegida por side.
 - La distancia perpendicular es la proyección sobre dir; Pitágoras da la euclídea.
 - deltaDist depende de la dirección del rayo.
 - El plano de cámara pasa por pos + dir, no por pos.
@@ -94,7 +96,7 @@ Wolfenstein 3D (id Software, 1992, motor de John Carmack) es el juego más conoc
 
 ## 5. Contexto: la primera presentación
 
-En septiembre de 2026 Juanma y Alejo presentaron raycasting en clase (10 minutos, deck propio en `referencias/presentacion-raycasting.pdf`, citado en el capítulo 8 del TDD). Recorrido:
+En septiembre de 2026 Juanma y Alejo presentaron raycasting en clase (10 minutos, deck propio en `references/presentacion-raycasting.pdf`, citado en el capítulo 8 del TDD). Recorrido:
 
 1. La ilusión de 3D: una grilla vista desde arriba, cada rayo se convierte en una columna, altura por triángulos semejantes (H / d).
 2. Tres técnicas, tres costos: raycasting, geometría 3D con polígonos, raytracing.
@@ -103,7 +105,7 @@ En septiembre de 2026 Juanma y Alejo presentaron raycasting en clase (10 minutos
 5. Plano de cámara y FOV implícito, 66 grados.
 6. cameraX y rayDir = dir + plane * cameraX.
 7. DDA: deltaDist, sideDist, step, side y el bucle.
-8. Ojo de pez, distancia perpendicular y alturaFranja.
+8. Ojo de pez, distancia perpendicular y alturaFranja (lineHeight en el código).
 9. Wolfenstein: restricciones que compran velocidad; Doom con BSP.
 
 Implicancias: el motor tiene que poder explicarse con esos mismos diagramas (mismo modelo de cámara, nomenclatura y fórmulas). Si una decisión del código se aparta de lo que se explicó en clase, avisalo. El radar del zombie es el puente natural para la percepción de los enemigos del alcance deseable, y el minimapa al lado de la vista en primera persona es la prueba visible de que el DDA es correcto (TDD 6.7).
@@ -173,7 +175,7 @@ TDD 1.3, 2.3, 4.6 y Fase 4: oscurecimiento por distancia, color de pared por chu
 
 ### 8.2 Estructura
 
-La de TDD 6.3 (`index.html`, `lib/`, `js/config.js`, `mapgen.js`, `world.js`, `player.js`, `raycaster.js`, `renderer.js`, `minimap.js`, `main.js`). Además, sin afectar el doble clic: `tests/`, `docs/` (TDD y `BACKLOG.md`) y `referencias/` (ignorada por git). Las deseables pueden sumar archivos (`js/hud.js`, `js/enemies.js`), siempre como scripts clásicos agregados en orden en `index.html`.
+La de TDD 6.3 (`index.html`, `lib/`, `js/config.js`, `mapgen.js`, `world.js`, `player.js`, `raycaster.js`, `renderer.js`, `minimap.js`, `main.js`). Además, sin afectar el doble clic: `tests/`, `docs/` (TDD y `BACKLOG.md`) y `references/` (ignorada por git). Las deseables pueden sumar archivos (`js/hud.js`, `js/enemies.js`), siempre como scripts clásicos agregados en orden en `index.html`.
 
 ### 8.3 Ticker (TDD 6.4)
 
@@ -203,7 +205,7 @@ Lo que se crea o se carga una sola vez va fuera del ticker; dentro va solo lo qu
 
 Lógica pura (getCell, Cantor, mapgen, DDA, colisiones) con el runner nativo de Node: `node --test tests/`, sin instalar nada. Un helper carga los archivos de `js/` en el orden de `index.html` dentro de un único contexto de `vm` y le da a cada test lo que necesita evaluando el nombre en ese contexto. El render se valida a mano.
 
-Casos mínimos: getCell con negativos y en fronteras de chunk; unicidad de Cantor en un rango con negativos; chunk con bordes macizos salvo puertas, sala dentro de márgenes y puertas conectadas a la sala (flood fill en el test, nunca en runtime); DDA alineado a un eje, con componente cero y con tope; distPerp contra un valor calculado a mano.
+Casos mínimos: getCell con negativos y en fronteras de chunk; unicidad de Cantor en un rango con negativos; chunk con bordes macizos salvo puertas, sala dentro de márgenes y puertas conectadas a la sala (flood fill en el test, nunca en runtime); DDA alineado a un eje, con componente cero y con tope; perpWallDist contra un valor calculado a mano.
 
 ## 9. Backlog semilla
 
@@ -215,13 +217,13 @@ Obligatorias:
 |---|---|---|---|
 | H-01 | Esqueleto clásico con PixiJS: código viejo a `legacy/`, `index.html` con scripts clásicos, `lib/pixi.min.js`, `config.js` y `main.js` que crea la app y pinta el fondo, `docs/BACKLOG.md` | 0 | |
 | H-02 | Mundo fijo detrás de getCell (mapa de 15 por 15 de la demo, fuera del mapa es pared) y helper de tests | 1 | H-01 |
-| H-03 | Raycaster DDA con tope; devuelve hit, distPerp, side, mapX y mapY | 1 | H-02 |
+| H-03 | Raycaster DDA con tope; devuelve hit, perpWallDist, side, mapX y mapY | 1 | H-02 |
 | H-04 | Render de franjas planas: techo y piso una vez, paredes agrupadas por cara, ancho de franja configurable, recorte, fondo sin hit (jugador quieto) | 1 | H-03 |
 | H-05 | Jugador: seis números, W y S con deltaTime, A y D con matriz de rotación, colisiones por eje con deslizamiento | 1 | H-04 |
 | H-06 | Minimapa: ventana de 21 por 21, celdas agrupadas por color, punto y línea de dirección | 2 | H-05 |
 | H-07 | Generador de chunk en `mapgen.js`, aislado y testeado | 3 | H-02 |
 | H-08 | Mundo infinito: Map con Cantor, getCell a demanda, spawn en la sala del chunk (0, 0); se retira el mapa fijo | 3 | H-06, H-07 |
-| H-09 | Cierre del mínimo: borrar `legacy/`, README (cómo abrir, controles, qué archivo implementa cada sección del TDD), chequeo de TDD 7.3 y 7.2 | 3 | H-08 |
+| H-09 | Cierre del mínimo: borrar `legacy/`, README en inglés (cómo abrir, controles, qué archivo implementa cada sección del TDD, materia y facultad), chequeo de TDD 7.3 y 7.2 | 3 | H-08 |
 
 Deseables, en este orden salvo que el equipo decida otro:
 
@@ -252,12 +254,12 @@ Leé `docs/BACKLOG.md`, `git log --oneline -10` y `git status`. Si hay cambios s
 
 1. Proponé el plan: ID, objetivo, criterios de aceptación, archivos que vas a tocar y, si existe, la única pregunta abierta. Esperá el OK antes de editar.
 2. Implementá. Corré `node --check` sobre cada archivo tocado y `node --test tests/`.
-3. Actualizá `docs/BACKLOG.md`: la historia pasa a "hecha" y se anotan las decisiones tomadas.
+3. Actualizá `docs/BACKLOG.md`: la historia pasa a "done" y se anotan las decisiones tomadas.
 4. Cerrá con este resumen en el chat:
    - Qué cambió y por qué (no más de 10 líneas).
    - Para defenderlo: concepto y sección del TDD (3 a 6 líneas).
    - Cómo validar: pasos concretos con doble clic, qué se tiene que ver y qué revisar en la consola (F12).
-   - Commit sugerido para GitHub Desktop: un título corto (por ejemplo `H-03: raycaster DDA con tope de distancia`) y una descripción de dos o tres líneas.
+   - Commit sugerido para GitHub Desktop, en inglés: un título corto (por ejemplo `H-03: DDA raycaster with max ray distance`) y una descripción de dos o tres líneas.
 5. Esperá. No arranques la historia siguiente hasta que Juanma escriba que está validada. Si reporta un problema, pedí lo mínimo para diagnosticar (error de consola, captura, qué hizo) y corregí dentro de la misma historia.
 
 ### 10.3 Git
@@ -279,7 +281,7 @@ Juanma maneja git con GitHub Desktop: revisa los cambios en la pestaña Changes,
 
 El estado del proyecto vive en el repo (`docs/BACKLOG.md` más el historial de commits), no en la conversación. Cualquier sesión nueva retoma desde ahí. Cuando una sesión se alarga (en general, cada dos o tres historias), sugerí empezar una nueva.
 
-Formato de `docs/BACKLOG.md`: una tabla con ID, historia, prioridad, fase del TDD, dependencias y estado (pendiente, en curso, hecha), y debajo una sección por historia con criterios de aceptación y decisiones tomadas.
+Formato de `docs/BACKLOG.md`, en inglés: una tabla con ID, story, priority, TDD phase, depends on y status (pending, in progress, done), y debajo una sección por historia con acceptance criteria y decisions.
 
 ## 11. Primera sesión
 
