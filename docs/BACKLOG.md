@@ -9,7 +9,7 @@ Branches: every story is committed on `develop`, and once validated `develop` is
 | H-01a | Repo layout: project docs to the root, old demo to `legacy/`, untrack `references/` | Required | 0 | | done |
 | H-01b | Classic script skeleton with PixiJS: `index.html`, `lib/pixi.min.js`, `js/config.js`, `js/main.js` paints the background | Required | 0 | H-01a | done |
 | H-02 | Fixed world behind `getCell` and test helper | Required | 1 | H-01b | done |
-| H-03 | Camera and DDA raycaster with max ray distance | Required | 1 | H-02 | pending |
+| H-03 | Camera and DDA raycaster with max ray distance | Required | 1 | H-02 | done |
 | H-04 | Flat wall strips render (static player) | Required | 1 | H-03 | pending |
 | H-05 | Movement, rotation and per axis collisions | Required | 1 | H-04 | pending |
 | H-06 | Minimap (21 by 21 window) | Required | 2 | H-05 | pending |
@@ -92,6 +92,19 @@ Acceptance criteria:
 - DDA per TDD 3.3: stops on a wall or past the max ray distance (24 cells). Returns hit, perpWallDist, side, mapX, mapY.
 - perpWallDist is read once after the loop: `sideDistX - deltaDistX` or `sideDistY - deltaDistY`, chosen by side (TDD 3.4).
 - Tests: axis aligned ray, zero ray component (Infinity deltaDist), max distance cutoff, perpWallDist against a hand computed value.
+
+Decisions:
+- One commit for the whole story, by team decision, even though it touches six files (`index.html`, `config.js`, `player.js`, `raycaster.js` and two test files). The proposed split into camera and DDA was declined.
+- Spawn at (7.5, 1.5) facing east, the demo spawn (480, 96 px with 64 px cells), at the start of the row 1 corridor. H-08 moves it to the room of chunk (0, 0).
+- dir = (1, 0), plane = (0, 0.66). The map grows downward in y, so facing east the right hand side is +y: plane is dir rotated 90 degrees with the rotation matrix (x' = -y, y' = x). With the opposite sign the view comes out mirrored and would not match the minimap of H-06. A test checks it.
+- `raycaster.js` has two functions. `castRayForColumn(player, x)` takes x in pixels, from 0 to `screenWidth - 1`, and builds cameraX and rayDir. `castRay(posX, posY, rayDirX, rayDirY)` is the DDA alone, so D-05 (line of sight) and D-07 (shooting, rayDir = dir) can reuse it.
+- Max distance: before crossing the next grid line, the loop stops with `hit: false` if `Math.min(sideDistX, sideDistY)` is past `maxRayDistance` (24, in `config.js`). It is measured in the same unit as perpWallDist, so the cutoff is a straight line parallel to the camera plane, not an arc. A wall at perpWallDist 24 or less is always seen.
+- When `hit` is false, perpWallDist is not meaningful; callers check `hit` first (H-04 paints the background).
+- The TDD 6.3 table says the raycaster returns distPerp and side. It also returns hit (for the background), mapX and mapY (for D-02, color per chunk). Not a contradiction, the extra fields are a superset.
+- Tests compare results field by field: objects made inside the `vm` context have their own `Object.prototype`, and `assert.deepEqual` rejects them.
+- The max distance tests run in a second `vm` context where `getCell` is replaced by open floor with a wall from x = 30, because no ray can travel 24 cells in the fixed map.
+- Checked by mutation: the tests fail with a mirrored plane, with the euclidean distance on side 1, without the distance cutoff and without `Math.abs` in deltaDist. They do not catch `rayDirX <= 0` in the step choice: with a zero component it gives `sideDistX = 0 * Infinity = NaN`, but every comparison with NaN is false, so the loop still picks y and the result is right.
+- Checked with headless Chrome on `file://`: the canvas still appears with no errors, and `castRayForColumn(player, 400)` returns hit true, perpWallDist 6.5, side 0, cell (14, 1).
 
 ## H-04: Flat wall strips render
 
