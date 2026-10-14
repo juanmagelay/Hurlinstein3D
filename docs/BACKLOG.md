@@ -10,7 +10,7 @@ Branches: every story is committed on `develop`, and once validated `develop` is
 | H-01b | Classic script skeleton with PixiJS: `index.html`, `lib/pixi.min.js`, `js/config.js`, `js/main.js` paints the background | Required | 0 | H-01a | done |
 | H-02 | Fixed world behind `getCell` and test helper | Required | 1 | H-01b | done |
 | H-03 | Camera and DDA raycaster with max ray distance | Required | 1 | H-02 | done |
-| H-04 | Flat wall strips render (static player) | Required | 1 | H-03 | pending |
+| H-04 | Flat wall strips render (static player) | Required | 1 | H-03 | done |
 | H-05 | Movement, rotation and per axis collisions | Required | 1 | H-04 | pending |
 | H-06 | Minimap (21 by 21 window) | Required | 2 | H-05 | pending |
 | H-07 | Chunk generator in `mapgen.js`, isolated and tested | Required | 3 | H-02 | pending |
@@ -110,10 +110,24 @@ Decisions:
 
 Acceptance criteria:
 - Ceiling and floor are drawn once, in their own Graphics.
-- The walls Graphics calls `clear()` each frame and groups rects by side, with one `fill()` per side (TDD 6.5).
+- The walls Graphics calls `clear()` each frame and groups rects by side, with one `fill()` per side (TDD 6.5). Side 1 faces are darker than side 0 faces.
 - Strip width comes from `config.js`. `lineHeight = screenHeight / perpWallDist`; drawStart and drawEnd are clipped to the screen.
-- A column with no hit shows the background color.
+- A column with no hit shows the background color, in the place a wall at `maxRayDistance` would take.
 - No Pixi objects are created inside the ticker (TDD 6.4).
+- Tests: strip height and position against hand computed values, clipping, distance 0, one fill per side from the spawn, background strips when every ray misses.
+
+Decisions:
+- Rays with no hit (option A, chosen by the team): the strip gets `backgroundColor` with the height of a wall at `maxRayDistance` (600 / 24 = 25 px), centered on the horizon. It reads as darkness at the end of a corridor and joins the farthest visible walls. A full height background column, the literal reading of TDD 5.2, would cut through the floor in front of the player, because ceiling and floor cover the whole canvas (TDD 6.5).
+- So a frame has up to three `fill()` calls: one per side, plus one for missed rays only when some ray misses. A group with no strips skips its `fill()`.
+- TDD updated with this wording, approved by the team: 5.2, "y en esa columna, en el lugar de la pared, se dibuja una franja del color de fondo con la altura que tendría una pared en el tope"; 6.5, "dos llamadas de relleno, una por cara de pared, más una para las columnas sin impacto cuando las hay".
+- Each strip casts the ray of its left column, `x = 0, 2, ..., 798`, so column 400 is still cameraX 0, the H-03 center test.
+- `getWallStrip(x, perpWallDist)` is the pure projection (TDD 3.4) and returns x, lineHeight, drawStart and drawEnd. Values stay as floats; Pixi rasterizes them. perpWallDist 0 gives Infinity, which the clip turns into the full column, with no special case.
+- Checked in `lib/pixi.min.js`: in v8, `rect()` adds to the active path and `fill()` paints the whole path as one instruction, then clears it. That is what lets a group cost one `fill()`.
+- Colors from the demo palette: ceiling `0x1a1a2e`, floor `0x2d2d44`, side 0 `0x4a6fa5`, side 1 `0x2c4a7c`. The demo also changed the tone by ray direction (4 colors); with one fill per side there are only 2.
+- Walls are redrawn every frame even though the player does not move yet, so H-05 only adds movement.
+- Five code files in one commit (one is the test), the same criterion the team accepted in H-03.
+- The render tests use a fake Graphics that records `clear`, `rect` and `fill`, and a second `vm` context with open floor for the missed rays. Checked by mutation: they fail without either clip, with swapped side colors, without the background strips, with full height background strips, with one `fill()` per strip and without `clear()`.
+- Checked with headless Chrome on `file://`: the spawn view shows the row 1 corridor with straight walls, and a copy with `maxRayDistance` set to 5 shows a 120 px background strip (600 / 5) where the end wall at 6.5 was. No console messages from the page.
 
 ## H-05: Movement, rotation and collisions
 
