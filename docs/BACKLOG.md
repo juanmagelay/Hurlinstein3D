@@ -8,7 +8,7 @@ Branches: every story is committed on `develop`, and once validated `develop` is
 |---|---|---|---|---|---|
 | H-01a | Repo layout: project docs to the root, old demo to `legacy/`, untrack `references/` | Required | 0 | | done |
 | H-01b | Classic script skeleton with PixiJS: `index.html`, `lib/pixi.min.js`, `js/config.js`, `js/main.js` paints the background | Required | 0 | H-01a | done |
-| H-02 | Fixed world behind `getCell` and test helper | Required | 1 | H-01b | pending |
+| H-02 | Fixed world behind `getCell` and test helper | Required | 1 | H-01b | done |
 | H-03 | Camera and DDA raycaster with max ray distance | Required | 1 | H-02 | pending |
 | H-04 | Flat wall strips render (static player) | Required | 1 | H-03 | pending |
 | H-05 | Movement, rotation and per axis collisions | Required | 1 | H-04 | pending |
@@ -71,8 +71,18 @@ Decisions:
 
 Acceptance criteria:
 - `js/world.js` exposes `getCell(x, y)` over the 15 by 15 demo map, in cell units. Any coordinate outside the map, negatives included, returns 1 (wall).
+- `getCell` takes cell integers and does not floor them: callers convert world positions with `Math.floor` (TDD 5.2).
+- `index.html` loads `js/world.js` between `config.js` and `main.js`.
 - A test helper loads the `js/` files in `index.html` order into a single `vm` context and returns names by evaluating them in that context.
-- `node --test tests/` passes: cells inside, outside and at negative coordinates.
+- `node --test "tests/*.test.js"` passes: air and wall cells inside, a non symmetric cell that catches swapped x and y, one cell past each side, negative and far coordinates.
+- Double click still shows the background with no console errors, and `getCell(7, 1)` typed in the console returns 0.
+
+Decisions:
+- The test command is `node --test "tests/*.test.js"`. The quotes let Node expand the pattern, so it works the same on macOS and Windows (Node 21 or later). `node --test tests/` fails on Node 22 (it treats the folder as a file, `MODULE_NOT_FOUND`), and a bare `node --test` would also pick up the Vitest files in `legacy/tests/`. `CLAUDE.md` 8.7 and 10.2 were updated to match.
+- The fixed map stays an array of rows, `fixedMap[y][x]`, copied from `legacy/src/game/World3D.js`. It reads like a drawing and H-08 removes it, so it does not use the chunk `Uint8Array` layout.
+- `tests/load-scripts.js` reads the script order from `index.html` instead of keeping its own list, so the two cannot drift. It skips `js/main.js`, which starts Pixi and needs a browser.
+- Top level `const` values in a `vm` context are not properties of the context object, so the helper reads globals by evaluating their name in the context.
+- Checked with headless Chrome on `file://`: the 800 by 600 canvas still appears, and the page sees `getCell(7, 1)` as 0 and `getCell(-1, -1)` as 1.
 
 ## H-03: Camera and DDA raycaster
 

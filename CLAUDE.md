@@ -203,7 +203,7 @@ Lo que se crea o se carga una sola vez va fuera del ticker; dentro va solo lo qu
 
 ### 8.7 Tests
 
-Lógica pura (getCell, Cantor, mapgen, DDA, colisiones) con el runner nativo de Node: `node --test tests/`, sin instalar nada. Un helper carga los archivos de `js/` en el orden de `index.html` dentro de un único contexto de `vm` y le da a cada test lo que necesita evaluando el nombre en ese contexto. El render se valida a mano.
+Lógica pura (getCell, Cantor, mapgen, DDA, colisiones) con el runner nativo de Node: `node --test "tests/*.test.js"` (con comillas, para que el patrón lo resuelva Node y no la terminal; requiere Node 21 o superior), sin instalar nada. Un helper carga los archivos de `js/` en el orden de `index.html` dentro de un único contexto de `vm` y le da a cada test lo que necesita evaluando el nombre en ese contexto. El render se valida a mano.
 
 Casos mínimos: getCell con negativos y en fronteras de chunk; unicidad de Cantor en un rango con negativos; chunk con bordes macizos salvo puertas, sala dentro de márgenes y puertas conectadas a la sala (flood fill en el test, nunca en runtime); DDA alineado a un eje, con componente cero y con tope; perpWallDist contra un valor calculado a mano.
 
@@ -253,7 +253,7 @@ Leé `docs/BACKLOG.md`, `git log --oneline -10`, `git status` y `git branch --sh
 ### 10.2 Ciclo de una historia
 
 1. Proponé el plan: ID, objetivo, criterios de aceptación, archivos que vas a tocar y, si existe, la única pregunta abierta. Esperá el OK antes de editar.
-2. Implementá. Corré `node --check` sobre cada archivo tocado y `node --test tests/`.
+2. Implementá. Corré `node --check` sobre cada archivo tocado y `node --test "tests/*.test.js"`.
 3. Actualizá `docs/BACKLOG.md`: la historia pasa a "done" y se anotan las decisiones tomadas.
 4. Cerrá con este resumen en el chat:
    - Qué cambió y por qué (no más de 10 líneas).
