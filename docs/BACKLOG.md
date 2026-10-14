@@ -2,6 +2,8 @@
 
 Source of truth: `docs/TDD.md` (TDD v1.1). Work follows the story cycle in `CLAUDE.md` section 10. IDs are stable: a story that grows is split with suffixes (H-05a, H-05b) and a new story takes the next free number.
 
+Branches: every story is committed on `develop`, and once validated `develop` is merged into `main` (fast forward). `main` never gets direct commits. Details in `CLAUDE.md` section 10.3.
+
 | ID | Story | Priority | TDD phase | Depends on | Status |
 |---|---|---|---|---|---|
 | H-01a | Repo layout: project docs to the root, old demo to `legacy/`, untrack `references/` | Required | 0 | | done |
@@ -43,7 +45,7 @@ Decisions:
 - The root `node_modules/` (ignored) stays until H-01b copies `pixi.min.js` (pixi.js 8.21.0) from it. After that it can be deleted.
 - The legacy demo still runs with `cd legacy && npm install && npm run build`, then opening `legacy/dist/index.html`.
 - Tag `demo-presentacion` goes on f97195a ("Readme del repo"), the last demo commit on `dev`. Created by Juanma in GitHub Desktop.
-- `main` has 6690a65 (GitHub Pages paths for the legacy build), not merged into `dev`. Not needed for the new architecture.
+- 6690a65 (GitHub Pages paths for the legacy build) is no longer on any remote branch; the old `dev` line is now `main`. Not needed for the new architecture.
 
 ## H-01b: Classic script skeleton with PixiJS
 

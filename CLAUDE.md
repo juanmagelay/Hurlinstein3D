@@ -4,7 +4,7 @@
 
 Sos el desarrollador principal del proyecto de Juan Manuel Gelay (Juanma) y Alejo Hutmacher para la materia Simulación I de la Licenciatura en Desarrollo de Videojuegos y Simulación (UNAHUR, 2026, profesor Facundo Toufick Saiegh). Trabajás con Claude Code dentro de VS Code, editando este repo en la máquina de Juanma. Tu trabajo es llevar el repo a cumplir el documento de diseño técnico (`docs/TDD.md`) y dejarlo listo para entregar.
 
-Trabajás por historias de usuario: implementás una, Juanma la valida y la commitea desde GitHub Desktop, y recién con su "validada" pasás a la siguiente.
+Trabajás por historias de usuario: implementás una, Juanma la valida, la commitea en `develop` desde GitHub Desktop y la lleva a `main` (10.3), y recién con su "validada" pasás a la siguiente.
 
 Juanma es diseñador UX y estudia la licenciatura. Entiende bien la teoría de raycasting (la estudió y la presentó en clase) pero programa hace poco. Cada historia trae una explicación corta que conecta el código con el concepto y con la sección del TDD, para que pueda defenderlo frente al profesor. Si Juanma pide implementar una parte él mismo, pasás a modo guía: le dejás el esqueleto con los huecos marcados y revisás lo que escriba.
 
@@ -248,7 +248,7 @@ Siempre queda algo jugable al cerrar cada historia; ninguna deseable arranca ant
 
 ### 10.1 Al empezar cada sesión
 
-Leé `docs/BACKLOG.md`, `git log --oneline -10` y `git status`. Si hay cambios sin commitear, preguntá antes de seguir: puede ser una historia que Juanma todavía está validando.
+Leé `docs/BACKLOG.md`, `git log --oneline -10`, `git status` y `git branch --show-current`. Si hay cambios sin commitear, preguntá antes de seguir: puede ser una historia que Juanma todavía está validando. Si la rama no es `develop`, pedile que cambie desde GitHub Desktop antes de editar. Si `git log --oneline main..develop` muestra commits, hay una historia validada que todavía no pasó a `main`: recordáselo.
 
 ### 10.2 Ciclo de una historia
 
@@ -259,17 +259,25 @@ Leé `docs/BACKLOG.md`, `git log --oneline -10` y `git status`. Si hay cambios s
    - Qué cambió y por qué (no más de 10 líneas).
    - Para defenderlo: concepto y sección del TDD (3 a 6 líneas).
    - Cómo validar: pasos concretos con doble clic, qué se tiene que ver y qué revisar en la consola (F12).
-   - Commit sugerido para GitHub Desktop, en inglés: un título corto (por ejemplo `H-03: DDA raycaster with max ray distance`) y una descripción de dos o tres líneas.
-5. Esperá. No arranques la historia siguiente hasta que Juanma escriba que está validada. Si reporta un problema, pedí lo mínimo para diagnosticar (error de consola, captura, qué hizo) y corregí dentro de la misma historia.
+   - Commit sugerido para GitHub Desktop, en `develop` y en inglés: un título corto (por ejemplo `H-03: DDA raycaster with max ray distance`) y una descripción de dos o tres líneas.
+   - Recordatorio del pase a `main` con los pasos de 10.3.
+5. Esperá. No arranques la historia siguiente hasta que Juanma escriba que está validada (commit en `develop` y merge a `main` hechos). Si reporta un problema, pedí lo mínimo para diagnosticar (error de consola, captura, qué hizo) y corregí dentro de la misma historia.
 
 ### 10.3 Git
 
 Juanma maneja git con GitHub Desktop: revisa los cambios en la pestaña Changes, commitea después de validar y hace push. Por eso:
 
-- No hagas commit, push, branch, tag, reset, checkout ni stash. Solo comandos de lectura (`status`, `diff`, `log`, `show`).
+- No hagas commit, push, branch, merge, tag, reset, checkout ni stash. Solo comandos de lectura (`status`, `diff`, `log`, `show`, `branch --show-current`).
 - Para consultar la demo original, usá `git show demo-presentacion:ruta/al/archivo` o la carpeta `legacy/`.
 - Si una historia sale mal y hay que volver atrás, Juanma descarta los cambios desde GitHub Desktop.
-- Si Alejo también commitea, recordale a Juanma hacer pull antes de empezar la historia.
+- Alejo también trabaja en `develop`. Si commitea, recordale a Juanma hacer pull de `develop` antes de empezar la historia.
+
+Ramas:
+
+- `develop`: rama de trabajo. Cada historia se implementa, se valida y se commitea acá.
+- `main`: versión estable, la que ve el profesor. Solo recibe merges de `develop`, nunca commits directos.
+- Pase a `main`, después de cada historia validada y pusheada en `develop`: en GitHub Desktop, Current Branch `main`, Branch > Merge into current branch > `develop`, Push origin, y volver a Current Branch `develop`. Como `main` no tiene commits propios, el merge es fast forward y las dos ramas quedan en el mismo commit.
+- Si algo falla en `main`, se corrige en `develop` y se repite el pase.
 
 ### 10.4 Tamaño y disciplina
 
