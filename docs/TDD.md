@@ -140,7 +140,7 @@ El mundo se divide en **chunks de 16 por 16 celdas**. Cada chunk es un bloque de
 
 2.  Se sortea una sala rectangular de entre 4 y 8 celdas de lado, ubicada con un margen de al menos dos celdas de pared contra cada borde del chunk, y se la talla en aire.
 
-3.  Se fijan las cuatro puertas del chunk, siempre en la misma posición: la celda del medio de cada borde, es decir la fila 8 o la columna 8.
+3.  Se fijan las cuatro puertas del chunk, siempre en la misma posición: la celda de índice 8 de cada borde.
 
 4.  Cada puerta se une a la sala con un corredor de tres tramos rectos: sale de la puerta hacia adentro del chunk, dobla en una fila o columna sorteada entre el borde y la sala hasta alinearse con el centro de la sala, y entra derecho.
 

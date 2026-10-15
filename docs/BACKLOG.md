@@ -14,8 +14,9 @@ Branches: every story is committed on `develop`, and once validated `develop` is
 | H-05a | Player input and movement logic | Required | 1 | H-04 | done |
 | H-05b | Connect player controls to the ticker | Required | 1 | H-05a | done |
 | H-06 | Minimap (21 by 21 window) | Required | 2 | H-05b | done |
-| H-07 | Chunk generator in `mapgen.js`, isolated and tested | Required | 3 | H-02 | pending |
-| H-08 | Infinite world: chunk Map with Cantor key, spawn in chunk (0, 0) | Required | 3 | H-06, H-07 | pending |
+| H-07a | Clarify fixed chunk door coordinates in the TDD | Required | 3 | H-06 | in progress |
+| H-07b | Chunk generator in `mapgen.js`, isolated and tested | Required | 3 | H-07a, H-02 | pending |
+| H-08 | Infinite world: chunk Map with Cantor key, spawn in chunk (0, 0) | Required | 3 | H-06, H-07b | pending |
 | H-09 | Minimum scope closure: delete `legacy/`, README, TDD 7.2 and 7.3 check | Required | 3 | H-08 | pending |
 | D-01 | Distance darkening in brightness bands | Desirable | 4 | H-09 | pending |
 | D-02 | Wall color per chunk | Desirable | 4 | H-09 | pending |
@@ -163,14 +164,24 @@ Decisions:
 - Use 10 pixels per cell, giving a 210 by 210 pixel window, with a 10 pixel screen margin.
 - Draw the floor and walls in color groups, followed by the player's position and direction.
 
-## H-07: Chunk generator
+## H-07a: Clarify fixed chunk door coordinates
 
 Acceptance criteria:
-- `js/mapgen.js` returns a 16 by 16 `Uint8Array` (index `ly * 16 + lx`, 0 air, 1 wall) per TDD 4.2: room of 4 to 8 cells per side, at least 2 wall cells of margin, doors at index 8 of each border, three segment corridors.
+- TDD 4.2 states that each border door is at index 8.
+
+Decisions:
+- The team approved index 8 as the fixed door coordinate because a 16-cell border has two central indices, 7 and 8.
+
+## H-07b: Chunk generator
+
+Acceptance criteria:
+- `js/mapgen.js` returns `{ cells, roomCenter }`, where `cells` is a 16 by 16 `Uint8Array` (index `ly * 16 + lx`, 0 air, 1 wall), per TDD 4.2.
+- The room is 4 to 8 cells per side, has at least 2 wall cells of margin and connects to doors at index 8 through three-segment corridors.
 - Tests: solid borders except doors, room inside the margins, every door connected to the room (flood fill in the test, never at runtime).
 - ASCII dump of a chunk in the console for a visual check.
 
-Open question: TDD 4.2 says "la celda del medio de cada borde, es decir la fila 8 o la columna 8". With 16 cells the middle falls between 7 and 8. Proposed wording: "la celda de índice 8 de cada borde". Pending team approval.
+Decisions:
+- `roomCenter` is generation metadata for H-08; the world stores only the `cells` typed array in its chunk Map.
 
 ## H-08: Infinite world
 
