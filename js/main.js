@@ -65,8 +65,8 @@ async function startGame() {
 
   // TDD 6.4: inside the ticker goes only what changes every frame
   app.ticker.add((ticker) => {
-    healthBar.fill.width = getHealthBarWidth(player.health / player.maxHealth);
-    ammoBar.fill.width = getAmmoBarWidth(player.ammo, magazineSize);
+    setBarFill(healthBar, getHealthBarWidth(player.health / player.maxHealth));
+    setBarFill(ammoBar, getAmmoBarWidth(player.ammo, magazineSize));
     // D-06b: at zero health the game freezes on the last frame
     if (isPlayerDefeated(player)) {
       defeatOverlay.visible = true;

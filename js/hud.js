@@ -64,6 +64,15 @@ function getAmmoBarWidth(ammo, magazine) {
   return barSheetWidth * fraction;
 }
 
+// D-06c and D-08b: the fill is revealed by a rectangular mask, so the segments
+// keep their size and are cropped at the right edge instead of being squashed.
+// A Pixi mask is not a scene child; it is rendered into the stencil buffer.
+function setBarFill(bar, width) {
+  const clampedWidth = Math.min(Math.max(width, 0), barSheetWidth);
+  bar.mask.clear();
+  bar.mask.rect(bar.x, bar.y, clampedWidth, barBandHeight).fill(0xffffff);
+}
+
 function loadBarCanvas(dataUri, bandY) {
   return new Promise((resolve) => {
     const image = new Image();
@@ -98,9 +107,11 @@ async function createHealthBar() {
   const barY = screenHeight - healthBarMargin - barBandHeight;
   const background = new PIXI.Sprite(PIXI.Texture.from(emptyCanvas));
   const fill = new PIXI.Sprite(PIXI.Texture.from(healthCanvas));
+  const mask = new PIXI.Graphics();
+  fill.mask = mask;
   background.position.set(barX, barY);
   fill.position.set(barX, barY);
-  return { background, fill };
+  return { background, fill, mask, x: barX, y: barY };
 }
 
 // D-08b: the six-round ammo bar, in the bottom-right corner.
@@ -111,9 +122,11 @@ async function createAmmoBar() {
   const barY = screenHeight - ammoBarMargin - barBandHeight;
   const background = new PIXI.Sprite(PIXI.Texture.from(emptyCanvas));
   const fill = new PIXI.Sprite(PIXI.Texture.from(ammoCanvas));
+  const mask = new PIXI.Graphics();
+  fill.mask = mask;
   background.position.set(barX, barY);
   fill.position.set(barX, barY);
-  return { background, fill };
+  return { background, fill, mask, x: barX, y: barY };
 }
 
 // D-06c: dark overlay with a red frame, hidden until the player is defeated.
