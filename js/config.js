@@ -25,3 +25,8 @@ const floorColor = 0x2d2d44;
 const wallPalette = [0x4a6fa5, 0x4d8b84, 0xa77845, 0x7b5b98];
 const side1Brightness = 0.65;
 const distanceBrightnessBands = [1, 0.8, 0.6, 0.4];
+
+// D-04: weighted enemy population per generated chunk
+const enemyCountThresholds = [0.5, 0.8, 0.95];
+const enemySize = 0.5;
+const enemyColor = 0xffc857;

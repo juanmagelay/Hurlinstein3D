@@ -41,7 +41,7 @@ Branches: every story is committed on `develop`, and once validated `develop` is
 | D-03a | Add a vector crosshair HUD | Desirable | 4 | D-02 | done |
 | D-03b | Document the HUD file in the README | Desirable | 4 | D-03a | done |
 | D-04a0 | Specify enemy population in the TDD | Desirable | 4 | D-03b | in progress |
-| D-04a | Populate chunks with registered enemies | Desirable | 4 | D-04a0 | pending |
+| D-04a | Populate chunks with registered enemies | Desirable | 4 | D-04a0 | done |
 | D-04b | Show enemies on the minimap | Desirable | 4 | D-04a | pending |
 | D-04c1 | Store wall depth for enemy occlusion | Desirable | 4 | D-04a | pending |
 | D-04c2 | Render enemy squares with z-buffer occlusion | Desirable | 4 | D-04b, D-04c1 | pending |

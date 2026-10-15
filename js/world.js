@@ -1,6 +1,9 @@
 // TDD 5.1 and 6.8: chunks are generated on demand and kept for the session.
 const generatedChunks = new Map();
+const enemiesByChunk = new Map();
+const enemiesByCell = new Map();
 let spawnRoomCenter = null;
+let nextEnemyId = 1;
 
 // TDD 6.8: map signed chunk coordinates to non-negative integers, then pair them.
 function getChunkKey(cx, cy) {
@@ -15,11 +18,85 @@ function getChunkCells(cx, cy) {
   if (!generatedChunks.has(key)) {
     const generatedChunk = generateChunk();
     generatedChunks.set(key, generatedChunk.cells);
+    const enemies = generateEnemiesForChunk(cx, cy, generatedChunk.cells);
+    enemiesByChunk.set(key, enemies);
+    for (const enemy of enemies) {
+      registerEnemyAtCell(enemy);
+    }
     if (cx === 0 && cy === 0) {
       spawnRoomCenter = generatedChunk.roomCenter;
     }
   }
   return generatedChunks.get(key);
+}
+
+// D-04: zero enemies in the spawn chunk, weighted population in other chunks.
+function getEnemyCountForRoll(roll) {
+  if (roll < enemyCountThresholds[0]) {
+    return 0;
+  }
+  if (roll < enemyCountThresholds[1]) {
+    return 1;
+  }
+  if (roll < enemyCountThresholds[2]) {
+    return 2;
+  }
+  return 3;
+}
+
+function generateEnemiesForChunk(cx, cy, cells) {
+  if (cx === 0 && cy === 0) {
+    return [];
+  }
+
+  const enemyCount = getEnemyCountForRoll(Math.random());
+  const openCells = [];
+  for (let index = 0; index < cells.length; index += 1) {
+    if (cells[index] === 0) {
+      openCells.push(index);
+    }
+  }
+
+  const enemies = [];
+  for (let count = 0; count < enemyCount && openCells.length > 0; count += 1) {
+    const openCellIndex = Math.floor(Math.random() * openCells.length);
+    const cellIndex = openCells.splice(openCellIndex, 1)[0];
+    const localX = cellIndex % chunkSize;
+    const localY = Math.floor(cellIndex / chunkSize);
+    const cellX = cx * chunkSize + localX;
+    const cellY = cy * chunkSize + localY;
+    enemies.push({
+      id: nextEnemyId,
+      posX: cellX + 0.5,
+      posY: cellY + 0.5,
+      cellX,
+      cellY,
+      chunkX: cx,
+      chunkY: cy,
+      size: enemySize,
+      color: enemyColor,
+      state: "idle",
+      stateTime: 0,
+    });
+    nextEnemyId += 1;
+  }
+  return enemies;
+}
+
+function registerEnemyAtCell(enemy) {
+  const cellKey = getChunkKey(enemy.cellX, enemy.cellY);
+  if (!enemiesByCell.has(cellKey)) {
+    enemiesByCell.set(cellKey, []);
+  }
+  enemiesByCell.get(cellKey).push(enemy);
+}
+
+function getEnemiesForChunk(cx, cy) {
+  return enemiesByChunk.get(getChunkKey(cx, cy)) || [];
+}
+
+function getEnemiesAtCell(cellX, cellY) {
+  return enemiesByCell.get(getChunkKey(cellX, cellY)) || [];
 }
 
 function getSpawnPosition() {

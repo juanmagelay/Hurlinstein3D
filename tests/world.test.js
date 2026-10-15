@@ -10,6 +10,11 @@ const getSpawnPosition = getGlobal("getSpawnPosition");
 const generatedChunks = getGlobal("generatedChunks");
 const chunkSize = getGlobal("chunkSize");
 const player = getGlobal("player");
+const getEnemyCountForRoll = getGlobal("getEnemyCountForRoll");
+const getEnemiesForChunk = getGlobal("getEnemiesForChunk");
+const getEnemiesAtCell = getGlobal("getEnemiesAtCell");
+const enemySize = getGlobal("enemySize");
+const enemyColor = getGlobal("enemyColor");
 
 test("Cantor chunk keys are unique for positive and negative coordinates", () => {
   const keys = new Set();
@@ -65,4 +70,44 @@ test("the spawn position is the center of the generated room in chunk zero", () 
   assert.equal(player.posY, spawnPosition.y);
   assert.equal(getCell(roomCenterCellX, roomCenterCellY), 0);
   assert.equal(spawnCells[roomCenterCellY * chunkSize + roomCenterCellX], 0);
+});
+
+test("enemy population roll uses the approved 50, 30, 15 and 5 percent weights", () => {
+  assert.equal(getEnemyCountForRoll(0), 0);
+  assert.equal(getEnemyCountForRoll(0.4999), 0);
+  assert.equal(getEnemyCountForRoll(0.5), 1);
+  assert.equal(getEnemyCountForRoll(0.8), 2);
+  assert.equal(getEnemyCountForRoll(0.95), 3);
+});
+
+test("the spawn chunk starts without enemies", () => {
+  assert.equal(getEnemiesForChunk(0, 0).length, 0);
+});
+
+test("generated enemies occupy distinct open cells and are registered there", () => {
+  const enemyWorld = loadScripts();
+  enemyWorld("Math.random = function () { return 0.99; }");
+  const enemyGetCell = enemyWorld("getCell");
+  const enemyGetChunkCells = enemyWorld("getChunkCells");
+  const enemyGetEnemiesForChunk = enemyWorld("getEnemiesForChunk");
+  const enemyGetEnemiesAtCell = enemyWorld("getEnemiesAtCell");
+  const firstCells = enemyGetChunkCells(-3, 4);
+  const enemies = enemyGetEnemiesForChunk(-3, 4);
+  const occupiedCells = new Set();
+
+  assert.equal(enemies.length, 3);
+  for (const enemy of enemies) {
+    const cellKey = `${enemy.cellX},${enemy.cellY}`;
+    assert.equal(occupiedCells.has(cellKey), false);
+    occupiedCells.add(cellKey);
+    assert.equal(enemyGetCell(enemy.cellX, enemy.cellY), 0);
+    assert.equal(enemy.posX, enemy.cellX + 0.5);
+    assert.equal(enemy.posY, enemy.cellY + 0.5);
+    assert.equal(enemy.size, enemySize);
+    assert.equal(enemy.color, enemyColor);
+    assert.ok(enemyGetEnemiesAtCell(enemy.cellX, enemy.cellY).some((entry) => entry.id === enemy.id));
+  }
+
+  assert.equal(enemyGetChunkCells(-3, 4), firstCells);
+  assert.equal(enemyGetEnemiesForChunk(-3, 4), enemies);
 });
