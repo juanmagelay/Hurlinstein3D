@@ -9,6 +9,9 @@ const createKeyboardInput = getGlobal("createKeyboardInput");
 const updatePlayer = getGlobal("updatePlayer");
 const moveSpeed = getGlobal("moveSpeed");
 const rotationSpeed = getGlobal("rotationSpeed");
+const collisionWorld = loadScripts();
+collisionWorld("getCell = function (x, y) { return x >= 14 || y >= 2 ? 1 : 0; }");
+const updatePlayerWithCollisionWorld = collisionWorld("updatePlayer");
 
 // Results like 0.66 * 0.66 are not exact in floating point
 function assertClose(actual, expected) {
@@ -97,7 +100,7 @@ test("movement slides along a wall when the X axis is blocked", () => {
     planeY: 0.66 * diagonal,
   });
 
-  updatePlayer(movingPlayer, new Set(["w"]), 1);
+  updatePlayerWithCollisionWorld(movingPlayer, new Set(["w"]), 1);
 
   assertClose(movingPlayer.posX, 13.99);
   assertClose(movingPlayer.posY, 1.5 + diagonal * moveSpeed);
@@ -114,7 +117,7 @@ test("movement slides along a wall when the Y axis is blocked", () => {
     planeY: 0.66 * diagonal,
   });
 
-  updatePlayer(movingPlayer, new Set(["w"]), 1);
+  updatePlayerWithCollisionWorld(movingPlayer, new Set(["w"]), 1);
 
   assertClose(movingPlayer.posX, 7.5 + diagonal * moveSpeed);
   assertClose(movingPlayer.posY, 1.99);

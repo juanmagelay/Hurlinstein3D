@@ -8,6 +8,10 @@ const castRayForColumn = getGlobal("castRayForColumn");
 const screenWidth = getGlobal("screenWidth");
 const maxRayDistance = getGlobal("maxRayDistance");
 
+getGlobal(`getCell = function (x, y) {
+  return ["14,1", "0,1", "1,14", "1,0", "7,2", "8,0", "8,2"].includes(x + "," + y) ? 1 : 0;
+}`);
+
 // Results like 0.5 / 0.66 are not exact in floating point
 function assertClose(actual, expected) {
   assert.ok(Math.abs(actual - expected) < 1e-9, `${actual} is not close to ${expected}`);

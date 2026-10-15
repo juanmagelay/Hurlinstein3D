@@ -3,6 +3,7 @@ const assert = require("node:assert/strict");
 const { loadScripts } = require("./load-scripts.js");
 
 const getGlobal = loadScripts();
+getGlobal("getCell = function (x, y) { return x <= 0 || x >= 14 || y <= 0 || y >= 2 ? 1 : 0; }");
 const getWallStrip = getGlobal("getWallStrip");
 const drawWalls = getGlobal("drawWalls");
 const screenWidth = getGlobal("screenWidth");

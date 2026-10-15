@@ -16,8 +16,9 @@ Branches: every story is committed on `develop`, and once validated `develop` is
 | H-06 | Minimap (21 by 21 window) | Required | 2 | H-05b | done |
 | H-07a | Clarify fixed chunk door coordinates in the TDD | Required | 3 | H-06 | done |
 | H-07b | Chunk generator in `mapgen.js`, isolated and tested | Required | 3 | H-07a, H-02 | done |
-| H-08 | Infinite world: chunk Map with Cantor key, spawn in chunk (0, 0) | Required | 3 | H-06, H-07b | pending |
-| H-09 | Minimum scope closure: delete `legacy/`, README, TDD 7.2 and 7.3 check | Required | 3 | H-08 | pending |
+| H-08a | Decouple algorithm tests from the fixed map | Required | 3 | H-03, H-04, H-07b | done |
+| H-08b | Infinite world: chunk Map with Cantor key, spawn in chunk (0, 0) | Required | 3 | H-06, H-07b, H-08a | pending |
+| H-09 | Minimum scope closure: delete `legacy/`, README, TDD 7.2 and 7.3 check | Required | 3 | H-08b | pending |
 | D-01 | Distance darkening in brightness bands | Desirable | 4 | H-09 | pending |
 | D-02 | Wall color per chunk | Desirable | 4 | H-09 | pending |
 | D-03 | Base HUD and center crosshair | Desirable | 4 | H-09 | pending |
@@ -183,7 +184,13 @@ Acceptance criteria:
 Decisions:
 - `room` and `roomCenter` are generation metadata for H-08; the world stores only the `cells` typed array in its chunk Map.
 
-## H-08: Infinite world
+## H-08a: Decouple algorithm tests from the fixed map
+
+Acceptance criteria:
+- DDA, renderer and collision tests use controlled cell fixtures instead of relying on `fixedMap`.
+- Existing numerical assertions continue to verify the same ray and projection behavior.
+
+## H-08b: Infinite world
 
 Acceptance criteria:
 - Chunks live in a `Map` keyed by the Cantor pairing of cx and cy after mapping them to non negatives (TDD 6.8). Each chunk is generated once and kept for the session.
