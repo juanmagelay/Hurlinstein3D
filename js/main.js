@@ -22,6 +22,11 @@ async function startGame() {
   const minimap = new PIXI.Graphics();
   app.stage.addChild(minimap);
 
+  // TDD 6.4: static HUD Graphics is created and drawn once, above the minimap
+  const hud = new PIXI.Graphics();
+  drawHud(hud);
+  app.stage.addChild(hud);
+
   // TDD 6.4: keyboard listeners are registered once, outside the ticker
   const pressedKeys = createKeyboardInput(window);
 

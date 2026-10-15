@@ -38,8 +38,9 @@ Branches: every story is committed on `develop`, and once validated `develop` is
 | H-10b | Document the 16:9 canvas dimensions | Required | 3 | H-10a | done |
 | D-01 | Distance darkening in brightness bands | Desirable | 4 | H-09o | done |
 | D-02 | Wall color per chunk | Desirable | 4 | H-09o | in progress |
-| D-03 | Base HUD and center crosshair | Desirable | 4 | H-09o | pending |
-| D-04 | Visible enemy: registered per cell, on the minimap and in 3D as a square with z-buffer | Desirable | 4 | D-03 | pending |
+| D-03a | Add a vector crosshair HUD | Desirable | 4 | D-02 | done |
+| D-03b | Document the HUD file in the README | Desirable | 4 | D-03a | pending |
+| D-04 | Visible enemy: registered per cell, on the minimap and in 3D as a square with z-buffer | Desirable | 4 | D-03b | pending |
 | D-05 | Enemy state machine with DDA line of sight | Desirable | 4 | D-04 | pending |
 | D-06 | Health, contact damage, health bar and defeat | Desirable | 4 | D-05 | pending |
 | D-07 | Shooting with the center ray DDA, blocked by walls | Desirable | 4 | D-04 | pending |
@@ -350,6 +351,22 @@ Acceptance criteria:
 Decisions:
 - Use a four-color muted palette: blue, teal, amber and violet.
 - Select the palette entry by the Cantor key modulo the palette length, with no additional color Map.
+
+## D-03a: Add a vector crosshair HUD
+
+Acceptance criteria:
+- A small four-arm crosshair is centered in the 1280 by 720 view.
+- Draw the crosshair with PixiJS Graphics, without an external image.
+- Create and draw the HUD Graphics outside the ticker.
+- Life and ammo indicators remain deferred to D-06 and D-08.
+
+Decisions:
+- Use the minimap's teal accent, 2-pixel arms of 8 pixels and a 4-pixel center gap.
+
+## D-03b: Document the HUD file in the README
+
+Acceptance criteria:
+- README maps `js/hud.js` to TDD 2.3.3 and 6.4.
 
 ## Desirables
 
