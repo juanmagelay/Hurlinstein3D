@@ -36,6 +36,10 @@ async function startGame() {
   app.stage.addChild(healthBar.background);
   app.stage.addChild(healthBar.fill);
 
+  // D-07b: the shotgun view model sits at the bottom center, under the HUD and overlay
+  const shotgun = await createShotgun();
+  app.stage.addChild(shotgun.sprite);
+
   // D-06c: defeat overlay sits on top and stays hidden until health reaches zero
   const defeatOverlay = createDefeatOverlay();
   app.stage.addChild(defeatOverlay);
@@ -56,7 +60,9 @@ async function startGame() {
     updateEnemies(player, ticker.deltaTime);
     if (fireInput.consumeShot()) {
       shootCenterRay(player);
+      triggerShotgun(shotgun);
     }
+    updateShotgun(shotgun, ticker.deltaTime);
     damagePlayer(player, getContactDamage(player, ticker.deltaTime));
     drawWalls(walls, player);
     drawEnemies(enemies, player);

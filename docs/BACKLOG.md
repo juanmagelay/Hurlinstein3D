@@ -51,7 +51,7 @@ Branches: every story is committed on `develop`, and once validated `develop` is
 | D-06b | Health, contact damage and defeat | Desirable | 4 | D-06a | done |
 | D-06c | Draw the health bar and defeat overlay | Desirable | 4 | D-06b | done |
 | D-07a | Shoot enemies with the center ray DDA | Desirable | 4 | D-04c2 | done |
-| D-07b | Add the Sgun idle and firing animation | Desirable | 4 | D-07a | pending |
+| D-07b | Add the Sgun idle and firing animation | Desirable | 4 | D-07a | done |
 | D-08a | Track six shotgun rounds and reload state | Desirable | 4 | D-07b | pending |
 | D-08b | Draw the six-round bar and reload animation | Desirable | 4 | D-08a | pending |
 | D-09 | Procedural textures on a hidden canvas (wallX, texX), keeping flat color mode | Desirable | 4 | D-08b | pending |
@@ -457,6 +457,12 @@ Acceptance criteria:
 - The shotgun sprite sits at the bottom-center of the view.
 - Frame 1 of row 1 is idle; the next four frames play once on each shot.
 - Each animation frame lasts 0.08 seconds.
+
+Decisions:
+- The sheet is not on a clean grid: its flat violet background (RGB 86, 82, 167) has to be keyed out and the frames touch, so they are cut by flood-filling the gun's own connected pixels inside its cell (keeps a frame from bleeding into its neighbour).
+- Frames are aligned on the gun body (horizontal centroid of the lower quarter, bottom row) so the gun does not jump when firing.
+- The five frames are pre-processed offline into a small transparent strip and embedded as a data URI in `js/weapon-sheet.js`; under `file://` the canvas would be tainted if the PNG were read from disk (TDD 6.1).
+- The sprite uses the idle frame until a shot calls `triggerShotgun`; the four firing frames play once and fall back to idle.
 
 ## D-03a: Add a vector crosshair HUD
 
