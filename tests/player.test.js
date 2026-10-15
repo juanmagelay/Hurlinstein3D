@@ -12,6 +12,9 @@ const rotationSpeed = getGlobal("rotationSpeed");
 const collisionWorld = loadScripts();
 collisionWorld("getCell = function (x, y) { return x >= 14 || y >= 2 ? 1 : 0; }");
 const updatePlayerWithCollisionWorld = collisionWorld("updatePlayer");
+const movementWorld = loadScripts();
+movementWorld("getCell = function () { return 0; }");
+const updatePlayerInOpenWorld = movementWorld("updatePlayer");
 
 // Results like 0.66 * 0.66 are not exact in floating point
 function assertClose(actual, expected) {
@@ -45,7 +48,15 @@ test("the player spawns on an air cell", () => {
 });
 
 function createPlayer(overrides = {}) {
-  return { ...player, ...overrides };
+  return {
+    posX: 7.5,
+    posY: 1.5,
+    dirX: 1,
+    dirY: 0,
+    planeX: 0,
+    planeY: 0.66,
+    ...overrides,
+  };
 }
 
 test("keyboard input tracks only W, A, S and D", () => {
@@ -68,14 +79,16 @@ test("keyboard input tracks only W, A, S and D", () => {
 
 test("W and S move along dir scaled by deltaTime", () => {
   const movingPlayer = createPlayer();
+  const startX = movingPlayer.posX;
+  const startY = movingPlayer.posY;
 
-  updatePlayer(movingPlayer, new Set(["w"]), 0.5);
-  assertClose(movingPlayer.posX, 7.5 + moveSpeed * 0.5);
-  assertClose(movingPlayer.posY, 1.5);
+  updatePlayerInOpenWorld(movingPlayer, new Set(["w"]), 0.5);
+  assertClose(movingPlayer.posX, startX + movingPlayer.dirX * moveSpeed * 0.5);
+  assertClose(movingPlayer.posY, startY + movingPlayer.dirY * moveSpeed * 0.5);
 
-  updatePlayer(movingPlayer, new Set(["s"]), 0.5);
-  assertClose(movingPlayer.posX, 7.5);
-  assertClose(movingPlayer.posY, 1.5);
+  updatePlayerInOpenWorld(movingPlayer, new Set(["s"]), 0.5);
+  assertClose(movingPlayer.posX, startX);
+  assertClose(movingPlayer.posY, startY);
 });
 
 test("A and D rotate dir and plane by the same angle", () => {
@@ -94,6 +107,7 @@ test("movement slides along a wall when the X axis is blocked", () => {
   const diagonal = Math.SQRT1_2;
   const movingPlayer = createPlayer({
     posX: 13.99,
+    posY: 1.5,
     dirX: diagonal,
     dirY: diagonal,
     planeX: -0.66 * diagonal,

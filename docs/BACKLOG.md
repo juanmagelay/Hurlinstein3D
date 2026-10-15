@@ -17,7 +17,8 @@ Branches: every story is committed on `develop`, and once validated `develop` is
 | H-07a | Clarify fixed chunk door coordinates in the TDD | Required | 3 | H-06 | done |
 | H-07b | Chunk generator in `mapgen.js`, isolated and tested | Required | 3 | H-07a, H-02 | done |
 | H-08a | Decouple algorithm tests from the fixed map | Required | 3 | H-03, H-04, H-07b | done |
-| H-08b | Infinite world: chunk Map with Cantor key, spawn in chunk (0, 0) | Required | 3 | H-06, H-07b, H-08a | pending |
+| H-08a2 | Decouple player movement tests from the world map | Required | 3 | H-05a, H-08a | in progress |
+| H-08b | Infinite world: chunk Map with Cantor key, spawn in chunk (0, 0) | Required | 3 | H-06, H-07b, H-08a2 | pending |
 | H-09 | Minimum scope closure: delete `legacy/`, README, TDD 7.2 and 7.3 check | Required | 3 | H-08b | pending |
 | D-01 | Distance darkening in brightness bands | Desirable | 4 | H-09 | pending |
 | D-02 | Wall color per chunk | Desirable | 4 | H-09 | pending |
@@ -189,6 +190,13 @@ Decisions:
 Acceptance criteria:
 - DDA, renderer and collision tests use controlled cell fixtures instead of relying on `fixedMap`.
 - Existing numerical assertions continue to verify the same ray and projection behavior.
+
+## H-08a2: Decouple player movement tests from the world map
+
+Acceptance criteria:
+- Movement tests use a controlled open world and a known camera state.
+- Collision tests use a controlled wall fixture.
+- Spawn tests continue to validate the actual player's position against `getCell`.
 
 ## H-08b: Infinite world
 
