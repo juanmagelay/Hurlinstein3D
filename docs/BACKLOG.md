@@ -18,7 +18,7 @@ Branches: every story is committed on `develop`, and once validated `develop` is
 | H-07b | Chunk generator in `mapgen.js`, isolated and tested | Required | 3 | H-07a, H-02 | done |
 | H-08a | Decouple algorithm tests from the fixed map | Required | 3 | H-03, H-04, H-07b | done |
 | H-08a2 | Decouple player movement tests from the world map | Required | 3 | H-05a, H-08a | in progress |
-| H-08b | Infinite world: chunk Map with Cantor key, spawn in chunk (0, 0) | Required | 3 | H-06, H-07b, H-08a2 | pending |
+| H-08b | Infinite world: chunk Map with Cantor key, spawn in chunk (0, 0) | Required | 3 | H-06, H-07b, H-08a2 | in progress |
 | H-09 | Minimum scope closure: delete `legacy/`, README, TDD 7.2 and 7.3 check | Required | 3 | H-08b | pending |
 | D-01 | Distance darkening in brightness bands | Desirable | 4 | H-09 | pending |
 | D-02 | Wall color per chunk | Desirable | 4 | H-09 | pending |
@@ -202,10 +202,13 @@ Acceptance criteria:
 
 Acceptance criteria:
 - Chunks live in a `Map` keyed by the Cantor pairing of cx and cy after mapping them to non negatives (TDD 6.8). Each chunk is generated once and kept for the session.
-- `getCell`: `cx = Math.floor(x / 16)`, local `x - cx * 16`; generates the chunk on demand.
+- `getCell`: `cx = Math.floor(x / 16)`, local `x - cx * 16`; generates the chunk on demand, including for negative coordinates.
 - Spawn at the center of the room in chunk (0, 0).
 - The fixed map is removed.
-- Tests: `getCell` with negatives and on chunk borders, Cantor uniqueness over a range with negatives, same answer on a second query.
+- Tests: negative coordinates and chunk borders, neighboring door connections, Cantor uniqueness over a range with negatives, retained chunk identity and spawn in air.
+
+Decisions:
+- The chunk Map stores only each generated `Uint8Array`. Room-center metadata is retained separately for the initial spawn.
 
 ## H-09: Minimum scope closure
 

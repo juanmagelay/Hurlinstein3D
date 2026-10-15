@@ -1,34 +1,38 @@
-// TDD 5.1 and 7.1 (phase 1): hand written map behind getCell.
-// H-08 swaps it for generated chunks without touching the callers.
+// TDD 5.1 and 6.8: chunks are generated on demand and kept for the session.
+const generatedChunks = new Map();
+let spawnRoomCenter = null;
 
-// 15 by 15 map from the demo, read as fixedMap[y][x]: 1 wall, 0 air
-const fixedMap = [
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1],
-  [1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1],
-  [1, 0, 1, 0, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1],
-  [1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1],
-  [1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1],
-  [1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 1, 1],
-  [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1],
-  [1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1],
-  [1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1],
-  [1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-];
+// TDD 6.8: map signed chunk coordinates to non-negative integers, then pair them.
+function getChunkKey(cx, cy) {
+  const a = cx >= 0 ? 2 * cx : -2 * cx - 1;
+  const b = cy >= 0 ? 2 * cy : -2 * cy - 1;
+  const sum = a + b;
+  return (sum * (sum + 1)) / 2 + b;
+}
 
-const fixedMapWidth = fixedMap[0].length;
-const fixedMapHeight = fixedMap.length;
-
-// TDD 5.2: getCell answers any coordinate; outside the map everything is wall.
-// x and y are cell integers: callers convert world positions with Math.floor.
-function getCell(x, y) {
-  const isInsideMap = x >= 0 && x < fixedMapWidth && y >= 0 && y < fixedMapHeight;
-  if (!isInsideMap) {
-    return 1;
+function getChunkCells(cx, cy) {
+  const key = getChunkKey(cx, cy);
+  if (!generatedChunks.has(key)) {
+    const generatedChunk = generateChunk();
+    generatedChunks.set(key, generatedChunk.cells);
+    if (cx === 0 && cy === 0) {
+      spawnRoomCenter = generatedChunk.roomCenter;
+    }
   }
-  return fixedMap[y][x];
+  return generatedChunks.get(key);
+}
+
+function getSpawnPosition() {
+  getChunkCells(0, 0);
+  return { x: spawnRoomCenter.x, y: spawnRoomCenter.y };
+}
+
+// TDD 5.2: callers pass cell integers; negative chunk coordinates use Math.floor.
+function getCell(x, y) {
+  const cx = Math.floor(x / chunkSize);
+  const cy = Math.floor(y / chunkSize);
+  const localX = x - cx * chunkSize;
+  const localY = y - cy * chunkSize;
+  const cells = getChunkCells(cx, cy);
+  return cells[localY * chunkSize + localX];
 }
