@@ -7,7 +7,7 @@
 const playerMaxHealth = 100;
 // D-08: the shotgun holds six shells and the reserve is unlimited
 const magazineSize = 6;
-const reloadDuration = 0.9; // seconds, matched to the reload frames in D-08b
+const reloadDuration = 0.96; // seconds: the 12 reload frames at 0.08 s each (D-08c)
 const spawnPosition = getSpawnPosition();
 const player = {
   posX: spawnPosition.x,

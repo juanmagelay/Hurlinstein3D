@@ -54,7 +54,7 @@ Branches: every story is committed on `develop`, and once validated `develop` is
 | D-07b | Add the Sgun idle and firing animation | Desirable | 4 | D-07a | done |
 | D-08a | Track six shotgun rounds and reload state | Desirable | 4 | D-07b | done |
 | D-08b | Draw the six-round ammo bar | Desirable | 4 | D-08a | done |
-| D-08c | Play the Sgun reload animation while reloading | Desirable | 4 | D-08b | pending |
+| D-08c | Play the Sgun reload animation while reloading | Desirable | 4 | D-08b | done |
 | D-09 | Procedural textures on a hidden canvas (wallX, texX), keeping flat color mode | Desirable | 4 | D-08b | pending |
 | D-11 | Second room per chunk without breaking connectivity | Desirable | 4 | D-09 | pending |
 | D-10 | Raycast lighting with one light per room | Desirable | 4 | D-11 | pending |
@@ -493,8 +493,16 @@ Decisions:
 
 ## D-08c: Play the Sgun reload animation while reloading
 
-Open question to settle before implementing:
-- The reload frames in `Sgun.png` are irregular (the lower rows do not sit on the 4 by 5 grid), so the frame set has to be chosen by inspecting the sheet.
+Acceptance criteria:
+- Pressing R on an incomplete magazine plays the reload frames, then returns to idle.
+- The animation lasts as long as the reload (`reloadDuration`).
+- Firing and reloading share one animation player.
+
+Decisions:
+- The lower rows of `Sgun.png` do not sit on the 4 by 5 grid, so the reload frames were picked by inspecting the sheet: frames 5 to 16 (the hand opening the gun and inserting shells). Frames 17 to 19 were grid fragments and are dropped.
+- The embedded strip now holds all 17 frames (idle, four firing, twelve reload); the sheet grew to about 233 KB.
+- `shotgunFrameDuration` (0.08 s) times the 12 reload frames sets `reloadDuration` to 0.96 s, so the logic and the animation end together.
+- `weapon.js` gained one generic sequence player: both the fire and the reload feed it a frame list.
 
 ## D-03a: Add a vector crosshair HUD
 

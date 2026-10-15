@@ -65,8 +65,8 @@ async function startGame() {
     }
     updatePlayer(player, pressedKeys, ticker.deltaTime);
     updateEnemies(player, ticker.deltaTime);
-    if (reloadInput.consumeReload()) {
-      startReload(player);
+    if (reloadInput.consumeReload() && startReload(player)) {
+      startReloadAnimation(shotgun);
     }
     updateReload(player, ticker.deltaTime);
     if (fireInput.consumeShot() && tryFire(player)) {
