@@ -35,7 +35,7 @@ El **alcance deseable** son las extensiones que se implementan solo si el alcanc
 
 # 2. Descripción del juego
 ## 2.1 Bucle de juego
-El jugador aparece en el centro de una sala y explora la mazmorra en primera persona. En el alcance mínimo no hay condición de victoria ni de derrota: el bucle es caminar, girar y orientarse con el minimapa. Las condiciones de victoria y derrota llegan con el sistema de combate del alcance deseable.
+El jugador aparece en el centro de una sala y explora la mazmorra en primera persona. En el alcance mínimo no hay condición de victoria ni de derrota: el bucle es caminar, girar y orientarse con el minimapa. Con el sistema de combate del alcance deseable llega solo la condición de derrota: si la vida del jugador llega a cero, la partida termina. No se define una condición de victoria, porque el objetivo es sobrevivir y explorar, no completar un nivel.
 
 ## 2.2 Controles del jugador
 El esquema de movimiento usa las teclas WASD:

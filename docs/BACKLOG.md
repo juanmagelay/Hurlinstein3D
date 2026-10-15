@@ -47,7 +47,7 @@ Branches: every story is committed on `develop`, and once validated `develop` is
 | D-04c2 | Render enemy squares with z-buffer occlusion | Desirable | 4 | D-04b, D-04c1 | done |
 | D-05a | Enemy idle timer and two-point patrol movement | Desirable | 4 | D-04c2 | done |
 | D-05b | Enemy line of sight and chase with return to patrol | Desirable | 4 | D-05a | done |
-| D-06a | Clarify defeat-only scope in the TDD | Desirable | 4 | D-05b | pending |
+| D-06a | Clarify defeat-only scope in the TDD | Desirable | 4 | D-05b | done |
 | D-06b | Health, contact damage, health bar and defeat | Desirable | 4 | D-06a | pending |
 | D-07a | Shoot enemies with the center ray DDA | Desirable | 4 | D-04c2 | pending |
 | D-07b | Add the Sgun idle and firing animation | Desirable | 4 | D-07a | pending |
