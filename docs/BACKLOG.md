@@ -13,7 +13,7 @@ Branches: every story is committed on `develop`, and once validated `develop` is
 | H-04 | Flat wall strips render (static player) | Required | 1 | H-03 | done |
 | H-05a | Player input and movement logic | Required | 1 | H-04 | done |
 | H-05b | Connect player controls to the ticker | Required | 1 | H-05a | done |
-| H-06 | Minimap (21 by 21 window) | Required | 2 | H-05b | pending |
+| H-06 | Minimap (21 by 21 window) | Required | 2 | H-05b | done |
 | H-07 | Chunk generator in `mapgen.js`, isolated and tested | Required | 3 | H-02 | pending |
 | H-08 | Infinite world: chunk Map with Cantor key, spawn in chunk (0, 0) | Required | 3 | H-06, H-07 | pending |
 | H-09 | Minimum scope closure: delete `legacy/`, README, TDD 7.2 and 7.3 check | Required | 3 | H-08 | pending |
@@ -158,7 +158,10 @@ Acceptance criteria:
 - Dot for the position and a line for the direction.
 - Matches the first person view (TDD 6.7).
 
-Open question: placement. TDD 2.3.3 overlays the minimap on the view as part of the HUD; `CLAUDE.md` section 5 and the demo put it side by side. The TDD wins unless the team decides otherwise; the losing document gets fixed.
+Decisions:
+- Overlay the minimap in the upper-left corner, as specified by TDD 2.3.3.
+- Use 10 pixels per cell, giving a 210 by 210 pixel window, with a 10 pixel screen margin.
+- Draw the floor and walls in color groups, followed by the player's position and direction.
 
 ## H-07: Chunk generator
 

@@ -18,6 +18,10 @@ async function startGame() {
   const walls = new PIXI.Graphics();
   app.stage.addChild(walls);
 
+  // TDD 6.4: the minimap Graphics object is created once, above the view
+  const minimap = new PIXI.Graphics();
+  app.stage.addChild(minimap);
+
   // TDD 6.4: keyboard listeners are registered once, outside the ticker
   const pressedKeys = createKeyboardInput(window);
 
@@ -25,6 +29,7 @@ async function startGame() {
   app.ticker.add((ticker) => {
     updatePlayer(player, pressedKeys, ticker.deltaTime);
     drawWalls(walls, player);
+    drawMinimap(minimap, player);
   });
 }
 
