@@ -49,7 +49,7 @@ Branches: every story is committed on `develop`, and once validated `develop` is
 | D-05b | Enemy line of sight and chase with return to patrol | Desirable | 4 | D-05a | done |
 | D-06a | Clarify defeat-only scope in the TDD | Desirable | 4 | D-05b | done |
 | D-06b | Health, contact damage and defeat | Desirable | 4 | D-06a | done |
-| D-06c | Draw the health bar and defeat overlay | Desirable | 4 | D-06b | pending |
+| D-06c | Draw the health bar and defeat overlay | Desirable | 4 | D-06b | done |
 | D-07a | Shoot enemies with the center ray DDA | Desirable | 4 | D-04c2 | pending |
 | D-07b | Add the Sgun idle and firing animation | Desirable | 4 | D-07a | pending |
 | D-08a | Track six shotgun rounds and reload state | Desirable | 4 | D-07b | pending |

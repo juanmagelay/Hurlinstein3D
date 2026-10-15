@@ -31,13 +31,24 @@ async function startGame() {
   drawHud(hud);
   app.stage.addChild(hud);
 
+  // D-06c: health bar sprites from the embedded images, loaded once (no network)
+  const healthBar = await createHealthBar();
+  app.stage.addChild(healthBar.background);
+  app.stage.addChild(healthBar.fill);
+
+  // D-06c: defeat overlay sits on top and stays hidden until health reaches zero
+  const defeatOverlay = createDefeatOverlay();
+  app.stage.addChild(defeatOverlay);
+
   // TDD 6.4: keyboard listeners are registered once, outside the ticker
   const pressedKeys = createKeyboardInput(window);
 
   // TDD 6.4: inside the ticker goes only what changes every frame
   app.ticker.add((ticker) => {
+    healthBar.fill.width = getHealthBarWidth(player.health / player.maxHealth);
     // D-06b: at zero health the game freezes on the last frame
     if (isPlayerDefeated(player)) {
+      defeatOverlay.visible = true;
       return;
     }
     updatePlayer(player, pressedKeys, ticker.deltaTime);
