@@ -22,7 +22,7 @@ The player collides with walls and slides along them. The minimap is overlaid in
 | File | Responsibility | TDD |
 |---|---|---|
 | `lib/pixi.min.js` | Local PixiJS 8.21.0 browser bundle | 6.1, 6.2 |
-| `js/config.js` | Screen, movement and rendering constants | 6.3 |
+| `js/config.js` | 1280 by 720 canvas, movement and rendering constants | 6.3 |
 | `js/mapgen.js` | Generates a connected room and four corridors in each chunk | 4.2, 4.3 |
 | `js/world.js` | Cantor-keyed chunk storage and `getCell` | 5.1, 5.2, 6.8 |
 | `js/player.js` | Camera state, keyboard input, movement and collisions | 3.2, 6.6 |
@@ -36,7 +36,7 @@ The player collides with walls and slides along them. The minimap is overlaid in
 
 ### TDD 7.3 success criteria
 
-- [x] Opening `index.html` directly in Chrome creates the 800 by 600 game canvas.
+- [x] Opening `index.html` directly in Chrome creates the 1280 by 720 (16:9) game canvas.
 - [x] The player moves and turns through the procedural world, including across a chunk boundary into negative coordinates, without crossing walls.
 - [x] Generated chunks remain cached during the session, so revisiting a chunk returns the same map.
 - [x] The minimap and first-person view read the same `getCell` world.

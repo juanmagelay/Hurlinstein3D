@@ -35,7 +35,7 @@ Branches: every story is committed on `develop`, and once validated `develop` is
 | H-09n | Remove remaining legacy tests | Required | 3 | H-09m | done |
 | H-09o | Add README and verify the minimum scope | Required | 3 | H-09n | done |
 | H-10a | Change the canvas to 1280 by 720 | Required | 3 | H-09o | done |
-| H-10b | Document the 16:9 canvas dimensions | Required | 3 | H-10a | pending |
+| H-10b | Document the 16:9 canvas dimensions | Required | 3 | H-10a | done |
 | D-01 | Distance darkening in brightness bands | Desirable | 4 | H-09o | pending |
 | D-02 | Wall color per chunk | Desirable | 4 | H-09o | pending |
 | D-03 | Base HUD and center crosshair | Desirable | 4 | H-09o | pending |

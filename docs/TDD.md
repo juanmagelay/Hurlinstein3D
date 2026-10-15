@@ -224,7 +224,7 @@ proyecto/
 
 | **Archivo** | **Responsabilidad**                                                                    | **Cuándo corre**                                   |
 |-------------|----------------------------------------------------------------------------------------|----------------------------------------------------|
-| config      | Constantes: tamaño de chunk, ancho de franja, tope de distancia, velocidades y colores | Se lee siempre                                     |
+| config      | Constantes: tamaño de canvas, chunk, ancho de franja, tope de distancia, velocidades y colores | Se lee siempre                                     |
 | mapgen      | Genera un chunk: sala y corredores hacia las cuatro puertas                            | Cuando getCell pide un chunk que todavía no existe |
 | world       | Map de chunks y getCell(x, y)                                                          | En cada consulta                                   |
 | player      | pos, dir, plane, lectura de teclado, giro, movimiento y colisiones                     | Cada cuadro                                        |
@@ -243,7 +243,7 @@ Dentro del ticker van la lectura de teclas, el giro y el movimiento con colision
 ## 6.5 Render
 El techo y el piso son dos rectángulos en un Graphics que se dibuja una sola vez. Las paredes van en otro Graphics que arranca cada cuadro con clear() y dibuja un rect() por columna. Las columnas del mismo color se acumulan y se pintan con un solo fill(), así cada cuadro hace dos llamadas de relleno, una por cara de pared, más una para las columnas sin impacto cuando las hay.
 
-El ancho de franja es configurable y es la palanca principal de rendimiento: con franjas de 2 píxeles, un canvas de 800 de ancho lanza 400 rayos en vez de 800.
+El canvas del proyecto mide **1280 por 720 píxeles**, una relación de aspecto 16:9. El ancho de franja es configurable y es la palanca principal de rendimiento: con franjas de 2 píxeles, un canvas de 1280 de ancho lanza 640 rayos en vez de 1280.
 
 ## 6.6 Movimiento y colisiones
 El movimiento prueba cada eje por separado: si la celda de destino en x está libre, el jugador avanza en x, y lo mismo en y. El efecto es que el jugador se desliza contra las paredes cuando camina en diagonal, en lugar de quedarse trabado.
