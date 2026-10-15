@@ -56,7 +56,7 @@ Branches: every story is committed on `develop`, and once validated `develop` is
 | D-08b | Draw the six-round ammo bar | Desirable | 4 | D-08a | done |
 | D-08c | Play the Sgun reload animation while reloading | Desirable | 4 | D-08b | done |
 | D-09 | Procedural textures on a hidden canvas (wallX, texX), keeping flat color mode | Desirable | 4 | D-08b | done |
-| D-11 | Second room per chunk without breaking connectivity | Desirable | 4 | D-09 | pending |
+| D-11 | Second room per chunk without breaking connectivity | Desirable | 4 | D-09 | done |
 | D-10 | Raycast lighting with one light per room | Desirable | 4 | D-11 | pending |
 | D-12 | Strafing and mouse look, only if the team asks for it | Desirable | 4 | H-09o | pending |
 
@@ -517,6 +517,19 @@ Decisions:
 - One texture per texture column (64 columns) is sliced out of the canvas and reused by 640 pre-created strip sprites, so no Pixi object is created inside the ticker (TDD 6.4).
 - The strip sprites keep their unclipped height and let the canvas edge clip them, which keeps the texture aligned when a wall is taller than the screen.
 - `useWallTextures` in `config.js` defaults to true; set it to false to return to flat color mode (TDD 1.3).
+
+## D-11: Second room per chunk
+
+Acceptance criteria:
+- Roughly half of the chunks get a second room, 4 to 6 cells per side.
+- The second room stays inside the two-cell margin and never shares a cell with the main room.
+- The second room is reachable from the main room, so connectivity is kept.
+- The fixed doors keep working.
+
+Decisions:
+- `Math.random() < 0.5` decides whether the chunk gets the room. The room is placed by rejection sampling inside the margin, away from the main room (no shared cell), and connected by an L corridor between the two room centers.
+- A main room up to 8 by 8 can leave no space for a 4 to 6 room, so the realized share sits a little under 50 percent (about 47 percent in a sample of 8000 chunks): the tests assert a range, not an exact half.
+- The room centers are always inside their rooms, so the connecting corridor only crosses interior cells and never opens the border.
 
 ## D-03a: Add a vector crosshair HUD
 

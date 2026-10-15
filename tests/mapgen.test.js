@@ -75,6 +75,45 @@ test("connects the room to all four doors by construction", () => {
   }
 });
 
+test("about half the chunks get a second room, always 4 to 6 and reachable", () => {
+  const attempts = 300;
+  let withSecondRoom = 0;
+
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    const { cells, room, roomCenter, secondRoom } = generateChunk();
+    if (!secondRoom) {
+      continue;
+    }
+    withSecondRoom += 1;
+
+    assert.ok(secondRoom.width >= 4 && secondRoom.width <= 6);
+    assert.ok(secondRoom.height >= 4 && secondRoom.height <= 6);
+    assert.ok(secondRoom.x >= 2 && secondRoom.y >= 2);
+    assert.ok(secondRoom.x + secondRoom.width <= chunkSize - 2);
+    assert.ok(secondRoom.y + secondRoom.height <= chunkSize - 2);
+
+    // It never shares a cell with the main room
+    const sharesCells =
+      secondRoom.x < room.x + room.width &&
+      secondRoom.x + secondRoom.width > room.x &&
+      secondRoom.y < room.y + room.height &&
+      secondRoom.y + secondRoom.height > room.y;
+    assert.equal(sharesCells, false);
+
+    // Its center is open and reachable from the main room center
+    const secondCenterX = Math.floor(secondRoom.x + secondRoom.width / 2);
+    const secondCenterY = Math.floor(secondRoom.y + secondRoom.height / 2);
+    assert.equal(cellAt(cells, secondCenterX, secondCenterY), 0);
+    const reachable = reachableCells(cells, Math.floor(roomCenter.x), Math.floor(roomCenter.y));
+    assert.ok(reachable.has(`${secondCenterX},${secondCenterY}`));
+  }
+
+  // A large main room can leave no gap for a 4 to 6 room, so the share sits a
+  // little under 50 percent.
+  const rate = withSecondRoom / attempts;
+  assert.ok(rate > 0.3 && rate < 0.65, `second room rate ${rate}`);
+});
+
 test("prints an ASCII chunk for visual inspection", () => {
   const { cells } = generateChunk();
   const ascii = formatChunk(cells);

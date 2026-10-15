@@ -23,7 +23,7 @@ The player collides with walls and slides along them. The minimap is overlaid in
 |---|---|---|
 | `lib/pixi.min.js` | Local PixiJS 8.21.0 browser bundle | 6.1, 6.2 |
 | `js/config.js` | 1280 by 720 canvas, movement and rendering constants, wall texture toggle | 6.3 |
-| `js/mapgen.js` | Generates a connected room and four corridors in each chunk | 4.2, 4.3 |
+| `js/mapgen.js` | Generates a connected room (and often a second one) plus four corridors in each chunk | 4.2, 4.3 |
 | `js/world.js` | Cantor-keyed chunk storage and `getCell` | 5.1, 5.2, 6.8 |
 | `js/player.js` | Camera state, keyboard input, movement, collisions, health and ammo | 3.2, 6.6 |
 | `js/raycaster.js` | Camera rays and grid DDA | 3.2, 3.3, 3.4 |

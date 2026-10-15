@@ -2,6 +2,12 @@
 const chunkSize = 16;
 const doorIndex = 8;
 
+// D-11: half of the chunks get a second, smaller room joined to the main one
+const secondRoomChance = 0.5;
+const secondRoomMinSize = 4;
+const secondRoomMaxSize = 6;
+const secondRoomAttempts = 40;
+
 function generateChunk() {
   const cells = new Uint8Array(chunkSize * chunkSize);
   cells.fill(1);
@@ -25,7 +31,66 @@ function generateChunk() {
   carveWestCorridor(cells, room, roomCenterCellX, roomCenterCellY);
   carveEastCorridor(cells, room, roomCenterCellX, roomCenterCellY);
 
-  return { cells, room, roomCenter };
+  const secondRoom = maybeCarveSecondRoom(cells, room);
+  if (secondRoom) {
+    connectRooms(cells, room, secondRoom);
+  }
+
+  return { cells, room, roomCenter, secondRoom };
+}
+
+// D-11: rolls the second room, tries to place it clear of the main room and,
+// when it fits, carves it. Returns the room or null.
+function maybeCarveSecondRoom(cells, mainRoom) {
+  if (Math.random() >= secondRoomChance) {
+    return null;
+  }
+
+  const secondRoom = placeSecondRoom(mainRoom);
+  if (!secondRoom) {
+    return null;
+  }
+
+  carveRectangle(cells, secondRoom.x, secondRoom.y, secondRoom.width, secondRoom.height);
+  return secondRoom;
+}
+
+// D-11: random 4 to 6 room, inside the two-cell margin, not sharing a cell with
+// the main room. Gives up after a few tries when a big main room leaves no gap.
+function placeSecondRoom(mainRoom) {
+  for (let attempt = 0; attempt < secondRoomAttempts; attempt += 1) {
+    const width = randomInteger(secondRoomMinSize, secondRoomMaxSize);
+    const height = randomInteger(secondRoomMinSize, secondRoomMaxSize);
+    const x = randomInteger(2, chunkSize - width - 2);
+    const y = randomInteger(2, chunkSize - height - 2);
+    const candidate = { x, y, width, height };
+    if (!roomsShareCells(candidate, mainRoom)) {
+      return candidate;
+    }
+  }
+  return null;
+}
+
+function roomsShareCells(a, b) {
+  return (
+    a.x < b.x + b.width &&
+    a.x + a.width > b.x &&
+    a.y < b.y + b.height &&
+    a.y + a.height > b.y
+  );
+}
+
+// D-11: an L corridor between the two room centers, so the second room joins
+// the rest of the chunk. Both centers sit inside their rooms, so the path only
+// crosses interior cells.
+function connectRooms(cells, firstRoom, secondRoom) {
+  const firstCenterX = Math.floor(firstRoom.x + firstRoom.width / 2);
+  const firstCenterY = Math.floor(firstRoom.y + firstRoom.height / 2);
+  const secondCenterX = Math.floor(secondRoom.x + secondRoom.width / 2);
+  const secondCenterY = Math.floor(secondRoom.y + secondRoom.height / 2);
+
+  carveVertical(cells, secondCenterX, secondCenterY, firstCenterY);
+  carveHorizontal(cells, secondCenterX, firstCenterX, firstCenterY);
 }
 
 function randomInteger(minimum, maximum) {
