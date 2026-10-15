@@ -55,7 +55,11 @@ El esquema deja afuera a propósito el desplazamiento lateral y el giro con el m
 - **Gestión de munición**: la reserva total es infinita, para favorecer un ritmo constante, pero el cargador tiene capacidad limitada, así que el jugador debe recargar cada cierta cantidad de disparos.
 
 ### 2.3.2 Enemigos y comportamiento
-La mazmorra estaría habitada por un único tipo de enemigo, controlado por una **máquina de estados**. En esta primera iteración el enemigo se representa como un cuadrado geométrico sin textura, lo que deja preparado el terreno para aplicarle sprites más adelante. Los estados previstos son:
+La mazmorra estaría habitada por un único tipo de enemigo, controlado por una **máquina de estados**. En esta primera iteración el enemigo se representa como un cuadrado geométrico sin textura, lo que deja preparado el terreno para aplicarle sprites más adelante.
+
+Cada chunk distinto de (0, 0) sortea una población una sola vez: 50% de probabilidad de cero enemigos, 30% de uno, 15% de dos y 5% de tres. El chunk (0, 0) no tiene enemigos. Se ubican en celdas de aire distintas, tanto en salas como en corredores, usan un collider cuadrado de 0,5 celdas y son de color ámbar. Su registro por celda se conserva durante la sesión.
+
+Los estados previstos son:
 
 - **Reposo**: el enemigo permanece estático en su zona.
 

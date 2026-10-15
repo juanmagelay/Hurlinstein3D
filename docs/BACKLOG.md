@@ -37,17 +37,24 @@ Branches: every story is committed on `develop`, and once validated `develop` is
 | H-10a | Change the canvas to 1280 by 720 | Required | 3 | H-09o | done |
 | H-10b | Document the 16:9 canvas dimensions | Required | 3 | H-10a | done |
 | D-01 | Distance darkening in brightness bands | Desirable | 4 | H-09o | done |
-| D-02 | Wall color per chunk | Desirable | 4 | H-09o | in progress |
+| D-02 | Wall color per chunk | Desirable | 4 | H-09o | done |
 | D-03a | Add a vector crosshair HUD | Desirable | 4 | D-02 | done |
 | D-03b | Document the HUD file in the README | Desirable | 4 | D-03a | done |
-| D-04 | Visible enemy: registered per cell, on the minimap and in 3D as a square with z-buffer | Desirable | 4 | D-03b | pending |
-| D-05 | Enemy state machine with DDA line of sight | Desirable | 4 | D-04 | pending |
-| D-06 | Health, contact damage, health bar and defeat | Desirable | 4 | D-05 | pending |
-| D-07 | Shooting with the center ray DDA, blocked by walls | Desirable | 4 | D-04 | pending |
-| D-08 | Ammo: magazine, reload, counter | Desirable | 4 | D-07 | pending |
-| D-09 | Procedural textures on a hidden canvas (wallX, texX), keeping flat color mode | Desirable | 4 | H-09o | pending |
-| D-10 | Raycast lighting (reuse `pointLightFactor` from the demo) | Desirable | 4 | H-09o | pending |
-| D-11 | Second room per chunk without breaking connectivity | Desirable | 4 | H-09o | pending |
+| D-04a0 | Specify enemy population in the TDD | Desirable | 4 | D-03b | in progress |
+| D-04a | Populate chunks with registered enemies | Desirable | 4 | D-04a0 | pending |
+| D-04b | Show enemies on the minimap | Desirable | 4 | D-04a | pending |
+| D-04c1 | Store wall depth for enemy occlusion | Desirable | 4 | D-04a | pending |
+| D-04c2 | Render enemy squares with z-buffer occlusion | Desirable | 4 | D-04b, D-04c1 | pending |
+| D-05 | Enemy state machine with DDA line of sight | Desirable | 4 | D-04c2 | pending |
+| D-06a | Clarify defeat-only scope in the TDD | Desirable | 4 | D-05 | pending |
+| D-06b | Health, contact damage, health bar and defeat | Desirable | 4 | D-06a | pending |
+| D-07a | Shoot enemies with the center ray DDA | Desirable | 4 | D-04c2 | pending |
+| D-07b | Add the Sgun idle and firing animation | Desirable | 4 | D-07a | pending |
+| D-08a | Track six shotgun rounds and reload state | Desirable | 4 | D-07b | pending |
+| D-08b | Draw the six-round bar and reload animation | Desirable | 4 | D-08a | pending |
+| D-09 | Procedural textures on a hidden canvas (wallX, texX), keeping flat color mode | Desirable | 4 | D-08b | pending |
+| D-11 | Second room per chunk without breaking connectivity | Desirable | 4 | D-09 | pending |
+| D-10 | Raycast lighting with one light per room | Desirable | 4 | D-11 | pending |
 | D-12 | Strafing and mouse look, only if the team asks for it | Desirable | 4 | H-09o | pending |
 
 ## H-01a: Repo layout
@@ -351,6 +358,47 @@ Acceptance criteria:
 Decisions:
 - Use a four-color muted palette: blue, teal, amber and violet.
 - Select the palette entry by the Cantor key modulo the palette length, with no additional color Map.
+
+## D-04a0: Specify enemy population in the TDD
+
+Acceptance criteria:
+- TDD 2.3.2 states the weighted enemy count, the empty spawn chunk, placement rules and collider size.
+
+Decisions:
+- Use 50%, 30%, 15% and 5% for zero through three enemies in non-spawn chunks; chunk (0, 0) is always empty.
+- Enemies occupy unique air cells anywhere in a chunk and use amber 0.5-cell square colliders.
+
+## D-04a: Populate chunks with registered enemies
+
+Acceptance criteria:
+- Chunk (0, 0) has no enemies; each other chunk rolls 0, 1, 2 or 3 enemies with probabilities 50%, 30%, 15% and 5%.
+- Enemies occupy distinct air cells anywhere in the chunk, including corridors, and use 0.5-cell square colliders.
+- Enemy objects and their per-cell registration persist when the chunk is revisited.
+- Tests verify population thresholds, free-cell placement, unique cells and persistence.
+
+Decisions:
+- Enemy squares use the amber palette color `0xffc857`.
+- Their initial state is `idle`; state transitions arrive in D-05.
+
+## D-04b: Show enemies on the minimap
+
+Acceptance criteria:
+- Registered enemies are drawn in their cells as amber markers.
+- Enemy positions update through the per-cell registry when D-05 moves them.
+
+## D-04c1: Store wall depth for enemy occlusion
+
+Acceptance criteria:
+- The wall renderer exposes perpendicular depth for each screen strip.
+- Missed rays use `maxRayDistance` as their occlusion depth.
+- Tests verify the z-buffer values against DDA results.
+
+## D-04c2: Render enemy squares with z-buffer occlusion
+
+Acceptance criteria:
+- Enemies are projected as 0.5-cell squares in the first-person view.
+- Enemy strips draw only where the enemy is closer than the wall depth.
+- Manual check verifies a wall hides an enemy behind it.
 
 ## D-03a: Add a vector crosshair HUD
 
