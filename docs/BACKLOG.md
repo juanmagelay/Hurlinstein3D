@@ -45,8 +45,9 @@ Branches: every story is committed on `develop`, and once validated `develop` is
 | D-04b | Show enemies on the minimap | Desirable | 4 | D-04a | done |
 | D-04c1 | Store wall depth for enemy occlusion | Desirable | 4 | D-04a | done |
 | D-04c2 | Render enemy squares with z-buffer occlusion | Desirable | 4 | D-04b, D-04c1 | done |
-| D-05 | Enemy state machine with DDA line of sight | Desirable | 4 | D-04c2 | pending |
-| D-06a | Clarify defeat-only scope in the TDD | Desirable | 4 | D-05 | pending |
+| D-05a | Enemy idle timer and two-point patrol movement | Desirable | 4 | D-04c2 | done |
+| D-05b | Enemy line of sight and chase with return to patrol | Desirable | 4 | D-05a | pending |
+| D-06a | Clarify defeat-only scope in the TDD | Desirable | 4 | D-05b | pending |
 | D-06b | Health, contact damage, health bar and defeat | Desirable | 4 | D-06a | pending |
 | D-07a | Shoot enemies with the center ray DDA | Desirable | 4 | D-04c2 | pending |
 | D-07b | Add the Sgun idle and firing animation | Desirable | 4 | D-07a | pending |
@@ -399,6 +400,24 @@ Acceptance criteria:
 - Enemies are projected as 0.5-cell squares in the first-person view.
 - Enemy strips draw only where the enemy is closer than the wall depth.
 - Manual check verifies a wall hides an enemy behind it.
+
+## D-05a: Enemy idle timer and two-point patrol movement
+
+Acceptance criteria:
+- Every enemy starts in `idle` and switches to `patrol` after two seconds.
+- In `patrol` the enemy walks between two neighbouring air cell centers at one cell per second.
+- Moving an enemy updates its per-cell registration when it crosses a cell boundary.
+- Tests cover the idle transition, patrol speed, the two-point oscillation and registry updates.
+
+Decisions:
+- Timings are measured in 60 Hz ticker units: `deltaTime` accumulates and speeds are cells per tick.
+- If an enemy has no adjacent air cell to patrol to, it stays `idle`.
+
+## D-05b: Enemy line of sight and chase with return to patrol
+
+Acceptance criteria:
+- Within 24 cells and with a clear 360 degree DDA line of sight, the enemy chases the player at two cells per second.
+- After losing line of sight for one second, the enemy returns to `patrol`.
 
 ## D-03a: Add a vector crosshair HUD
 
