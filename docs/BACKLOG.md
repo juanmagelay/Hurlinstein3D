@@ -17,21 +17,35 @@ Branches: every story is committed on `develop`, and once validated `develop` is
 | H-07a | Clarify fixed chunk door coordinates in the TDD | Required | 3 | H-06 | done |
 | H-07b | Chunk generator in `mapgen.js`, isolated and tested | Required | 3 | H-07a, H-02 | done |
 | H-08a | Decouple algorithm tests from the fixed map | Required | 3 | H-03, H-04, H-07b | done |
-| H-08a2 | Decouple player movement tests from the world map | Required | 3 | H-05a, H-08a | in progress |
-| H-08b | Infinite world: chunk Map with Cantor key, spawn in chunk (0, 0) | Required | 3 | H-06, H-07b, H-08a2 | in progress |
-| H-09 | Minimum scope closure: delete `legacy/`, README, TDD 7.2 and 7.3 check | Required | 3 | H-08b | pending |
-| D-01 | Distance darkening in brightness bands | Desirable | 4 | H-09 | pending |
-| D-02 | Wall color per chunk | Desirable | 4 | H-09 | pending |
-| D-03 | Base HUD and center crosshair | Desirable | 4 | H-09 | pending |
+| H-08a2 | Decouple player movement tests from the world map | Required | 3 | H-05a, H-08a | done |
+| H-08b | Infinite world: chunk Map with Cantor key, spawn in chunk (0, 0) | Required | 3 | H-06, H-07b, H-08a2 | done |
+| H-09a | Remove legacy docs and HTML entries | Required | 3 | H-08b | done |
+| H-09b | Remove legacy package manifests | Required | 3 | H-09a | in progress |
+| H-09c | Remove legacy build tools and bootstrap | Required | 3 | H-09b | pending |
+| H-09d | Remove legacy layout, styling and math files | Required | 3 | H-09c | pending |
+| H-09e | Remove legacy input and DDA files | Required | 3 | H-09d | pending |
+| H-09f | Remove legacy raycast and collision files | Required | 3 | H-09e | pending |
+| H-09g | Remove legacy game controllers and 2D player | Required | 3 | H-09f | pending |
+| H-09h | Remove legacy 3D player and worlds | Required | 3 | H-09g | pending |
+| H-09i | Remove legacy canvas and base renderers | Required | 3 | H-09h | pending |
+| H-09j | Remove legacy 3D and minimap renderers | Required | 3 | H-09i | pending |
+| H-09k | Remove remaining legacy renderers | Required | 3 | H-09j | pending |
+| H-09l | Remove legacy lighting and debug panels | Required | 3 | H-09k | pending |
+| H-09m | Remove legacy menu and initial tests | Required | 3 | H-09l | pending |
+| H-09n | Remove remaining legacy tests | Required | 3 | H-09m | pending |
+| H-09o | Add README and verify the minimum scope | Required | 3 | H-09n | pending |
+| D-01 | Distance darkening in brightness bands | Desirable | 4 | H-09o | pending |
+| D-02 | Wall color per chunk | Desirable | 4 | H-09o | pending |
+| D-03 | Base HUD and center crosshair | Desirable | 4 | H-09o | pending |
 | D-04 | Visible enemy: registered per cell, on the minimap and in 3D as a square with z-buffer | Desirable | 4 | D-03 | pending |
 | D-05 | Enemy state machine with DDA line of sight | Desirable | 4 | D-04 | pending |
 | D-06 | Health, contact damage, health bar and defeat | Desirable | 4 | D-05 | pending |
 | D-07 | Shooting with the center ray DDA, blocked by walls | Desirable | 4 | D-04 | pending |
 | D-08 | Ammo: magazine, reload, counter | Desirable | 4 | D-07 | pending |
-| D-09 | Procedural textures on a hidden canvas (wallX, texX), keeping flat color mode | Desirable | 4 | H-09 | pending |
-| D-10 | Raycast lighting (reuse `pointLightFactor` from the demo) | Desirable | 4 | H-09 | pending |
-| D-11 | Second room per chunk without breaking connectivity | Desirable | 4 | H-09 | pending |
-| D-12 | Strafing and mouse look, only if the team asks for it | Desirable | 4 | H-09 | pending |
+| D-09 | Procedural textures on a hidden canvas (wallX, texX), keeping flat color mode | Desirable | 4 | H-09o | pending |
+| D-10 | Raycast lighting (reuse `pointLightFactor` from the demo) | Desirable | 4 | H-09o | pending |
+| D-11 | Second room per chunk without breaking connectivity | Desirable | 4 | H-09o | pending |
+| D-12 | Strafing and mouse look, only if the team asks for it | Desirable | 4 | H-09o | pending |
 
 ## H-01a: Repo layout
 
@@ -210,10 +224,79 @@ Acceptance criteria:
 Decisions:
 - The chunk Map stores only each generated `Uint8Array`. Room-center metadata is retained separately for the initial spawn.
 
-## H-09: Minimum scope closure
+## H-09a: Remove legacy docs and HTML entries
 
 Acceptance criteria:
-- `legacy/` is deleted.
+- Delete `legacy/README.md`, `legacy/dev.html` and `legacy/index.html`.
+
+## H-09b: Remove legacy package manifests
+
+Acceptance criteria:
+- Delete `legacy/package.json`, `legacy/package-lock.json` and `legacy/standalone.html`.
+
+## H-09c: Remove legacy build tools and bootstrap
+
+Acceptance criteria:
+- Delete `legacy/scripts/build-standalone.js`, `legacy/vite.config.js` and `legacy/src/main.js`.
+
+## H-09d: Remove legacy layout, styling and math files
+
+Acceptance criteria:
+- Delete `legacy/src/application/Game3DLayout.js`, `legacy/src/style.css` and `legacy/src/math/Vector2.js`.
+
+## H-09e: Remove legacy input and DDA files
+
+Acceptance criteria:
+- Delete `legacy/src/input/KeyboardInput.js`, `legacy/src/input/PointerInput.js` and `legacy/src/raycast/DDA.js`.
+
+## H-09f: Remove legacy raycast and collision files
+
+Acceptance criteria:
+- Delete `legacy/src/raycast/Raycast.js`, `legacy/src/game/Collision.js` and `legacy/src/game/Obstacle2D.js`.
+
+## H-09g: Remove legacy game controllers and 2D player
+
+Acceptance criteria:
+- Delete `legacy/src/game/Game2D.js`, `legacy/src/game/Game3D.js` and `legacy/src/game/Player2D.js`.
+
+## H-09h: Remove legacy 3D player and worlds
+
+Acceptance criteria:
+- Delete `legacy/src/game/Player3D.js`, `legacy/src/game/World2D.js` and `legacy/src/game/World3D.js`.
+
+## H-09i: Remove legacy canvas and base renderers
+
+Acceptance criteria:
+- Delete `legacy/src/rendering/CanvasApp.js`, `legacy/src/rendering/Draw.js` and `legacy/src/rendering/Game2DRenderer.js`.
+
+## H-09j: Remove legacy 3D and minimap renderers
+
+Acceptance criteria:
+- Delete `legacy/src/rendering/Game3DRenderer.js`, `legacy/src/rendering/MinimapRenderer3D.js` and `legacy/src/rendering/RayRenderer2D.js`.
+
+## H-09k: Remove remaining legacy renderers
+
+Acceptance criteria:
+- Delete `legacy/src/rendering/ObstacleRenderer2D.js`, `legacy/src/rendering/PlayerRenderer2D.js` and `legacy/src/rendering/RaycasterRenderer3D.js`.
+
+## H-09l: Remove legacy lighting and debug panels
+
+Acceptance criteria:
+- Delete `legacy/src/rendering/PointLighting.js`, `legacy/src/ui/DebugPanel2D.js` and `legacy/src/ui/DebugPanel3D.js`.
+
+## H-09m: Remove legacy menu and initial tests
+
+Acceptance criteria:
+- Delete `legacy/src/ui/Menu.js`, `legacy/tests/collision.test.js` and `legacy/tests/game3d-layout.test.js`.
+
+## H-09n: Remove remaining legacy tests
+
+Acceptance criteria:
+- Delete `legacy/tests/point-lighting.test.js`, `legacy/tests/raycast-dda.test.js` and `legacy/tests/raycast.test.js`.
+
+## H-09o: Add README and verify the minimum scope
+
+Acceptance criteria:
 - English README: how to open, controls, which file implements each TDD section, course and university.
 - TDD 7.3 success criteria and TDD 7.2 risks checked one by one.
 
