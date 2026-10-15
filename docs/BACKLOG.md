@@ -20,8 +20,8 @@ Branches: every story is committed on `develop`, and once validated `develop` is
 | H-08a2 | Decouple player movement tests from the world map | Required | 3 | H-05a, H-08a | done |
 | H-08b | Infinite world: chunk Map with Cantor key, spawn in chunk (0, 0) | Required | 3 | H-06, H-07b, H-08a2 | done |
 | H-09a | Remove legacy docs and HTML entries | Required | 3 | H-08b | done |
-| H-09b | Remove legacy package manifests | Required | 3 | H-09a | in progress |
-| H-09c | Remove legacy build tools and bootstrap | Required | 3 | H-09b | pending |
+| H-09b | Remove legacy package manifests | Required | 3 | H-09a | done |
+| H-09c | Remove legacy build tools and bootstrap | Required | 3 | H-09b | in progress |
 | H-09d | Remove legacy layout, styling and math files | Required | 3 | H-09c | pending |
 | H-09e | Remove legacy input and DDA files | Required | 3 | H-09d | pending |
 | H-09f | Remove legacy raycast and collision files | Required | 3 | H-09e | pending |
