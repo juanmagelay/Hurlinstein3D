@@ -4,6 +4,7 @@
 // TDD 5.2: spawn at the center of the generated room in chunk (0, 0).
 // y grows downward on the map, so facing east (+x) the right hand side is +y:
 // plane points there and the image is not mirrored.
+const playerMaxHealth = 100;
 const spawnPosition = getSpawnPosition();
 const player = {
   posX: spawnPosition.x,
@@ -12,7 +13,18 @@ const player = {
   dirY: 0,
   planeX: 0,
   planeY: 0.66,
+  health: playerMaxHealth,
+  maxHealth: playerMaxHealth,
 };
+
+// D-06b: health never goes below zero, and zero health means defeat.
+function damagePlayer(player, amount) {
+  player.health = Math.max(0, player.health - amount);
+}
+
+function isPlayerDefeated(player) {
+  return player.health <= 0;
+}
 
 // TDD 6.6: only the four controls from TDD 2.2 affect the player
 const movementKeys = new Set(["w", "a", "s", "d"]);

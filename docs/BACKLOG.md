@@ -48,7 +48,8 @@ Branches: every story is committed on `develop`, and once validated `develop` is
 | D-05a | Enemy idle timer and two-point patrol movement | Desirable | 4 | D-04c2 | done |
 | D-05b | Enemy line of sight and chase with return to patrol | Desirable | 4 | D-05a | done |
 | D-06a | Clarify defeat-only scope in the TDD | Desirable | 4 | D-05b | done |
-| D-06b | Health, contact damage, health bar and defeat | Desirable | 4 | D-06a | pending |
+| D-06b | Health, contact damage and defeat | Desirable | 4 | D-06a | done |
+| D-06c | Draw the health bar and defeat overlay | Desirable | 4 | D-06b | pending |
 | D-07a | Shoot enemies with the center ray DDA | Desirable | 4 | D-04c2 | pending |
 | D-07b | Add the Sgun idle and firing animation | Desirable | 4 | D-07a | pending |
 | D-08a | Track six shotgun rounds and reload state | Desirable | 4 | D-07b | pending |
@@ -418,6 +419,25 @@ Decisions:
 Acceptance criteria:
 - Within 24 cells and with a clear 360 degree DDA line of sight, the enemy chases the player at two cells per second.
 - After losing line of sight for one second, the enemy returns to `patrol`.
+
+## D-06b: Health, contact damage and defeat
+
+Acceptance criteria:
+- The player starts with 100 of 100 health, never goes below zero and is defeated at zero.
+- An enemy within 0.6 cells deals 10 damage per second of contact.
+- At zero health the ticker stops updating the player and the enemies.
+- Tests cover the starting health, damage clamping and contact damage at range.
+
+Decisions:
+- Health lives on the player object; damage and defeat checks live with the player logic.
+- Contact damage accumulates per enemy per tick, so two overlapping enemies cost double.
+
+## D-06c: Draw the health bar and defeat overlay
+
+Acceptance criteria:
+- A health bar sits in the bottom-left corner, drawn from the embedded empty and full bar images.
+- The full bar width shrinks with the current health fraction.
+- A defeat overlay appears when health reaches zero.
 
 ## D-03a: Add a vector crosshair HUD
 

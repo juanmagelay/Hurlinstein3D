@@ -10,6 +10,23 @@ const enemyChaseSpeed = 2 / ticksPerSecond;
 const enemySightDistance = maxRayDistance;
 const enemyLoseSightTicks = ticksPerSecond;
 
+// D-06b: an enemy touching the player deals damage every tick, so a full second
+// of contact costs contactDamagePerSecond.
+const contactDistance = 0.6;
+const contactDamagePerSecond = 10;
+
+function getContactDamage(player, deltaTime) {
+  let damage = 0;
+  for (const enemies of enemiesByChunk.values()) {
+    for (const enemy of enemies) {
+      if (Math.hypot(enemy.posX - player.posX, enemy.posY - player.posY) < contactDistance) {
+        damage += contactDamagePerSecond * deltaTime / ticksPerSecond;
+      }
+    }
+  }
+  return damage;
+}
+
 // D-05a and D-05b: idle waits, patrol walks a route and scans for the player,
 // chase follows the player until it loses sight for a full second.
 function updateEnemies(player, deltaTime) {

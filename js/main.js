@@ -36,8 +36,13 @@ async function startGame() {
 
   // TDD 6.4: inside the ticker goes only what changes every frame
   app.ticker.add((ticker) => {
+    // D-06b: at zero health the game freezes on the last frame
+    if (isPlayerDefeated(player)) {
+      return;
+    }
     updatePlayer(player, pressedKeys, ticker.deltaTime);
     updateEnemies(player, ticker.deltaTime);
+    damagePlayer(player, getContactDamage(player, ticker.deltaTime));
     drawWalls(walls, player);
     drawEnemies(enemies, player);
     drawMinimap(minimap, player);
