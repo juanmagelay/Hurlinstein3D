@@ -11,8 +11,9 @@ Branches: every story is committed on `develop`, and once validated `develop` is
 | H-02 | Fixed world behind `getCell` and test helper | Required | 1 | H-01b | done |
 | H-03 | Camera and DDA raycaster with max ray distance | Required | 1 | H-02 | done |
 | H-04 | Flat wall strips render (static player) | Required | 1 | H-03 | done |
-| H-05 | Movement, rotation and per axis collisions | Required | 1 | H-04 | pending |
-| H-06 | Minimap (21 by 21 window) | Required | 2 | H-05 | pending |
+| H-05a | Player input and movement logic | Required | 1 | H-04 | done |
+| H-05b | Connect player controls to the ticker | Required | 1 | H-05a | pending |
+| H-06 | Minimap (21 by 21 window) | Required | 2 | H-05b | pending |
 | H-07 | Chunk generator in `mapgen.js`, isolated and tested | Required | 3 | H-02 | pending |
 | H-08 | Infinite world: chunk Map with Cantor key, spawn in chunk (0, 0) | Required | 3 | H-06, H-07 | pending |
 | H-09 | Minimum scope closure: delete `legacy/`, README, TDD 7.2 and 7.3 check | Required | 3 | H-08 | pending |
@@ -129,15 +130,26 @@ Decisions:
 - The render tests use a fake Graphics that records `clear`, `rect` and `fill`, and a second `vm` context with open floor for the missed rays. Checked by mutation: they fail without either clip, with swapped side colors, without the background strips, with full height background strips, with one `fill()` per strip and without `clear()`.
 - Checked with headless Chrome on `file://`: the spawn view shows the row 1 corridor with straight walls, and a copy with `maxRayDistance` set to 5 shows a 120 px background strip (600 / 5) where the end wall at 6.5 was. No console messages from the page.
 
-## H-05: Movement, rotation and collisions
+## H-05a: Player input and movement logic
 
 Acceptance criteria:
-- Keyboard listeners, registered once, keep a Set of pressed keys.
-- W and S move along dir, scaled by `ticker.deltaTime`. A and D rotate dir and plane with the rotation matrix.
+- `createKeyboardInput(target)` tracks W, A, S and D in a Set and ignores other keys.
+- `updatePlayer(player, pressedKeys, deltaTime)` moves along dir and rotates dir and plane with the same rotation matrix.
 - Each axis is tested separately against `getCell`, so the player slides along walls (TDD 6.6).
-- Only W, A, S and D (TDD 2.2): no arrow keys, strafing or mouse.
+- Tests cover key tracking, deltaTime movement, rotation and sliding on both axes.
 
-Open question: point collider (TDD 6.6 as written, like Lode) or a margin of about 0.2 cells (like the demo radius). Proposal: margin, so the player cannot press against a wall until lineHeight blows up.
+Decisions:
+- Split H-05 into H-05a (movement logic) and H-05b (ticker integration) to keep each story within the four-file limit.
+- Use a point collider, as specified by TDD 6.6. The demo's circular collider is not carried over.
+- Preserve the demo speeds, converted from 200 px/s and 3 rad/s to cells and radians per 60 Hz ticker unit.
+
+## H-05b: Connect player controls to the ticker
+
+Acceptance criteria:
+- Register keyboard listeners once outside the ticker.
+- Update the player with `ticker.deltaTime` before drawing walls.
+- Only W, A, S and D move or rotate the player (TDD 2.2).
+- Manual check: walk, rotate and slide along the fixed map walls.
 
 ## H-06: Minimap
 

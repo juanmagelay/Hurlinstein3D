@@ -13,3 +13,59 @@ const player = {
   planeX: 0,
   planeY: 0.66,
 };
+
+// TDD 6.6: only the four controls from TDD 2.2 affect the player
+const movementKeys = new Set(["w", "a", "s", "d"]);
+
+function createKeyboardInput(target) {
+  const pressedKeys = new Set();
+
+  target.addEventListener("keydown", (event) => {
+    const key = event.key.toLowerCase();
+    if (movementKeys.has(key)) {
+      pressedKeys.add(key);
+    }
+  });
+
+  target.addEventListener("keyup", (event) => {
+    pressedKeys.delete(event.key.toLowerCase());
+  });
+
+  return pressedKeys;
+}
+
+// TDD 6.6: rotate the camera, move along dir and slide along walls by axis
+function updatePlayer(player, pressedKeys, deltaTime) {
+  const turn = Number(pressedKeys.has("d")) - Number(pressedKeys.has("a"));
+  const rotation = turn * rotationSpeed * deltaTime;
+
+  if (rotation !== 0) {
+    const cosRotation = Math.cos(rotation);
+    const sinRotation = Math.sin(rotation);
+    const oldDirX = player.dirX;
+    const oldDirY = player.dirY;
+    const oldPlaneX = player.planeX;
+    const oldPlaneY = player.planeY;
+
+    player.dirX = oldDirX * cosRotation - oldDirY * sinRotation;
+    player.dirY = oldDirX * sinRotation + oldDirY * cosRotation;
+    player.planeX = oldPlaneX * cosRotation - oldPlaneY * sinRotation;
+    player.planeY = oldPlaneX * sinRotation + oldPlaneY * cosRotation;
+  }
+
+  const moveDirection = Number(pressedKeys.has("w")) - Number(pressedKeys.has("s"));
+  const moveX = player.dirX * moveDirection * moveSpeed * deltaTime;
+  const moveY = player.dirY * moveDirection * moveSpeed * deltaTime;
+
+  const nextMapX = Math.floor(player.posX + moveX);
+  const currentMapY = Math.floor(player.posY);
+  if (getCell(nextMapX, currentMapY) === 0) {
+    player.posX += moveX;
+  }
+
+  const currentMapX = Math.floor(player.posX);
+  const nextMapY = Math.floor(player.posY + moveY);
+  if (getCell(currentMapX, nextMapY) === 0) {
+    player.posY += moveY;
+  }
+}
