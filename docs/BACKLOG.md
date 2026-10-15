@@ -12,7 +12,7 @@ Branches: every story is committed on `develop`, and once validated `develop` is
 | H-03 | Camera and DDA raycaster with max ray distance | Required | 1 | H-02 | done |
 | H-04 | Flat wall strips render (static player) | Required | 1 | H-03 | done |
 | H-05a | Player input and movement logic | Required | 1 | H-04 | done |
-| H-05b | Connect player controls to the ticker | Required | 1 | H-05a | pending |
+| H-05b | Connect player controls to the ticker | Required | 1 | H-05a | done |
 | H-06 | Minimap (21 by 21 window) | Required | 2 | H-05b | pending |
 | H-07 | Chunk generator in `mapgen.js`, isolated and tested | Required | 3 | H-02 | pending |
 | H-08 | Infinite world: chunk Map with Cantor key, spawn in chunk (0, 0) | Required | 3 | H-06, H-07 | pending |

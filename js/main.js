@@ -18,8 +18,12 @@ async function startGame() {
   const walls = new PIXI.Graphics();
   app.stage.addChild(walls);
 
+  // TDD 6.4: keyboard listeners are registered once, outside the ticker
+  const pressedKeys = createKeyboardInput(window);
+
   // TDD 6.4: inside the ticker goes only what changes every frame
-  app.ticker.add(() => {
+  app.ticker.add((ticker) => {
+    updatePlayer(player, pressedKeys, ticker.deltaTime);
     drawWalls(walls, player);
   });
 }
