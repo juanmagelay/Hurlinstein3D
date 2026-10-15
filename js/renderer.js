@@ -29,6 +29,20 @@ function shadeColor(color, brightness) {
   return (red << 16) | (green << 8) | blue;
 }
 
+// TDD 6.8 and D-02: chunk colors follow a stable palette index from Cantor key
+function getChunkWallColor(mapX, mapY) {
+  const cx = Math.floor(mapX / chunkSize);
+  const cy = Math.floor(mapY / chunkSize);
+  const paletteIndex = getChunkKey(cx, cy) % wallPalette.length;
+  return wallPalette[paletteIndex];
+}
+
+function getWallColor(mapX, mapY, side, perpWallDist) {
+  const faceBrightness = side === 1 ? side1Brightness : 1;
+  const distanceBrightness = getDistanceBrightness(perpWallDist);
+  return shadeColor(getChunkWallColor(mapX, mapY), faceBrightness * distanceBrightness);
+}
+
 // TDD 6.4 and 6.5: runs once, outside the ticker. Ceiling above the horizon,
 // floor below it.
 function drawCeilingAndFloor(graphics) {
@@ -54,8 +68,7 @@ function drawWalls(graphics, player) {
       // place a wall at maxRayDistance would have, so it reads as darkness.
       missedStrips.push(getWallStrip(x, maxRayDistance));
     } else {
-      const baseColor = ray.side === 0 ? wallColorSide0 : wallColorSide1;
-      const color = shadeColor(baseColor, getDistanceBrightness(ray.perpWallDist));
+      const color = getWallColor(ray.mapX, ray.mapY, ray.side, ray.perpWallDist);
       addStripToColorGroup(stripsByColor, color, getWallStrip(x, ray.perpWallDist));
     }
   }

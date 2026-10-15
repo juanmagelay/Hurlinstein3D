@@ -21,7 +21,7 @@ const stripWidth = 2;
 // TDD 1.3: flat colors, from the demo palette
 const ceilingColor = 0x1a1a2e;
 const floorColor = 0x2d2d44;
-// Fake lighting: side 1 faces (horizontal grid lines) are darker than side 0 faces
-const wallColorSide0 = 0x4a6fa5;
-const wallColorSide1 = 0x2c4a7c;
+// D-02: muted wall colors are assigned deterministically by chunk coordinate
+const wallPalette = [0x4a6fa5, 0x4d8b84, 0xa77845, 0x7b5b98];
+const side1Brightness = 0.65;
 const distanceBrightnessBands = [1, 0.8, 0.6, 0.4];

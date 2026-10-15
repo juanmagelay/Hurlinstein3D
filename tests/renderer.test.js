@@ -11,8 +11,11 @@ const screenHeight = getGlobal("screenHeight");
 const stripWidth = getGlobal("stripWidth");
 const maxRayDistance = getGlobal("maxRayDistance");
 const backgroundColor = getGlobal("backgroundColor");
-const wallColorSide0 = getGlobal("wallColorSide0");
-const wallColorSide1 = getGlobal("wallColorSide1");
+const wallPalette = getGlobal("wallPalette");
+const getChunkKey = getGlobal("getChunkKey");
+const getChunkWallColor = getGlobal("getChunkWallColor");
+const getWallColor = getGlobal("getWallColor");
+const side1Brightness = getGlobal("side1Brightness");
 const getDistanceBand = getGlobal("getDistanceBand");
 const getDistanceBrightness = getGlobal("getDistanceBrightness");
 const shadeColor = getGlobal("shadeColor");
@@ -84,14 +87,32 @@ test("distance is quantized into four six-cell brightness bands", () => {
   assert.equal(getDistanceBrightness(18), 0.4);
 });
 
-test("distance shading darkens both faces and keeps side 1 darker", () => {
+test("distance shading darkens colors and keeps side 1 darker", () => {
   for (const brightness of [1, 0.8, 0.6, 0.4]) {
-    const side0Color = shadeColor(wallColorSide0, brightness);
-    const side1Color = shadeColor(wallColorSide1, brightness);
-    assert.ok(side0Color <= wallColorSide0);
+    const baseColor = wallPalette[0];
+    const side0Color = shadeColor(baseColor, brightness);
+    const side1Color = shadeColor(baseColor, brightness * side1Brightness);
+    assert.ok(side0Color <= baseColor);
     assert.ok(side1Color < side0Color);
   }
-  assert.equal(shadeColor(wallColorSide0, 1), wallColorSide0);
+  assert.equal(shadeColor(wallPalette[0], 1), wallPalette[0]);
+});
+
+test("chunk colors use a deterministic palette across positive and negative cells", () => {
+  assert.equal(getChunkWallColor(0, 0), wallPalette[getChunkKey(0, 0) % wallPalette.length]);
+  assert.equal(getChunkWallColor(-1, 15), getChunkWallColor(-16, 0));
+  assert.equal(getChunkWallColor(0, 0), wallPalette[0]);
+  assert.equal(getChunkWallColor(-1, 0), wallPalette[1]);
+  assert.equal(getChunkWallColor(0, -1), wallPalette[2]);
+  assert.equal(getChunkWallColor(16, 0), wallPalette[3]);
+});
+
+test("wall color combines chunk, side and distance shading", () => {
+  const baseColor = getChunkWallColor(-1, 0);
+
+  assert.equal(getWallColor(-1, 0, 0, 0), baseColor);
+  assert.equal(getWallColor(-1, 0, 1, 0), shadeColor(baseColor, side1Brightness));
+  assert.equal(getWallColor(-1, 0, 0, 18), shadeColor(baseColor, 0.4));
 });
 
 test("the canvas is 16:9 and casts 640 rays", () => {
@@ -101,7 +122,7 @@ test("the canvas is 16:9 and casts 640 rays", () => {
   assert.equal(screenWidth / stripWidth, 640);
 });
 
-test("from the spawn, the walls take one fill per side and stay on screen", () => {
+test("from the spawn, wall strips share color fills and stay on screen", () => {
   // Spawn view: the center hits a side 0 face, the edges hit side 1 faces
   const camera = { posX: 7.5, posY: 1.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66 };
   const graphics = createRecordingGraphics();
@@ -112,8 +133,8 @@ test("from the spawn, the walls take one fill per side and stay on screen", () =
   assert.equal(graphics.rects.length, screenWidth / stripWidth);
   // Every ray hits within maxRayDistance, so there is no background fill.
   // Strips sharing a shaded color are accumulated into one fill.
-  assert.ok(graphics.fillColors.includes(shadeColor(wallColorSide0, 0.8)));
-  assert.ok(graphics.fillColors.includes(wallColorSide1));
+  assert.ok(graphics.fillColors.includes(getWallColor(14, 1, 0, 6.5)));
+  assert.ok(graphics.fillColors.includes(getWallColor(8, 0, 1, 0.5 / 0.66)));
   assert.equal(new Set(graphics.fillColors).size, graphics.fillColors.length);
   assert.ok(graphics.fillColors.length < graphics.rects.length);
   for (const rect of graphics.rects) {

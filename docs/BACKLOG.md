@@ -37,7 +37,7 @@ Branches: every story is committed on `develop`, and once validated `develop` is
 | H-10a | Change the canvas to 1280 by 720 | Required | 3 | H-09o | done |
 | H-10b | Document the 16:9 canvas dimensions | Required | 3 | H-10a | done |
 | D-01 | Distance darkening in brightness bands | Desirable | 4 | H-09o | done |
-| D-02 | Wall color per chunk | Desirable | 4 | H-09o | pending |
+| D-02 | Wall color per chunk | Desirable | 4 | H-09o | in progress |
 | D-03 | Base HUD and center crosshair | Desirable | 4 | H-09o | pending |
 | D-04 | Visible enemy: registered per cell, on the minimap and in 3D as a square with z-buffer | Desirable | 4 | D-03 | pending |
 | D-05 | Enemy state machine with DDA line of sight | Desirable | 4 | D-04 | pending |
@@ -337,6 +337,19 @@ Acceptance criteria:
 Decisions:
 - Band intervals are 0 to 6, 6 to 12, 12 to 18 and 18 to 24 cells.
 - Brightness levels are 100%, 80%, 60% and 40%, from near to far.
+
+## D-02: Wall color per chunk
+
+Acceptance criteria:
+- Every hit wall uses a palette color selected deterministically from the hit cell's chunk coordinates.
+- Negative chunk coordinates use `Math.floor` and the existing Cantor key.
+- Side 1 shading and D-01 distance bands apply to each chunk color.
+- Strips with the same final color are drawn with one fill.
+- Tests cover stable color selection, negative coordinates and combined shading.
+
+Decisions:
+- Use a four-color muted palette: blue, teal, amber and violet.
+- Select the palette entry by the Cantor key modulo the palette length, with no additional color Map.
 
 ## Desirables
 
