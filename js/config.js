@@ -26,6 +26,13 @@ const wallPalette = [0x4a6fa5, 0x4d8b84, 0xa77845, 0x7b5b98];
 const side1Brightness = 0.65;
 const distanceBrightnessBands = [1, 0.8, 0.6, 0.4];
 
+// D-09: procedural wall texture, drawn on a hidden canvas (no external files).
+// Set to false to fall back to the flat color mode of TDD 1.3.
+const useWallTextures = true;
+const wallTextureSize = 64;
+// A very close wall would need an enormous sprite; clamp it to keep it sane
+const wallSpriteMaxHeight = screenHeight * 8;
+
 // D-04: weighted enemy population per generated chunk
 const enemyCountThresholds = [0.5, 0.8, 0.95];
 const enemySize = 0.5;

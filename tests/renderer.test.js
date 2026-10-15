@@ -145,6 +145,28 @@ test("from the spawn, wall strips share color fills and stay on screen", () => {
   }
 });
 
+const getWallTextureX = getGlobal("getWallTextureX");
+const wallTextureSize = getGlobal("wallTextureSize");
+
+test("the texture column follows the wallX offset and stays inside the sheet", () => {
+  // Center ray runs along +X and hits a side 0 face at posY 2.5: wallX 0.5.
+  // rayDirX > 0 flips it to 0.5, so texX = floor(0.5 * 64) = 32.
+  const camera = { posX: 2.5, posY: 2.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66 };
+  assert.equal(getWallTextureX(camera, screenWidth / 2, { side: 0, perpWallDist: 4 }), 32);
+
+  // Moving toward -X does not flip: wallX 0.25 stays 0.25, texX = 16.
+  const leftward = { posX: 5, posY: 2.25, dirX: -1, dirY: 0, planeX: 0, planeY: 0.66 };
+  assert.equal(getWallTextureX(leftward, screenWidth / 2, { side: 0, perpWallDist: 3 }), 16);
+});
+
+test("a side 1 face maps the X offset and flips when looking up the wall", () => {
+  // Center ray runs along -Y and hits a side 1 face at posX 2.25: wallX 0.25.
+  // rayDirY < 0 flips it to 0.75, so texX = floor(0.75 * 64) = 48.
+  const camera = { posX: 2.25, posY: 5, dirX: 0, dirY: -1, planeX: 0.66, planeY: 0 };
+  assert.equal(getWallTextureX(camera, screenWidth / 2, { side: 1, perpWallDist: 3 }), 48);
+  assert.equal(wallTextureSize, 64);
+});
+
 // An open floor with no walls at all, so every ray misses. getGlobal evaluates
 // code in its context, so it can also replace getCell there.
 const getOpenFloorGlobal = loadScripts();

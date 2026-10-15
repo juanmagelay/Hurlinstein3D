@@ -18,6 +18,15 @@ async function startGame() {
   const walls = new PIXI.Graphics();
   app.stage.addChild(walls);
 
+  // D-09: optional textured walls, one pre-created sprite per strip, above the
+  // flat wall graphics and under the enemies
+  let wallStrips = null;
+  if (useWallTextures) {
+    initWallTextures();
+    wallStrips = createWallStripSprites();
+    app.stage.addChild(wallStrips.container);
+  }
+
   // D-04c2: enemies draw over the walls, occluded per strip by the wall depth
   const enemies = new PIXI.Graphics();
   app.stage.addChild(enemies);
@@ -75,7 +84,7 @@ async function startGame() {
     }
     updateShotgun(shotgun, ticker.deltaTime);
     damagePlayer(player, getContactDamage(player, ticker.deltaTime));
-    drawWalls(walls, player);
+    drawWalls(walls, player, wallStrips);
     drawEnemies(enemies, player);
     drawMinimap(minimap, player);
   });

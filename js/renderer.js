@@ -61,12 +61,121 @@ function drawCeilingAndFloor(graphics) {
   graphics.rect(0, horizonY, screenWidth, screenHeight - horizonY).fill(floorColor);
 }
 
+// D-09: a procedural masonry texture on a hidden canvas. It is grayscale, so
+// the chunk color and the shading tint it through the sprite tint.
+function createWallTextureCanvas() {
+  const brickWidth = 16;
+  const brickHeight = 8;
+  const mortar = 2;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = wallTextureSize;
+  canvas.height = wallTextureSize;
+  const context = canvas.getContext("2d");
+
+  // The mortar fills the gaps left between the bricks
+  context.fillStyle = "rgb(70,70,70)";
+  context.fillRect(0, 0, wallTextureSize, wallTextureSize);
+
+  const rows = wallTextureSize / brickHeight;
+  const columns = wallTextureSize / brickWidth;
+  for (let row = 0; row < rows; row++) {
+    // Every other row is nudged half a brick, like a real bond
+    const rowOffset = (row % 2) * (brickWidth / 2);
+    for (let column = -1; column <= columns; column++) {
+      const x = column * brickWidth + rowOffset;
+      const y = row * brickHeight;
+      // Deterministic shade per brick, so the same wall looks the same every run
+      const shade = 190 + ((row * 31 + column * 17) % 45);
+      context.fillStyle = `rgb(${shade},${shade},${shade})`;
+      context.fillRect(x + mortar / 2, y + mortar / 2, brickWidth - mortar, brickHeight - mortar);
+    }
+  }
+
+  return canvas;
+}
+
+// D-09: one texture per texture column, sliced out of the hidden canvas so a
+// strip sprite can show the right column without redrawing the wall.
+let wallTextureColumns = null;
+
+function initWallTextures() {
+  if (wallTextureColumns) {
+    return;
+  }
+
+  const canvas = createWallTextureCanvas();
+  wallTextureColumns = [];
+  for (let x = 0; x < wallTextureSize; x++) {
+    const column = document.createElement("canvas");
+    column.width = 1;
+    column.height = wallTextureSize;
+    column.getContext("2d").drawImage(canvas, x, 0, 1, wallTextureSize, 0, 0, 1, wallTextureSize);
+    const texture = PIXI.Texture.from(column);
+    texture.source.scaleMode = "nearest";
+    wallTextureColumns.push(texture);
+  }
+}
+
+// D-09 (Lode part 2): one pre-created sprite per strip, reused every frame
+// (TDD 6.4). Two objects instead of 640 makes the reuse explicit.
+function createWallStripSprites() {
+  const container = new PIXI.Container();
+  const sprites = [];
+  for (let index = 0; index < wallStripCount; index++) {
+    const sprite = new PIXI.Sprite();
+    sprite.visible = false;
+    container.addChild(sprite);
+    sprites.push(sprite);
+  }
+  return { container, sprites };
+}
+
+// D-09 (Lode part 2): where along the wall face the ray landed, in [0, 1).
+// side 0 (a vertical line) uses the Y offset, side 1 the X offset. The flip
+// keeps the texture readable while walking around the wall.
+function getWallTextureX(player, stripX, ray) {
+  const cameraX = 2 * stripX / screenWidth - 1;
+  const rayDirX = player.dirX + player.planeX * cameraX;
+  const rayDirY = player.dirY + player.planeY * cameraX;
+
+  let wallX;
+  if (ray.side === 0) {
+    wallX = player.posY + ray.perpWallDist * rayDirY;
+  } else {
+    wallX = player.posX + ray.perpWallDist * rayDirX;
+  }
+  wallX -= Math.floor(wallX);
+
+  if (ray.side === 0 && rayDirX > 0) {
+    wallX = 1 - wallX;
+  }
+  if (ray.side === 1 && rayDirY < 0) {
+    wallX = 1 - wallX;
+  }
+
+  let texX = Math.floor(wallX * wallTextureSize);
+  if (texX < 0) {
+    texX = 0;
+  }
+  if (texX >= wallTextureSize) {
+    texX = wallTextureSize - 1;
+  }
+  return texX;
+}
+
 // TDD 6.5: runs every frame. Casts one ray per strip, from the strip's left
 // column (so column screenWidth / 2 is still cameraX 0), and sorts the strips
 // into side 0 walls, side 1 walls and rays that hit nothing. Each group is
-// painted with a single fill().
-function drawWalls(graphics, player) {
+// painted with a single fill(). With useWallTextures the sprites replace this
+// path, but missed strips still use the background fill.
+function drawWalls(graphics, player, wallStrips) {
   graphics.clear();
+
+  if (useWallTextures && wallStrips) {
+    drawTexturedWalls(graphics, player, wallStrips);
+    return;
+  }
 
   const stripsByColor = new Map();
   const missedStrips = [];
@@ -86,6 +195,38 @@ function drawWalls(graphics, player) {
   }
 
   fillStripColorGroups(graphics, stripsByColor);
+  fillStrips(graphics, missedStrips, backgroundColor);
+}
+
+// D-09 (Lode part 2): the textured version of drawWalls. Each strip sprite is
+// stretched to the wall height and tinted with the same color the flat mode
+// uses, so chunk color and shading still apply. The sprite keeps its unclipped
+// height and lets the canvas edge do the clipping, which keeps the texture
+// aligned when a wall is bigger than the screen.
+function drawTexturedWalls(graphics, player, wallStrips) {
+  const missedStrips = [];
+
+  for (let index = 0; index < wallStripCount; index++) {
+    const x = index * stripWidth;
+    const sprite = wallStrips.sprites[index];
+    const ray = castRayForColumn(player, x);
+    if (!ray.hit) {
+      wallDepthBuffer[index] = maxRayDistance;
+      sprite.visible = false;
+      missedStrips.push(getWallStrip(x, maxRayDistance));
+      continue;
+    }
+
+    wallDepthBuffer[index] = ray.perpWallDist;
+    const lineHeight = Math.min(screenHeight / ray.perpWallDist, wallSpriteMaxHeight);
+    sprite.texture = wallTextureColumns[getWallTextureX(player, x, ray)];
+    sprite.position.set(x, screenHeight / 2 - lineHeight / 2);
+    sprite.width = stripWidth;
+    sprite.height = lineHeight;
+    sprite.tint = getWallColor(ray.mapX, ray.mapY, ray.side, ray.perpWallDist);
+    sprite.visible = true;
+  }
+
   fillStrips(graphics, missedStrips, backgroundColor);
 }
 

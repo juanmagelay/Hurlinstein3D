@@ -40,7 +40,7 @@ Branches: every story is committed on `develop`, and once validated `develop` is
 | D-02 | Wall color per chunk | Desirable | 4 | H-09o | done |
 | D-03a | Add a vector crosshair HUD | Desirable | 4 | D-02 | done |
 | D-03b | Document the HUD file in the README | Desirable | 4 | D-03a | done |
-| D-04a0 | Specify enemy population in the TDD | Desirable | 4 | D-03b | in progress |
+| D-04a0 | Specify enemy population in the TDD | Desirable | 4 | D-03b | done |
 | D-04a | Populate chunks with registered enemies | Desirable | 4 | D-04a0 | done |
 | D-04b | Show enemies on the minimap | Desirable | 4 | D-04a | done |
 | D-04c1 | Store wall depth for enemy occlusion | Desirable | 4 | D-04a | done |
@@ -55,7 +55,7 @@ Branches: every story is committed on `develop`, and once validated `develop` is
 | D-08a | Track six shotgun rounds and reload state | Desirable | 4 | D-07b | done |
 | D-08b | Draw the six-round ammo bar | Desirable | 4 | D-08a | done |
 | D-08c | Play the Sgun reload animation while reloading | Desirable | 4 | D-08b | done |
-| D-09 | Procedural textures on a hidden canvas (wallX, texX), keeping flat color mode | Desirable | 4 | D-08b | pending |
+| D-09 | Procedural textures on a hidden canvas (wallX, texX), keeping flat color mode | Desirable | 4 | D-08b | done |
 | D-11 | Second room per chunk without breaking connectivity | Desirable | 4 | D-09 | pending |
 | D-10 | Raycast lighting with one light per room | Desirable | 4 | D-11 | pending |
 | D-12 | Strafing and mouse look, only if the team asks for it | Desirable | 4 | H-09o | pending |
@@ -503,6 +503,20 @@ Decisions:
 - The embedded strip now holds all 17 frames (idle, four firing, twelve reload); the sheet grew to about 233 KB.
 - `shotgunFrameDuration` (0.08 s) times the 12 reload frames sets `reloadDuration` to 0.96 s, so the logic and the animation end together.
 - `weapon.js` gained one generic sequence player: both the fire and the reload feed it a frame list.
+
+## D-09: Procedural wall textures on a hidden canvas
+
+Acceptance criteria:
+- Walls show a procedural brick texture, generated in code, with no external image.
+- The texture column follows `wallX` / `texX` (Lode part 2), so the pattern is aligned to the wall face.
+- Chunk color, side shading and distance shading still apply.
+- Flat color mode stays available.
+
+Decisions:
+- The brick pattern is drawn once on a hidden 64 by 64 canvas in grayscale; a strip sprite tinted with the existing `getWallColor` combines texture, chunk color and shading in one multiply.
+- One texture per texture column (64 columns) is sliced out of the canvas and reused by 640 pre-created strip sprites, so no Pixi object is created inside the ticker (TDD 6.4).
+- The strip sprites keep their unclipped height and let the canvas edge clip them, which keeps the texture aligned when a wall is taller than the screen.
+- `useWallTextures` in `config.js` defaults to true; set it to false to return to flat color mode (TDD 1.3).
 
 ## D-03a: Add a vector crosshair HUD
 
