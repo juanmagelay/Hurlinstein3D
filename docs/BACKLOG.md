@@ -50,7 +50,7 @@ Branches: every story is committed on `develop`, and once validated `develop` is
 | D-06a | Clarify defeat-only scope in the TDD | Desirable | 4 | D-05b | done |
 | D-06b | Health, contact damage and defeat | Desirable | 4 | D-06a | done |
 | D-06c | Draw the health bar and defeat overlay | Desirable | 4 | D-06b | done |
-| D-07a | Shoot enemies with the center ray DDA | Desirable | 4 | D-04c2 | pending |
+| D-07a | Shoot enemies with the center ray DDA | Desirable | 4 | D-04c2 | done |
 | D-07b | Add the Sgun idle and firing animation | Desirable | 4 | D-07a | pending |
 | D-08a | Track six shotgun rounds and reload state | Desirable | 4 | D-07b | pending |
 | D-08b | Draw the six-round bar and reload animation | Desirable | 4 | D-08a | pending |
@@ -438,6 +438,25 @@ Acceptance criteria:
 - A health bar sits in the bottom-left corner, drawn from the embedded empty and full bar images.
 - The full bar width shrinks with the current health fraction.
 - A defeat overlay appears when health reaches zero.
+
+## D-07a: Shoot enemies with the center ray DDA
+
+Acceptance criteria:
+- Space fires one shot per press and ignores the browser key repeat.
+- The shot uses the center ray (cameraX 0, rayDir equal to dir) with the same DDA as the render.
+- A wall closer than an enemy blocks the shot; one hit removes the enemy.
+- Tests cover a direct hit, a blocked shot, a lateral miss, an enemy behind and the key repeat.
+
+Decisions:
+- Hits use the enemy as a circle of radius `enemySize / 2`, as allowed by TDD 2.3.1.
+- Only the nearest enemy along the ray is hit.
+
+## D-07b: Add the Sgun idle and firing animation
+
+Acceptance criteria:
+- The shotgun sprite sits at the bottom-center of the view.
+- Frame 1 of row 1 is idle; the next four frames play once on each shot.
+- Each animation frame lasts 0.08 seconds.
 
 ## D-03a: Add a vector crosshair HUD
 

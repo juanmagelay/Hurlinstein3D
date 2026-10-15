@@ -46,6 +46,27 @@ function createKeyboardInput(target) {
   return pressedKeys;
 }
 
+// D-07: firing is one shot per key press. The browser repeats keydown while a
+// key is held, so event.repeat is ignored and consumeShot() drains one shot.
+function createFireInput(target) {
+  let pendingShot = false;
+  target.addEventListener("keydown", (event) => {
+    if (event.key === " " && !event.repeat) {
+      event.preventDefault();
+      pendingShot = true;
+    }
+  });
+  return {
+    consumeShot() {
+      if (!pendingShot) {
+        return false;
+      }
+      pendingShot = false;
+      return true;
+    },
+  };
+}
+
 // TDD 6.6: rotate the camera, move along dir and slide along walls by axis
 function updatePlayer(player, pressedKeys, deltaTime) {
   const turn = Number(pressedKeys.has("d")) - Number(pressedKeys.has("a"));

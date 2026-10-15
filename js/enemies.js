@@ -155,3 +155,51 @@ function removeEnemyFromCell(enemy) {
     list.splice(index, 1);
   }
 }
+
+// D-07a: the center ray reuses the render DDA. Since dir has length 1,
+// perpWallDist is the true distance to the wall along the ray. An enemy is hit
+// when it is ahead of the player, within its half-size of the ray and nearer
+// than the wall, so walls block the shot. One hit removes the enemy.
+function shootCenterRay(player) {
+  const ray = castRay(player.posX, player.posY, player.dirX, player.dirY);
+  const wallDistance = ray.hit ? ray.perpWallDist : Infinity;
+
+  let target = null;
+  let targetDistance = Infinity;
+  for (const enemies of enemiesByChunk.values()) {
+    for (const enemy of enemies) {
+      const offsetX = enemy.posX - player.posX;
+      const offsetY = enemy.posY - player.posY;
+      const along = offsetX * player.dirX + offsetY * player.dirY;
+      if (along <= 0 || along >= wallDistance || along >= targetDistance) {
+        continue;
+      }
+      const lateral = Math.hypot(
+        offsetX - along * player.dirX,
+        offsetY - along * player.dirY,
+      );
+      if (lateral <= enemy.size / 2) {
+        target = enemy;
+        targetDistance = along;
+      }
+    }
+  }
+
+  if (target !== null) {
+    removeEnemy(target);
+  }
+  return target;
+}
+
+function removeEnemy(enemy) {
+  removeEnemyFromCell(enemy);
+  const chunkKey = getChunkKey(enemy.chunkX, enemy.chunkY);
+  const list = enemiesByChunk.get(chunkKey);
+  if (list === undefined) {
+    return;
+  }
+  const index = list.indexOf(enemy);
+  if (index !== -1) {
+    list.splice(index, 1);
+  }
+}
