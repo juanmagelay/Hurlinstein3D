@@ -1,5 +1,7 @@
 // TDD 5.1 and 6.8: chunks are generated on demand and kept for the session.
 const generatedChunks = new Map();
+// D-10: one light per room center, in world coordinates, kept per chunk
+const lightsByChunk = new Map();
 const enemiesByChunk = new Map();
 const enemiesByCell = new Map();
 let spawnRoomCenter = null;
@@ -18,6 +20,7 @@ function getChunkCells(cx, cy) {
   if (!generatedChunks.has(key)) {
     const generatedChunk = generateChunk();
     generatedChunks.set(key, generatedChunk.cells);
+    lightsByChunk.set(key, createChunkLights(generatedChunk, cx, cy));
     const enemies = generateEnemiesForChunk(cx, cy, generatedChunk.cells);
     enemiesByChunk.set(key, enemies);
     for (const enemy of enemies) {
@@ -28,6 +31,25 @@ function getChunkCells(cx, cy) {
     }
   }
   return generatedChunks.get(key);
+}
+
+// D-10: a light sits at the center of every room of the chunk, in world cells.
+function createChunkLights(chunk, cx, cy) {
+  const rooms = chunk.secondRoom ? [chunk.room, chunk.secondRoom] : [chunk.room];
+  return rooms.map((room) => ({
+    x: cx * chunkSize + room.x + room.width / 2,
+    y: cy * chunkSize + room.y + room.height / 2,
+    radius: lightRadius,
+    intensity: lightIntensity,
+  }));
+}
+
+// D-10: rooms sit at least four cells from a chunk border and the light radius
+// is under four, so a light only ever reaches walls of its own chunk.
+function getLightsAtCell(cellX, cellY) {
+  const cx = Math.floor(cellX / chunkSize);
+  const cy = Math.floor(cellY / chunkSize);
+  return lightsByChunk.get(getChunkKey(cx, cy)) || [];
 }
 
 // D-04: zero enemies in the spawn chunk, weighted population in other chunks.

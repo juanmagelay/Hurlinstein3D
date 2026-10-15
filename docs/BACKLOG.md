@@ -57,7 +57,7 @@ Branches: every story is committed on `develop`, and once validated `develop` is
 | D-08c | Play the Sgun reload animation while reloading | Desirable | 4 | D-08b | done |
 | D-09 | Procedural textures on a hidden canvas (wallX, texX), keeping flat color mode | Desirable | 4 | D-08b | done |
 | D-11 | Second room per chunk without breaking connectivity | Desirable | 4 | D-09 | done |
-| D-10 | Raycast lighting with one light per room | Desirable | 4 | D-11 | pending |
+| D-10 | Raycast lighting with one light per room | Desirable | 4 | D-11 | done |
 | D-12 | Strafing and mouse look, only if the team asks for it | Desirable | 4 | H-09o | pending |
 
 ## H-01a: Repo layout
@@ -530,6 +530,19 @@ Decisions:
 - `Math.random() < 0.5` decides whether the chunk gets the room. The room is placed by rejection sampling inside the margin, away from the main room (no shared cell), and connected by an L corridor between the two room centers.
 - A main room up to 8 by 8 can leave no space for a 4 to 6 room, so the realized share sits a little under 50 percent (about 47 percent in a sample of 8000 chunks): the tests assert a range, not an exact half.
 - The room centers are always inside their rooms, so the connecting corridor only crosses interior cells and never opens the border.
+
+## D-10: Raycast lighting with one light per room
+
+Acceptance criteria:
+- Every room of a chunk has a light at its center, in world coordinates.
+- A wall strip is brighter the closer and more directly it faces a light, and a wall between the strip and the light casts a shadow.
+- Flat color, distance shading and textures all keep working.
+
+Decisions:
+- Ported the legacy `pointLightFactor`: illumination is the ambient floor plus, per light in range that faces the wall, `intensity * (1 - distance / radius)`, unless a shadow ray hits a wall first. Radius 3.75, intensity 0.85, ambient 0.22 (the values the team approved).
+- The wall hit point is `pos + perpWallDist * rayDir`, which is exact because `dir` is unit and `plane` is perpendicular. The face normal points toward the side the ray came from.
+- A light sits at least four cells from any chunk border and the radius is under four, so `getLightsAtCell` only needs the chunk of the hit cell.
+- `useLighting` in `config.js` defaults to true and, when on, the light factor replaces the distance brightness bands; set it to false to fall back to the distance shading of D-01.
 
 ## D-03a: Add a vector crosshair HUD
 

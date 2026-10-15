@@ -33,6 +33,14 @@ const wallTextureSize = 64;
 // A very close wall would need an enormous sprite; clamp it to keep it sane
 const wallSpriteMaxHeight = screenHeight * 8;
 
+// D-10: one light per room center, with a radial falloff and a shadow ray.
+// When on, the light factor replaces the distance brightness bands.
+const useLighting = true;
+const lightRadius = 3.75;
+const lightIntensity = 0.85;
+const ambientLight = 0.22;
+const shadowRayEpsilon = 0.05;
+
 // D-04: weighted enemy population per generated chunk
 const enemyCountThresholds = [0.5, 0.8, 0.95];
 const enemySize = 0.5;

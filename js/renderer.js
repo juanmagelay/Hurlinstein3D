@@ -53,6 +53,84 @@ function getWallColor(mapX, mapY, side, perpWallDist) {
   return shadeColor(getChunkWallColor(mapX, mapY), faceBrightness * distanceBrightness);
 }
 
+// D-10: the lit color. The light factor (ambient plus every light in range)
+// takes the place of the distance bands, and the side face stays darker.
+function getLitWallColor(mapX, mapY, side, lightFactor) {
+  const faceBrightness = side === 1 ? side1Brightness : 1;
+  return shadeColor(getChunkWallColor(mapX, mapY), faceBrightness * lightFactor);
+}
+
+// D-10: where the ray met the wall, in world cells, and the face normal. The
+// DDA can be read as a ray of parameter perpWallDist, because dir is unit and
+// plane is perpendicular, so the hit is pos + perpWallDist * rayDir.
+function getWallHitPoint(player, stripX, ray) {
+  const cameraX = 2 * stripX / screenWidth - 1;
+  const rayDirX = player.dirX + player.planeX * cameraX;
+  const rayDirY = player.dirY + player.planeY * cameraX;
+
+  const hitX = player.posX + ray.perpWallDist * rayDirX;
+  const hitY = player.posY + ray.perpWallDist * rayDirY;
+
+  // The normal points out of the wall, toward the side the ray came from
+  let normalX = 0;
+  let normalY = 0;
+  if (ray.side === 0) {
+    normalX = rayDirX > 0 ? -1 : 1;
+  } else {
+    normalY = rayDirY > 0 ? -1 : 1;
+  }
+  return { x: hitX, y: hitY, normalX, normalY };
+}
+
+// D-10 (Lode-style point light): start at the ambient floor, then for every
+// light in range that faces the wall, add intensity * (1 - distance / radius)
+// unless a wall blocks the way. The shadow ray reuses the DDA.
+function getWallLight(hitX, hitY, normalX, normalY, lights) {
+  let illumination = ambientLight;
+
+  for (const light of lights) {
+    const dx = light.x - hitX;
+    const dy = light.y - hitY;
+    const distanceSquared = dx * dx + dy * dy;
+    if (distanceSquared <= 0 || distanceSquared >= light.radius * light.radius) {
+      continue;
+    }
+    // The light must sit on the open side of the wall
+    if (dx * normalX + dy * normalY <= 0) {
+      continue;
+    }
+
+    const distance = Math.sqrt(distanceSquared);
+    const directionX = dx / distance;
+    const directionY = dy / distance;
+    const shadow = castRay(
+      hitX + directionX * shadowRayEpsilon,
+      hitY + directionY * shadowRayEpsilon,
+      directionX,
+      directionY
+    );
+    if (shadow.hit && shadow.perpWallDist < distance - shadowRayEpsilon) {
+      continue;
+    }
+
+    illumination += light.intensity * (1 - distance / light.radius);
+  }
+
+  return Math.min(1, illumination);
+}
+
+// D-10: color of one wall strip, lit or distance-shaded depending on the flag.
+function getWallStripColor(player, stripX, ray) {
+  if (!useLighting) {
+    return getWallColor(ray.mapX, ray.mapY, ray.side, ray.perpWallDist);
+  }
+
+  const hit = getWallHitPoint(player, stripX, ray);
+  const lights = getLightsAtCell(ray.mapX, ray.mapY);
+  const lightFactor = getWallLight(hit.x, hit.y, hit.normalX, hit.normalY, lights);
+  return getLitWallColor(ray.mapX, ray.mapY, ray.side, lightFactor);
+}
+
 // TDD 6.4 and 6.5: runs once, outside the ticker. Ceiling above the horizon,
 // floor below it.
 function drawCeilingAndFloor(graphics) {
@@ -189,7 +267,7 @@ function drawWalls(graphics, player, wallStrips) {
       missedStrips.push(getWallStrip(x, maxRayDistance));
     } else {
       wallDepthBuffer[x / stripWidth] = ray.perpWallDist;
-      const color = getWallColor(ray.mapX, ray.mapY, ray.side, ray.perpWallDist);
+      const color = getWallStripColor(player, x, ray);
       addStripToColorGroup(stripsByColor, color, getWallStrip(x, ray.perpWallDist));
     }
   }
@@ -223,7 +301,7 @@ function drawTexturedWalls(graphics, player, wallStrips) {
     sprite.position.set(x, screenHeight / 2 - lineHeight / 2);
     sprite.width = stripWidth;
     sprite.height = lineHeight;
-    sprite.tint = getWallColor(ray.mapX, ray.mapY, ray.side, ray.perpWallDist);
+    sprite.tint = getWallStripColor(player, x, ray);
     sprite.visible = true;
   }
 

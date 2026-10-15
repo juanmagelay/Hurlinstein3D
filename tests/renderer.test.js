@@ -21,6 +21,8 @@ const getDistanceBrightness = getGlobal("getDistanceBrightness");
 const shadeColor = getGlobal("shadeColor");
 const wallDepthBuffer = getGlobal("wallDepthBuffer");
 const getWallDepthAtColumn = getGlobal("getWallDepthAtColumn");
+const getLitWallColor = getGlobal("getLitWallColor");
+const ambientLight = getGlobal("ambientLight");
 
 // Stands in for a PIXI.Graphics and records what drawWalls asks it to draw
 function createRecordingGraphics() {
@@ -134,9 +136,10 @@ test("from the spawn, wall strips share color fills and stay on screen", () => {
   // 1280 / 2 = 640 strips, one rect each
   assert.equal(graphics.rects.length, screenWidth / stripWidth);
   // Every ray hits within maxRayDistance, so there is no background fill.
-  // Strips sharing a shaded color are accumulated into one fill.
-  assert.ok(graphics.fillColors.includes(getWallColor(14, 1, 0, 6.5)));
-  assert.ok(graphics.fillColors.includes(getWallColor(8, 0, 1, 0.5 / 0.66)));
+  // This context has no generated chunks, so no light reaches any strip and
+  // every wall sits at the ambient floor. Strips sharing a color share one fill.
+  assert.ok(graphics.fillColors.includes(getLitWallColor(14, 1, 0, ambientLight)));
+  assert.ok(graphics.fillColors.includes(getLitWallColor(8, 0, 1, ambientLight)));
   assert.equal(new Set(graphics.fillColors).size, graphics.fillColors.length);
   assert.ok(graphics.fillColors.length < graphics.rects.length);
   for (const rect of graphics.rects) {
@@ -255,4 +258,55 @@ test("a wall nearer than the enemy hides its strips", () => {
 
   assert.equal(graphics.rects.length, 0);
   assert.deepEqual(graphics.fillColors, []);
+});
+
+// D-10: an open context, so a shadow ray only stops on the light distance.
+const getLightGlobal = loadScripts();
+getLightGlobal("getCell = function (x, y) { return 0; }");
+const getWallHitPoint = getLightGlobal("getWallHitPoint");
+const getWallLight = getLightGlobal("getWallLight");
+const lightRadius = getLightGlobal("lightRadius");
+const lightIntensity = getLightGlobal("lightIntensity");
+
+test("the hit point and normal are read from the ray direction", () => {
+  const camera = { posX: 2.5, posY: 2.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66 };
+  const hit = getWallHitPoint(camera, screenWidth / 2, { side: 0, perpWallDist: 3 });
+  assert.equal(hit.x, 5.5);
+  assert.equal(hit.y, 2.5);
+  assert.equal(hit.normalX, -1);
+  assert.equal(hit.normalY, 0);
+
+  const downward = { posX: 5, posY: 5, dirX: 0, dirY: -1, planeX: 0.66, planeY: 0 };
+  const sideHit = getWallHitPoint(downward, screenWidth / 2, { side: 1, perpWallDist: 2 });
+  assert.equal(sideHit.x, 5);
+  assert.equal(sideHit.y, 3);
+  assert.equal(sideHit.normalX, 0);
+  assert.equal(sideHit.normalY, 1);
+});
+
+test("a light in front of the wall brightens it by the radial falloff", () => {
+  const lights = [{ x: 4.5, y: 2.5, radius: lightRadius, intensity: lightIntensity }];
+  const factor = getWallLight(5.5, 2.5, -1, 0, lights);
+  const expected = ambientLight + lightIntensity * (1 - 1 / lightRadius);
+  assert.ok(Math.abs(factor - expected) < 1e-9);
+});
+
+test("the light stays at the ambient floor beyond the radius or behind the wall", () => {
+  const far = [{ x: 9.5, y: 2.5, radius: lightRadius, intensity: lightIntensity }];
+  assert.equal(getWallLight(5.5, 2.5, -1, 0, far), ambientLight);
+
+  // The normal points toward -X, so a light on the +X side faces away
+  const behind = [{ x: 6.5, y: 2.5, radius: lightRadius, intensity: lightIntensity }];
+  assert.equal(getWallLight(5.5, 2.5, -1, 0, behind), ambientLight);
+});
+
+// D-10: the same open scene, but cell (4, 2) is a wall between point and light.
+const getShadowGlobal = loadScripts();
+getShadowGlobal("getCell = function (x, y) { return x === 4 && y === 2 ? 1 : 0; }");
+const getShadowedWallLight = getShadowGlobal("getWallLight");
+const shadowAmbientLight = getShadowGlobal("ambientLight");
+
+test("a wall between the hit point and the light casts a shadow", () => {
+  const lights = [{ x: 4.5, y: 2.5, radius: lightRadius, intensity: lightIntensity }];
+  assert.equal(getShadowedWallLight(5.5, 2.5, -1, 0, lights), shadowAmbientLight);
 });
