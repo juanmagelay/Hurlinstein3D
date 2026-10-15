@@ -187,3 +187,50 @@ test("missed rays store the max ray distance as their occlusion depth", () => {
     assert.equal(getOpenFloorDepth(x), maxRayDistance);
   }
 });
+
+// A context with no walls at all, so an enemy ahead is never occluded until the
+// test lowers the buffer on purpose.
+const getEnemyGlobal = loadScripts();
+getEnemyGlobal("getCell = function (x, y) { return 0; }");
+const drawEnemies = getEnemyGlobal("drawEnemies");
+const getEnemyProjection = getEnemyGlobal("getEnemyProjection");
+const getEnemyChunkKey = getEnemyGlobal("getChunkKey");
+const enemyChunks = getEnemyGlobal("enemiesByChunk");
+const enemyWorldBuffer = getEnemyGlobal("wallDepthBuffer");
+const enemyColor = getEnemyGlobal("enemyColor");
+const enemyCamera = { posX: 0.5, posY: 0.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66 };
+
+test("an enemy straight ahead projects onto the screen center at its cell depth", () => {
+  const projection = getEnemyProjection({ posX: 3.5, posY: 0.5 }, enemyCamera);
+  assert.ok(projection.transformX === 0);
+  assert.equal(projection.depth, 3);
+});
+
+test("an enemy ahead is drawn as one centered amber square", () => {
+  // 3 cells ahead: size = 720 * 0.5 / 3 = 120 px, from y 300 to 420, x 580 to 700
+  enemyChunks.set(getEnemyChunkKey(0, 0), [{ posX: 3.5, posY: 0.5, size: 0.5 }]);
+  const graphics = createRecordingGraphics();
+  drawEnemies(graphics, enemyCamera);
+
+  assert.equal(graphics.clearCount, 1);
+  assert.ok(graphics.rects.length > 0);
+  assert.deepEqual(graphics.fillColors, [enemyColor]);
+  for (const rect of graphics.rects) {
+    assert.equal(rect.width, stripWidth);
+    assert.equal(rect.y, 300);
+    assert.equal(rect.height, 120);
+  }
+  assert.equal(graphics.rects[0].x, 580);
+});
+
+test("a wall nearer than the enemy hides its strips", () => {
+  // Force every strip's wall depth inside the enemy to 0, closer than depth 3.
+  for (let index = 0; index < enemyWorldBuffer.length; index += 1) {
+    enemyWorldBuffer[index] = 0;
+  }
+  const graphics = createRecordingGraphics();
+  drawEnemies(graphics, enemyCamera);
+
+  assert.equal(graphics.rects.length, 0);
+  assert.deepEqual(graphics.fillColors, []);
+});

@@ -113,3 +113,55 @@ function fillStrips(graphics, strips, color) {
   }
   graphics.fill(color);
 }
+
+// D-04c2: the inverse of the camera matrix turns a world offset into camera
+// space. depth is the distance along dir, transformX the sideways position on
+// the camera plane (both in cells). Same model as Lode's sprite projection.
+function getEnemyProjection(enemy, player) {
+  const offsetX = enemy.posX - player.posX;
+  const offsetY = enemy.posY - player.posY;
+  const inverseDet = 1 / (player.planeX * player.dirY - player.dirX * player.planeY);
+  const transformX = inverseDet * (player.dirY * offsetX - player.dirX * offsetY);
+  const depth = inverseDet * (-player.planeY * offsetX + player.planeX * offsetY);
+  return { transformX, depth };
+}
+
+// D-04c2: draw each enemy as a 0.5-cell square centered on the horizon. A strip
+// only paints where the enemy is nearer than the wall depth (D-04c1) in that
+// column, so walls hide enemies behind them.
+function drawEnemies(graphics, player) {
+  graphics.clear();
+
+  const enemyStrips = [];
+  for (const enemies of enemiesByChunk.values()) {
+    for (const enemy of enemies) {
+      const { transformX, depth } = getEnemyProjection(enemy, player);
+      if (depth <= 0 || depth > maxRayDistance) {
+        continue;
+      }
+
+      // Square on screen: one cell tall at this depth is screenHeight / depth.
+      const size = screenHeight * enemy.size / depth;
+      const screenX = (screenWidth / 2) * (1 + transformX / depth);
+      const top = Math.max(0, screenHeight / 2 - size / 2);
+      const bottom = Math.min(screenHeight, screenHeight / 2 + size / 2);
+      if (bottom <= top) {
+        continue;
+      }
+
+      const firstColumn = Math.max(0, screenX - size / 2);
+      const lastColumn = Math.min(screenWidth - 1, screenX + size / 2);
+      for (
+        let x = Math.floor(firstColumn / stripWidth) * stripWidth;
+        x <= lastColumn;
+        x += stripWidth
+      ) {
+        if (depth < wallDepthBuffer[x / stripWidth]) {
+          enemyStrips.push({ x, drawStart: top, drawEnd: bottom });
+        }
+      }
+    }
+  }
+
+  fillStrips(graphics, enemyStrips, enemyColor);
+}

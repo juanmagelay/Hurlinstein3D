@@ -18,6 +18,10 @@ async function startGame() {
   const walls = new PIXI.Graphics();
   app.stage.addChild(walls);
 
+  // D-04c2: enemies draw over the walls, occluded per strip by the wall depth
+  const enemies = new PIXI.Graphics();
+  app.stage.addChild(enemies);
+
   // TDD 6.4: the minimap Graphics object is created once, above the view
   const minimap = new PIXI.Graphics();
   app.stage.addChild(minimap);
@@ -34,6 +38,7 @@ async function startGame() {
   app.ticker.add((ticker) => {
     updatePlayer(player, pressedKeys, ticker.deltaTime);
     drawWalls(walls, player);
+    drawEnemies(enemies, player);
     drawMinimap(minimap, player);
   });
 }
