@@ -1,5 +1,15 @@
 // TDD 3.4 and 6.5: ceiling and floor drawn once, wall strips drawn every frame.
 
+// D-04c1: perpendicular wall depth per screen strip, kept after each draw so
+// enemies (D-04c2) can be hidden behind walls. Missed strips use the max
+// distance, the same depth their background strip is drawn at.
+const wallStripCount = screenWidth / stripWidth;
+const wallDepthBuffer = new Array(wallStripCount).fill(maxRayDistance);
+
+function getWallDepthAtColumn(columnX) {
+  return wallDepthBuffer[Math.floor(columnX / stripWidth)];
+}
+
 // TDD 3.4: a strip is the rect drawn for one ray, x is its left edge in pixels.
 // A wall at perpWallDist is screenHeight / perpWallDist pixels tall (similar
 // triangles), centered on the horizon and clipped to the screen.
@@ -66,8 +76,10 @@ function drawWalls(graphics, player) {
     if (!ray.hit) {
       // TDD 5.2: nothing within maxRayDistance. The background color takes the
       // place a wall at maxRayDistance would have, so it reads as darkness.
+      wallDepthBuffer[x / stripWidth] = maxRayDistance;
       missedStrips.push(getWallStrip(x, maxRayDistance));
     } else {
+      wallDepthBuffer[x / stripWidth] = ray.perpWallDist;
       const color = getWallColor(ray.mapX, ray.mapY, ray.side, ray.perpWallDist);
       addStripToColorGroup(stripsByColor, color, getWallStrip(x, ray.perpWallDist));
     }

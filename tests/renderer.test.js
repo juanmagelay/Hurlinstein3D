@@ -19,6 +19,8 @@ const side1Brightness = getGlobal("side1Brightness");
 const getDistanceBand = getGlobal("getDistanceBand");
 const getDistanceBrightness = getGlobal("getDistanceBrightness");
 const shadeColor = getGlobal("shadeColor");
+const wallDepthBuffer = getGlobal("wallDepthBuffer");
+const getWallDepthAtColumn = getGlobal("getWallDepthAtColumn");
 
 // Stands in for a PIXI.Graphics and records what drawWalls asks it to draw
 function createRecordingGraphics() {
@@ -159,5 +161,29 @@ test("rays that hit nothing draw a background strip as tall as a wall at maxRayD
   for (const rect of graphics.rects) {
     assert.equal(rect.y, 345);
     assert.equal(rect.height, 30);
+  }
+});
+
+test("the wall depth buffer stores the DDA perpendicular distance per strip", () => {
+  // Same spawn view as above: the center ray runs along +X and hits the wall a
+  // cell 14 face, 6.5 cells from posX 7.5.
+  const camera = { posX: 7.5, posY: 1.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66 };
+  drawWalls(createRecordingGraphics(), camera);
+
+  assert.equal(wallDepthBuffer.length, screenWidth / stripWidth);
+  assert.equal(wallDepthBuffer[screenWidth / 2 / stripWidth], 6.5);
+  assert.equal(getWallDepthAtColumn(screenWidth / 2), 6.5);
+  // Columns inside the same strip share one depth
+  assert.equal(getWallDepthAtColumn(screenWidth / 2 + 1), 6.5);
+});
+
+test("missed rays store the max ray distance as their occlusion depth", () => {
+  // The open floor context has its own renderer state, so read its buffer.
+  const getOpenFloorDepth = getOpenFloorGlobal("getWallDepthAtColumn");
+  const camera = { posX: 0.5, posY: 0.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66 };
+  drawWallsOnOpenFloor(createRecordingGraphics(), camera);
+
+  for (let x = 0; x < screenWidth; x += stripWidth) {
+    assert.equal(getOpenFloorDepth(x), maxRayDistance);
   }
 });

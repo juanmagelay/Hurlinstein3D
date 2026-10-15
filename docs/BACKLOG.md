@@ -43,7 +43,7 @@ Branches: every story is committed on `develop`, and once validated `develop` is
 | D-04a0 | Specify enemy population in the TDD | Desirable | 4 | D-03b | in progress |
 | D-04a | Populate chunks with registered enemies | Desirable | 4 | D-04a0 | done |
 | D-04b | Show enemies on the minimap | Desirable | 4 | D-04a | done |
-| D-04c1 | Store wall depth for enemy occlusion | Desirable | 4 | D-04a | pending |
+| D-04c1 | Store wall depth for enemy occlusion | Desirable | 4 | D-04a | done |
 | D-04c2 | Render enemy squares with z-buffer occlusion | Desirable | 4 | D-04b, D-04c1 | pending |
 | D-05 | Enemy state machine with DDA line of sight | Desirable | 4 | D-04c2 | pending |
 | D-06a | Clarify defeat-only scope in the TDD | Desirable | 4 | D-05 | pending |
