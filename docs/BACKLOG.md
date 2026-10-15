@@ -31,8 +31,8 @@ Branches: every story is committed on `develop`, and once validated `develop` is
 | H-09j | Remove legacy 3D and minimap renderers | Required | 3 | H-09i | done |
 | H-09k | Remove remaining legacy renderers | Required | 3 | H-09j | done |
 | H-09l | Remove legacy lighting and debug panels | Required | 3 | H-09k | done |
-| H-09m | Remove legacy menu and initial tests | Required | 3 | H-09l | in progress |
-| H-09n | Remove remaining legacy tests | Required | 3 | H-09m | pending |
+| H-09m | Remove legacy menu and initial tests | Required | 3 | H-09l | done |
+| H-09n | Remove remaining legacy tests | Required | 3 | H-09m | in progress |
 | H-09o | Add README and verify the minimum scope | Required | 3 | H-09n | pending |
 | D-01 | Distance darkening in brightness bands | Desirable | 4 | H-09o | pending |
 | D-02 | Wall color per chunk | Desirable | 4 | H-09o | pending |
