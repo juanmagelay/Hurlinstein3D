@@ -14,8 +14,8 @@ Branches: every story is committed on `develop`, and once validated `develop` is
 | H-05a | Player input and movement logic | Required | 1 | H-04 | done |
 | H-05b | Connect player controls to the ticker | Required | 1 | H-05a | done |
 | H-06 | Minimap (21 by 21 window) | Required | 2 | H-05b | done |
-| H-07a | Clarify fixed chunk door coordinates in the TDD | Required | 3 | H-06 | in progress |
-| H-07b | Chunk generator in `mapgen.js`, isolated and tested | Required | 3 | H-07a, H-02 | pending |
+| H-07a | Clarify fixed chunk door coordinates in the TDD | Required | 3 | H-06 | done |
+| H-07b | Chunk generator in `mapgen.js`, isolated and tested | Required | 3 | H-07a, H-02 | done |
 | H-08 | Infinite world: chunk Map with Cantor key, spawn in chunk (0, 0) | Required | 3 | H-06, H-07b | pending |
 | H-09 | Minimum scope closure: delete `legacy/`, README, TDD 7.2 and 7.3 check | Required | 3 | H-08 | pending |
 | D-01 | Distance darkening in brightness bands | Desirable | 4 | H-09 | pending |
@@ -175,13 +175,13 @@ Decisions:
 ## H-07b: Chunk generator
 
 Acceptance criteria:
-- `js/mapgen.js` returns `{ cells, roomCenter }`, where `cells` is a 16 by 16 `Uint8Array` (index `ly * 16 + lx`, 0 air, 1 wall), per TDD 4.2.
+- `js/mapgen.js` returns `{ cells, room, roomCenter }`, where `cells` is a 16 by 16 `Uint8Array` (index `ly * 16 + lx`, 0 air, 1 wall), per TDD 4.2.
 - The room is 4 to 8 cells per side, has at least 2 wall cells of margin and connects to doors at index 8 through three-segment corridors.
 - Tests: solid borders except doors, room inside the margins, every door connected to the room (flood fill in the test, never at runtime).
 - ASCII dump of a chunk in the console for a visual check.
 
 Decisions:
-- `roomCenter` is generation metadata for H-08; the world stores only the `cells` typed array in its chunk Map.
+- `room` and `roomCenter` are generation metadata for H-08; the world stores only the `cells` typed array in its chunk Map.
 
 ## H-08: Infinite world
 
