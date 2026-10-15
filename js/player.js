@@ -5,6 +5,9 @@
 // y grows downward on the map, so facing east (+x) the right hand side is +y:
 // plane points there and the image is not mirrored.
 const playerMaxHealth = 100;
+// D-08: the shotgun holds six shells and the reserve is unlimited
+const magazineSize = 6;
+const reloadDuration = 0.9; // seconds, matched to the reload frames in D-08b
 const spawnPosition = getSpawnPosition();
 const player = {
   posX: spawnPosition.x,
@@ -15,6 +18,9 @@ const player = {
   planeY: 0.66,
   health: playerMaxHealth,
   maxHealth: playerMaxHealth,
+  ammo: magazineSize,
+  reloading: false,
+  reloadTime: 0,
 };
 
 // D-06b: health never goes below zero, and zero health means defeat.
@@ -24,6 +30,44 @@ function damagePlayer(player, amount) {
 
 function isPlayerDefeated(player) {
   return player.health <= 0;
+}
+
+// D-08: firing spends one round and is blocked while reloading or empty
+function canFireShot(player) {
+  return !player.reloading && player.ammo > 0;
+}
+
+function tryFire(player) {
+  if (!canFireShot(player)) {
+    return false;
+  }
+  player.ammo -= 1;
+  return true;
+}
+
+// D-08: reload only tops up an incomplete magazine, adds no reserve
+function startReload(player) {
+  if (player.reloading || player.ammo >= magazineSize) {
+    return false;
+  }
+  player.reloading = true;
+  player.reloadTime = 0;
+  return true;
+}
+
+// Returns true on the frame the reload finishes
+function updateReload(player, deltaTime) {
+  if (!player.reloading) {
+    return false;
+  }
+  player.reloadTime += deltaTime / 60;
+  if (player.reloadTime < reloadDuration) {
+    return false;
+  }
+  player.reloading = false;
+  player.reloadTime = 0;
+  player.ammo = magazineSize;
+  return true;
 }
 
 // TDD 6.6: only the four controls from TDD 2.2 affect the player
@@ -62,6 +106,25 @@ function createFireInput(target) {
         return false;
       }
       pendingShot = false;
+      return true;
+    },
+  };
+}
+
+// D-08: R reloads, one press at a time, ignoring the browser key repeat
+function createReloadInput(target) {
+  let pendingReload = false;
+  target.addEventListener("keydown", (event) => {
+    if (event.key.toLowerCase() === "r" && !event.repeat) {
+      pendingReload = true;
+    }
+  });
+  return {
+    consumeReload() {
+      if (!pendingReload) {
+        return false;
+      }
+      pendingReload = false;
       return true;
     },
   };

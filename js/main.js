@@ -47,6 +47,7 @@ async function startGame() {
   // TDD 6.4: keyboard listeners are registered once, outside the ticker
   const pressedKeys = createKeyboardInput(window);
   const fireInput = createFireInput(window);
+  const reloadInput = createReloadInput(window);
 
   // TDD 6.4: inside the ticker goes only what changes every frame
   app.ticker.add((ticker) => {
@@ -58,7 +59,11 @@ async function startGame() {
     }
     updatePlayer(player, pressedKeys, ticker.deltaTime);
     updateEnemies(player, ticker.deltaTime);
-    if (fireInput.consumeShot()) {
+    if (reloadInput.consumeReload()) {
+      startReload(player);
+    }
+    updateReload(player, ticker.deltaTime);
+    if (fireInput.consumeShot() && tryFire(player)) {
       shootCenterRay(player);
       triggerShotgun(shotgun);
     }

@@ -52,7 +52,7 @@ Branches: every story is committed on `develop`, and once validated `develop` is
 | D-06c | Draw the health bar and defeat overlay | Desirable | 4 | D-06b | done |
 | D-07a | Shoot enemies with the center ray DDA | Desirable | 4 | D-04c2 | done |
 | D-07b | Add the Sgun idle and firing animation | Desirable | 4 | D-07a | done |
-| D-08a | Track six shotgun rounds and reload state | Desirable | 4 | D-07b | pending |
+| D-08a | Track six shotgun rounds and reload state | Desirable | 4 | D-07b | done |
 | D-08b | Draw the six-round bar and reload animation | Desirable | 4 | D-08a | pending |
 | D-09 | Procedural textures on a hidden canvas (wallX, texX), keeping flat color mode | Desirable | 4 | D-08b | pending |
 | D-11 | Second room per chunk without breaking connectivity | Desirable | 4 | D-09 | pending |
@@ -463,6 +463,20 @@ Decisions:
 - Frames are aligned on the gun body (horizontal centroid of the lower quarter, bottom row) so the gun does not jump when firing.
 - The five frames are pre-processed offline into a small transparent strip and embedded as a data URI in `js/weapon-sheet.js`; under `file://` the canvas would be tainted if the PNG were read from disk (TDD 6.1).
 - The sprite uses the idle frame until a shot calls `triggerShotgun`; the four firing frames play once and fall back to idle.
+
+## D-08a: Track six shotgun rounds and reload state
+
+Acceptance criteria:
+- The magazine holds six rounds; firing spends one and an empty magazine cannot fire.
+- R starts a reload, only when the magazine is under six; the reserve is unlimited.
+- A reload takes `reloadDuration` seconds and cannot be interrupted or repeated.
+- Firing is blocked while reloading.
+- Tests cover spending rounds, the empty case, the reload gate and the reload timing.
+
+Decisions:
+- Reload key is R, confirmed with the team (the TDD leaves it open).
+- Reload duration is 0.9 s, to be matched to the remaining `Sgun.png` frames in D-08b.
+- Ammo and reload state live on the player; the reload input mirrors the fire input (one action per press, key repeat ignored).
 
 ## D-03a: Add a vector crosshair HUD
 

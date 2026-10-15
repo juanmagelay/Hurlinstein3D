@@ -25,7 +25,7 @@ The player collides with walls and slides along them. The minimap is overlaid in
 | `js/config.js` | 1280 by 720 canvas, movement and rendering constants | 6.3 |
 | `js/mapgen.js` | Generates a connected room and four corridors in each chunk | 4.2, 4.3 |
 | `js/world.js` | Cantor-keyed chunk storage and `getCell` | 5.1, 5.2, 6.8 |
-| `js/player.js` | Camera state, keyboard input, movement and collisions | 3.2, 6.6 |
+| `js/player.js` | Camera state, keyboard input, movement, collisions, health and ammo | 3.2, 6.6 |
 | `js/raycaster.js` | Camera rays and grid DDA | 3.2, 3.3, 3.4 |
 | `js/renderer.js` | Ceiling, floor and grouped flat-color wall strips | 6.4, 6.5 |
 | `js/minimap.js` | 21 by 21 cell minimap, player position and direction | 6.7 |
