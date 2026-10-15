@@ -36,6 +36,11 @@ async function startGame() {
   app.stage.addChild(healthBar.background);
   app.stage.addChild(healthBar.fill);
 
+  // D-08b: the six-round ammo bar, bottom-right, loaded once (no network)
+  const ammoBar = await createAmmoBar();
+  app.stage.addChild(ammoBar.background);
+  app.stage.addChild(ammoBar.fill);
+
   // D-07b: the shotgun view model sits at the bottom center, under the HUD and overlay
   const shotgun = await createShotgun();
   app.stage.addChild(shotgun.sprite);
@@ -52,6 +57,7 @@ async function startGame() {
   // TDD 6.4: inside the ticker goes only what changes every frame
   app.ticker.add((ticker) => {
     healthBar.fill.width = getHealthBarWidth(player.health / player.maxHealth);
+    ammoBar.fill.width = getAmmoBarWidth(player.ammo, magazineSize);
     // D-06b: at zero health the game freezes on the last frame
     if (isPlayerDefeated(player)) {
       defeatOverlay.visible = true;

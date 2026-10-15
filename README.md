@@ -29,7 +29,7 @@ The player collides with walls and slides along them. The minimap is overlaid in
 | `js/raycaster.js` | Camera rays and grid DDA | 3.2, 3.3, 3.4 |
 | `js/renderer.js` | Ceiling, floor and grouped flat-color wall strips | 6.4, 6.5 |
 | `js/minimap.js` | 21 by 21 cell minimap, player position and direction | 6.7 |
-| `js/hud.js` | Center crosshair, health bar and defeat overlay | 2.3.3, 6.4 |
+| `js/hud.js` | Center crosshair, health bar, ammo bar and defeat overlay | 2.3.3, 6.4 |
 | `js/weapon.js` | Bottom-center shotgun, idle and firing animation | 2.3.3, 6.4 |
 | `js/weapon-sheet.js` | Embedded shotgun strip generated from `assets/gun-sprites/Sgun.png` | 6.1 |
 | `js/main.js` | PixiJS application, scene and ticker | 6.4 |

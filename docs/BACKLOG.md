@@ -53,7 +53,8 @@ Branches: every story is committed on `develop`, and once validated `develop` is
 | D-07a | Shoot enemies with the center ray DDA | Desirable | 4 | D-04c2 | done |
 | D-07b | Add the Sgun idle and firing animation | Desirable | 4 | D-07a | done |
 | D-08a | Track six shotgun rounds and reload state | Desirable | 4 | D-07b | done |
-| D-08b | Draw the six-round bar and reload animation | Desirable | 4 | D-08a | pending |
+| D-08b | Draw the six-round ammo bar | Desirable | 4 | D-08a | done |
+| D-08c | Play the Sgun reload animation while reloading | Desirable | 4 | D-08b | pending |
 | D-09 | Procedural textures on a hidden canvas (wallX, texX), keeping flat color mode | Desirable | 4 | D-08b | pending |
 | D-11 | Second room per chunk without breaking connectivity | Desirable | 4 | D-09 | pending |
 | D-10 | Raycast lighting with one light per room | Desirable | 4 | D-11 | pending |
@@ -477,6 +478,23 @@ Decisions:
 - Reload key is R, confirmed with the team (the TDD leaves it open).
 - Reload duration is 0.9 s, to be matched to the remaining `Sgun.png` frames in D-08b.
 - Ammo and reload state live on the player; the reload input mirrors the fire input (one action per press, key repeat ignored).
+
+## D-08b: Draw the six-round ammo bar
+
+Acceptance criteria:
+- A six-segment ammo bar sits in the bottom-right corner (the top band of the UI sheet).
+- The lit width follows the loaded fraction of the magazine, clamped to the bar.
+- The bar is built from embedded data URIs, once, outside the ticker.
+
+Decisions:
+- Split from the reload animation so each half is a small, testable story.
+- The top bar band (rows 0 to 15) has exactly six segments, one per round, so the same width-scaling trick as the health bar reads as six rounds.
+- `loadBarCanvas` now takes the band Y, so the health band (rows 20 to 35) and the ammo band (rows 0 to 15) share one loader.
+
+## D-08c: Play the Sgun reload animation while reloading
+
+Open question to settle before implementing:
+- The reload frames in `Sgun.png` are irregular (the lower rows do not sit on the 4 by 5 grid), so the frame set has to be chosen by inspecting the sheet.
 
 ## D-03a: Add a vector crosshair HUD
 
