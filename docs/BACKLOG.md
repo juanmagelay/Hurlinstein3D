@@ -25,8 +25,8 @@ Branches: every story is committed on `develop`, and once validated `develop` is
 | H-09d | Remove legacy layout, styling and math files | Required | 3 | H-09c | done |
 | H-09e | Remove legacy input and DDA files | Required | 3 | H-09d | done |
 | H-09f | Remove legacy raycast and collision files | Required | 3 | H-09e | done |
-| H-09g | Remove legacy game controllers and 2D player | Required | 3 | H-09f | in progress |
-| H-09h | Remove legacy 3D player and worlds | Required | 3 | H-09g | pending |
+| H-09g | Remove legacy game controllers and 2D player | Required | 3 | H-09f | done |
+| H-09h | Remove legacy 3D player and worlds | Required | 3 | H-09g | in progress |
 | H-09i | Remove legacy canvas and base renderers | Required | 3 | H-09h | pending |
 | H-09j | Remove legacy 3D and minimap renderers | Required | 3 | H-09i | pending |
 | H-09k | Remove remaining legacy renderers | Required | 3 | H-09j | pending |
