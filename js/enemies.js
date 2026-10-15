@@ -6,21 +6,52 @@ const ticksPerSecond = 60;
 const enemyIdleSeconds = 2;
 const enemyIdleTicks = enemyIdleSeconds * ticksPerSecond;
 const enemyPatrolSpeed = 1 / ticksPerSecond;
+const enemyChaseSpeed = 2 / ticksPerSecond;
+const enemySightDistance = maxRayDistance;
+const enemyLoseSightTicks = ticksPerSecond;
 
-// D-05a: idle counts down, then the enemy patrols. Later states are handled by
-// their own update functions.
-function updateEnemies(deltaTime) {
+// D-05a and D-05b: idle waits, patrol walks a route and scans for the player,
+// chase follows the player until it loses sight for a full second.
+function updateEnemies(player, deltaTime) {
   for (const enemies of enemiesByChunk.values()) {
     for (const enemy of enemies) {
-      enemy.stateTime += deltaTime;
       if (enemy.state === "idle") {
+        enemy.stateTime += deltaTime;
         if (enemy.stateTime >= enemyIdleTicks) {
           startPatrol(enemy);
         }
       } else if (enemy.state === "patrol") {
-        updatePatrol(enemy, deltaTime);
+        updatePatrol(enemy, player, deltaTime);
+      } else if (enemy.state === "chase") {
+        updateChase(enemy, player, deltaTime);
       }
     }
+  }
+}
+
+// D-05b: 360 degree line of sight. The ray direction points straight at the
+// player, so the player sits at parameter 1 of the ray. A wall closer than that
+// (perpWallDist < 1) blocks the view. Same DDA used for rendering and shooting.
+function hasLineOfSight(enemy, player) {
+  const rayDirX = player.posX - enemy.posX;
+  const rayDirY = player.posY - enemy.posY;
+  if (Math.hypot(rayDirX, rayDirY) > enemySightDistance) {
+    return false;
+  }
+  const ray = castRay(enemy.posX, enemy.posY, rayDirX, rayDirY);
+  return !ray.hit || ray.perpWallDist >= 1;
+}
+
+function updateChase(enemy, player, deltaTime) {
+  if (hasLineOfSight(enemy, player)) {
+    enemy.stateTime = 0;
+    moveEnemyToward(enemy, { x: player.posX, y: player.posY }, enemyChaseSpeed * deltaTime);
+    updateEnemyCell(enemy);
+    return;
+  }
+  enemy.stateTime += deltaTime;
+  if (enemy.stateTime >= enemyLoseSightTicks) {
+    startPatrol(enemy);
   }
 }
 
@@ -54,7 +85,12 @@ function choosePatrolNeighbour(enemy) {
   return options[Math.floor(Math.random() * options.length)];
 }
 
-function updatePatrol(enemy, deltaTime) {
+function updatePatrol(enemy, player, deltaTime) {
+  if (hasLineOfSight(enemy, player)) {
+    enemy.state = "chase";
+    enemy.stateTime = 0;
+    return;
+  }
   const target = enemy.patrolTargetIsB ? enemy.patrolB : enemy.patrolA;
   moveEnemyToward(enemy, target, enemyPatrolSpeed * deltaTime);
   updateEnemyCell(enemy);

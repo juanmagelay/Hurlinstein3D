@@ -37,7 +37,7 @@ async function startGame() {
   // TDD 6.4: inside the ticker goes only what changes every frame
   app.ticker.add((ticker) => {
     updatePlayer(player, pressedKeys, ticker.deltaTime);
-    updateEnemies(ticker.deltaTime);
+    updateEnemies(player, ticker.deltaTime);
     drawWalls(walls, player);
     drawEnemies(enemies, player);
     drawMinimap(minimap, player);
