@@ -30,12 +30,12 @@ function createRecordingGraphics() {
 }
 
 test("a wall 2 cells away is half the screen tall, centered on the horizon", () => {
-  // lineHeight = 600 / 2 = 300, from 300 - 150 to 300 + 150
-  const strip = getWallStrip(400, 2);
-  assert.equal(strip.x, 400);
-  assert.equal(strip.lineHeight, 300);
-  assert.equal(strip.drawStart, 150);
-  assert.equal(strip.drawEnd, 450);
+  // lineHeight = 720 / 2 = 360, from 360 - 180 to 360 + 180
+  const strip = getWallStrip(screenWidth / 2, 2);
+  assert.equal(strip.x, screenWidth / 2);
+  assert.equal(strip.lineHeight, 360);
+  assert.equal(strip.drawStart, 180);
+  assert.equal(strip.drawEnd, 540);
 });
 
 test("a wall 1 cell away fills the column exactly", () => {
@@ -46,26 +46,33 @@ test("a wall 1 cell away fills the column exactly", () => {
 });
 
 test("a closer wall is clipped to the screen", () => {
-  // lineHeight = 1200 would go from -300 to 900
+  // lineHeight = 1440 extends beyond both screen edges
   const strip = getWallStrip(0, 0.5);
-  assert.equal(strip.lineHeight, 1200);
+  assert.equal(strip.lineHeight, 1440);
   assert.equal(strip.drawStart, 0);
   assert.equal(strip.drawEnd, screenHeight);
 });
 
 test("a wall at distance 0 fills the column instead of breaking", () => {
-  // 600 / 0 is Infinity, and the clip treats it like any wall taller than the screen
+  // 720 / 0 is Infinity, and the clip treats it like any wall taller than the screen
   const strip = getWallStrip(0, 0);
   assert.equal(strip.drawStart, 0);
   assert.equal(strip.drawEnd, screenHeight);
 });
 
-test("a wall at maxRayDistance is 25 px tall", () => {
-  // 600 / 24 = 25, from 300 - 12.5 to 300 + 12.5. Missed rays use this strip.
+test("a wall at maxRayDistance is 30 px tall", () => {
+  // 720 / 24 = 30, from 360 - 15 to 360 + 15. Missed rays use this strip.
   const strip = getWallStrip(0, maxRayDistance);
-  assert.equal(strip.lineHeight, 25);
-  assert.equal(strip.drawStart, 287.5);
-  assert.equal(strip.drawEnd, 312.5);
+  assert.equal(strip.lineHeight, 30);
+  assert.equal(strip.drawStart, 345);
+  assert.equal(strip.drawEnd, 375);
+});
+
+test("the canvas is 16:9 and casts 640 rays", () => {
+  assert.equal(screenWidth, 1280);
+  assert.equal(screenHeight, 720);
+  assert.equal(screenWidth / screenHeight, 16 / 9);
+  assert.equal(screenWidth / stripWidth, 640);
 });
 
 test("from the spawn, the walls take one fill per side and stay on screen", () => {
@@ -75,7 +82,7 @@ test("from the spawn, the walls take one fill per side and stay on screen", () =
   drawWalls(graphics, camera);
 
   assert.equal(graphics.clearCount, 1);
-  // 800 / 2 = 400 strips, one rect each
+  // 1280 / 2 = 640 strips, one rect each
   assert.equal(graphics.rects.length, screenWidth / stripWidth);
   // Every ray hits within maxRayDistance, so there is no background fill
   assert.deepEqual(graphics.fillColors, [wallColorSide0, wallColorSide1]);
@@ -99,7 +106,7 @@ test("rays that hit nothing draw a background strip as tall as a wall at maxRayD
   assert.equal(graphics.rects.length, screenWidth / stripWidth);
   assert.deepEqual(graphics.fillColors, [backgroundColor]);
   for (const rect of graphics.rects) {
-    assert.equal(rect.y, 287.5);
-    assert.equal(rect.height, 25);
+    assert.equal(rect.y, 345);
+    assert.equal(rect.height, 30);
   }
 });

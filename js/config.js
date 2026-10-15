@@ -1,8 +1,8 @@
 // TDD 6.3: global constants, read by every other script
 
-// Canvas size in pixels (TDD 6.5 example: 800 wide)
-const screenWidth = 800;
-const screenHeight = 600;
+// Canvas size in pixels (TDD 6.5)
+const screenWidth = 1280;
+const screenHeight = 720;
 
 const backgroundColor = 0x111e30;
 

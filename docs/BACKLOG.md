@@ -34,6 +34,8 @@ Branches: every story is committed on `develop`, and once validated `develop` is
 | H-09m | Remove legacy menu and initial tests | Required | 3 | H-09l | done |
 | H-09n | Remove remaining legacy tests | Required | 3 | H-09m | done |
 | H-09o | Add README and verify the minimum scope | Required | 3 | H-09n | done |
+| H-10a | Change the canvas to 1280 by 720 | Required | 3 | H-09o | done |
+| H-10b | Document the 16:9 canvas dimensions | Required | 3 | H-10a | pending |
 | D-01 | Distance darkening in brightness bands | Desirable | 4 | H-09o | pending |
 | D-02 | Wall color per chunk | Desirable | 4 | H-09o | pending |
 | D-03 | Base HUD and center crosshair | Desirable | 4 | H-09o | pending |
@@ -307,6 +309,22 @@ Decisions:
 - Chunk persistence, door connectivity, negative coordinates, projection and grouped rendering are covered by the root test suite.
 - The minimap was visually checked against the procedural first-person view.
 - The empty `legacy/` directory was removed after its tracked files were deleted; `.agents/Demo RayCast/` remains a reference copy.
+
+## H-10a: Change the canvas to 1280 by 720
+
+Acceptance criteria:
+- `screenWidth` and `screenHeight` are 1280 and 720, giving the canvas a 16:9 ratio.
+- Projection heights, clipping and missed-ray strips use the 720-pixel canvas height.
+- With 2-pixel strips, the renderer draws 640 rays per frame.
+
+Decisions:
+- Keep the full canvas as the playable viewport, with no letterbox bands.
+- Keep the strip width at 2 pixels, accepting the increase from 400 to 640 rays per frame.
+
+## H-10b: Document the 16:9 canvas dimensions
+
+Acceptance criteria:
+- TDD 6.5 and README identify the 1280 by 720 canvas and 640 rays per frame.
 
 ## Desirables
 
