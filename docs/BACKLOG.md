@@ -36,7 +36,7 @@ Branches: every story is committed on `develop`, and once validated `develop` is
 | H-09o | Add README and verify the minimum scope | Required | 3 | H-09n | done |
 | H-10a | Change the canvas to 1280 by 720 | Required | 3 | H-09o | done |
 | H-10b | Document the 16:9 canvas dimensions | Required | 3 | H-10a | done |
-| D-01 | Distance darkening in brightness bands | Desirable | 4 | H-09o | pending |
+| D-01 | Distance darkening in brightness bands | Desirable | 4 | H-09o | done |
 | D-02 | Wall color per chunk | Desirable | 4 | H-09o | pending |
 | D-03 | Base HUD and center crosshair | Desirable | 4 | H-09o | pending |
 | D-04 | Visible enemy: registered per cell, on the minimap and in 3D as a square with z-buffer | Desirable | 4 | D-03 | pending |
@@ -325,6 +325,18 @@ Decisions:
 
 Acceptance criteria:
 - TDD 6.5 and README identify the 1280 by 720 canvas and 640 rays per frame.
+
+## D-01: Distance darkening in brightness bands
+
+Acceptance criteria:
+- Perpendicular wall distance selects one of four brightness bands over `maxRayDistance`.
+- Side 1 faces remain darker than side 0 faces in every band.
+- Missed rays still use the background color, and strips with the same final color share one fill.
+- Tests cover band boundaries, face brightness and grouped wall fills.
+
+Decisions:
+- Band intervals are 0 to 6, 6 to 12, 12 to 18 and 18 to 24 cells.
+- Brightness levels are 100%, 80%, 60% and 40%, from near to far.
 
 ## Desirables
 

@@ -13,6 +13,9 @@ const maxRayDistance = getGlobal("maxRayDistance");
 const backgroundColor = getGlobal("backgroundColor");
 const wallColorSide0 = getGlobal("wallColorSide0");
 const wallColorSide1 = getGlobal("wallColorSide1");
+const getDistanceBand = getGlobal("getDistanceBand");
+const getDistanceBrightness = getGlobal("getDistanceBrightness");
+const shadeColor = getGlobal("shadeColor");
 
 // Stands in for a PIXI.Graphics and records what drawWalls asks it to draw
 function createRecordingGraphics() {
@@ -68,6 +71,29 @@ test("a wall at maxRayDistance is 30 px tall", () => {
   assert.equal(strip.drawEnd, 375);
 });
 
+test("distance is quantized into four six-cell brightness bands", () => {
+  assert.equal(getDistanceBand(0), 0);
+  assert.equal(getDistanceBand(5.99), 0);
+  assert.equal(getDistanceBand(6), 1);
+  assert.equal(getDistanceBand(12), 2);
+  assert.equal(getDistanceBand(18), 3);
+  assert.equal(getDistanceBand(maxRayDistance), 3);
+  assert.equal(getDistanceBrightness(0), 1);
+  assert.equal(getDistanceBrightness(6), 0.8);
+  assert.equal(getDistanceBrightness(12), 0.6);
+  assert.equal(getDistanceBrightness(18), 0.4);
+});
+
+test("distance shading darkens both faces and keeps side 1 darker", () => {
+  for (const brightness of [1, 0.8, 0.6, 0.4]) {
+    const side0Color = shadeColor(wallColorSide0, brightness);
+    const side1Color = shadeColor(wallColorSide1, brightness);
+    assert.ok(side0Color <= wallColorSide0);
+    assert.ok(side1Color < side0Color);
+  }
+  assert.equal(shadeColor(wallColorSide0, 1), wallColorSide0);
+});
+
 test("the canvas is 16:9 and casts 640 rays", () => {
   assert.equal(screenWidth, 1280);
   assert.equal(screenHeight, 720);
@@ -84,8 +110,12 @@ test("from the spawn, the walls take one fill per side and stay on screen", () =
   assert.equal(graphics.clearCount, 1);
   // 1280 / 2 = 640 strips, one rect each
   assert.equal(graphics.rects.length, screenWidth / stripWidth);
-  // Every ray hits within maxRayDistance, so there is no background fill
-  assert.deepEqual(graphics.fillColors, [wallColorSide0, wallColorSide1]);
+  // Every ray hits within maxRayDistance, so there is no background fill.
+  // Strips sharing a shaded color are accumulated into one fill.
+  assert.ok(graphics.fillColors.includes(shadeColor(wallColorSide0, 0.8)));
+  assert.ok(graphics.fillColors.includes(wallColorSide1));
+  assert.equal(new Set(graphics.fillColors).size, graphics.fillColors.length);
+  assert.ok(graphics.fillColors.length < graphics.rects.length);
   for (const rect of graphics.rects) {
     assert.equal(rect.width, stripWidth);
     assert.ok(rect.y >= 0 && rect.y + rect.height <= screenHeight, "rect outside the screen");

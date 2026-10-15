@@ -11,6 +11,24 @@ function getWallStrip(x, perpWallDist) {
   return { x, lineHeight, drawStart, drawEnd };
 }
 
+// TDD 6.5: quantize perpendicular distance into four brightness bands
+function getDistanceBand(perpWallDist) {
+  const bandWidth = maxRayDistance / distanceBrightnessBands.length;
+  const band = Math.floor(perpWallDist / bandWidth);
+  return Math.min(Math.max(band, 0), distanceBrightnessBands.length - 1);
+}
+
+function getDistanceBrightness(perpWallDist) {
+  return distanceBrightnessBands[getDistanceBand(perpWallDist)];
+}
+
+function shadeColor(color, brightness) {
+  const red = Math.floor(((color >> 16) & 0xff) * brightness);
+  const green = Math.floor(((color >> 8) & 0xff) * brightness);
+  const blue = Math.floor((color & 0xff) * brightness);
+  return (red << 16) | (green << 8) | blue;
+}
+
 // TDD 6.4 and 6.5: runs once, outside the ticker. Ceiling above the horizon,
 // floor below it.
 function drawCeilingAndFloor(graphics) {
@@ -26,8 +44,7 @@ function drawCeilingAndFloor(graphics) {
 function drawWalls(graphics, player) {
   graphics.clear();
 
-  const side0Strips = [];
-  const side1Strips = [];
+  const stripsByColor = new Map();
   const missedStrips = [];
 
   for (let x = 0; x < screenWidth; x += stripWidth) {
@@ -36,16 +53,28 @@ function drawWalls(graphics, player) {
       // TDD 5.2: nothing within maxRayDistance. The background color takes the
       // place a wall at maxRayDistance would have, so it reads as darkness.
       missedStrips.push(getWallStrip(x, maxRayDistance));
-    } else if (ray.side === 0) {
-      side0Strips.push(getWallStrip(x, ray.perpWallDist));
     } else {
-      side1Strips.push(getWallStrip(x, ray.perpWallDist));
+      const baseColor = ray.side === 0 ? wallColorSide0 : wallColorSide1;
+      const color = shadeColor(baseColor, getDistanceBrightness(ray.perpWallDist));
+      addStripToColorGroup(stripsByColor, color, getWallStrip(x, ray.perpWallDist));
     }
   }
 
-  fillStrips(graphics, side0Strips, wallColorSide0);
-  fillStrips(graphics, side1Strips, wallColorSide1);
+  fillStripColorGroups(graphics, stripsByColor);
   fillStrips(graphics, missedStrips, backgroundColor);
+}
+
+function addStripToColorGroup(stripsByColor, color, strip) {
+  if (!stripsByColor.has(color)) {
+    stripsByColor.set(color, []);
+  }
+  stripsByColor.get(color).push(strip);
+}
+
+function fillStripColorGroups(graphics, stripsByColor) {
+  for (const [color, strips] of stripsByColor) {
+    fillStrips(graphics, strips, color);
+  }
 }
 
 // Pixi v8 keeps adding rect() calls to one shape until fill() paints them all

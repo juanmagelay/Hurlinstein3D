@@ -24,3 +24,4 @@ const floorColor = 0x2d2d44;
 // Fake lighting: side 1 faces (horizontal grid lines) are darker than side 0 faces
 const wallColorSide0 = 0x4a6fa5;
 const wallColorSide1 = 0x2c4a7c;
+const distanceBrightnessBands = [1, 0.8, 0.6, 0.4];
