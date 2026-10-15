@@ -39,7 +39,7 @@ Branches: every story is committed on `develop`, and once validated `develop` is
 | D-01 | Distance darkening in brightness bands | Desirable | 4 | H-09o | done |
 | D-02 | Wall color per chunk | Desirable | 4 | H-09o | in progress |
 | D-03a | Add a vector crosshair HUD | Desirable | 4 | D-02 | done |
-| D-03b | Document the HUD file in the README | Desirable | 4 | D-03a | pending |
+| D-03b | Document the HUD file in the README | Desirable | 4 | D-03a | done |
 | D-04 | Visible enemy: registered per cell, on the minimap and in 3D as a square with z-buffer | Desirable | 4 | D-03b | pending |
 | D-05 | Enemy state machine with DDA line of sight | Desirable | 4 | D-04 | pending |
 | D-06 | Health, contact damage, health bar and defeat | Desirable | 4 | D-05 | pending |
