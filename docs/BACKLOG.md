@@ -29,8 +29,8 @@ Branches: every story is committed on `develop`, and once validated `develop` is
 | H-09h | Remove legacy 3D player and worlds | Required | 3 | H-09g | done |
 | H-09i | Remove legacy canvas and base renderers | Required | 3 | H-09h | done |
 | H-09j | Remove legacy 3D and minimap renderers | Required | 3 | H-09i | done |
-| H-09k | Remove remaining legacy renderers | Required | 3 | H-09j | in progress |
-| H-09l | Remove legacy lighting and debug panels | Required | 3 | H-09k | pending |
+| H-09k | Remove remaining legacy renderers | Required | 3 | H-09j | done |
+| H-09l | Remove legacy lighting and debug panels | Required | 3 | H-09k | in progress |
 | H-09m | Remove legacy menu and initial tests | Required | 3 | H-09l | pending |
 | H-09n | Remove remaining legacy tests | Required | 3 | H-09m | pending |
 | H-09o | Add README and verify the minimum scope | Required | 3 | H-09n | pending |
