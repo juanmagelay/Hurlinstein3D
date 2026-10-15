@@ -33,7 +33,7 @@ Branches: every story is committed on `develop`, and once validated `develop` is
 | H-09l | Remove legacy lighting and debug panels | Required | 3 | H-09k | done |
 | H-09m | Remove legacy menu and initial tests | Required | 3 | H-09l | done |
 | H-09n | Remove remaining legacy tests | Required | 3 | H-09m | done |
-| H-09o | Add README and verify the minimum scope | Required | 3 | H-09n | in progress |
+| H-09o | Add README and verify the minimum scope | Required | 3 | H-09n | done |
 | D-01 | Distance darkening in brightness bands | Desirable | 4 | H-09o | pending |
 | D-02 | Wall color per chunk | Desirable | 4 | H-09o | pending |
 | D-03 | Base HUD and center crosshair | Desirable | 4 | H-09o | pending |
@@ -297,8 +297,16 @@ Acceptance criteria:
 ## H-09o: Add README and verify the minimum scope
 
 Acceptance criteria:
+- `legacy/` is fully removed from the working tree.
 - English README: how to open, controls, which file implements each TDD section, course and university.
 - TDD 7.3 success criteria and TDD 7.2 risks checked one by one.
+
+Decisions:
+- README includes the open instructions, WASD controls, file-to-TDD map and course information.
+- Chrome opened the root `index.html` through `file://`, rendered the canvas and accepted WASD input across x = 0 into chunk (-1, 0).
+- Chunk persistence, door connectivity, negative coordinates, projection and grouped rendering are covered by the root test suite.
+- The minimap was visually checked against the procedural first-person view.
+- The empty `legacy/` directory was removed after its tracked files were deleted; `.agents/Demo RayCast/` remains a reference copy.
 
 ## Desirables
 
