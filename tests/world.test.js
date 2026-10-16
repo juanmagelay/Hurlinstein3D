@@ -13,7 +13,8 @@ const player = getGlobal("player");
 const getEnemyCountForRoll = getGlobal("getEnemyCountForRoll");
 const getEnemiesForChunk = getGlobal("getEnemiesForChunk");
 const getEnemiesAtCell = getGlobal("getEnemiesAtCell");
-const enemySize = getGlobal("enemySize");
+const enemyWidth = getGlobal("enemyWidth");
+const enemyHeight = getGlobal("enemyHeight");
 const enemyColor = getGlobal("enemyColor");
 
 test("Cantor chunk keys are unique for positive and negative coordinates", () => {
@@ -103,7 +104,8 @@ test("generated enemies occupy distinct open cells and are registered there", ()
     assert.equal(enemyGetCell(enemy.cellX, enemy.cellY), 0);
     assert.equal(enemy.posX, enemy.cellX + 0.5);
     assert.equal(enemy.posY, enemy.cellY + 0.5);
-    assert.equal(enemy.size, enemySize);
+    assert.equal(enemy.width, enemyWidth);
+    assert.equal(enemy.height, enemyHeight);
     assert.equal(enemy.color, enemyColor);
     assert.ok(enemyGetEnemiesAtCell(enemy.cellX, enemy.cellY).some((entry) => entry.id === enemy.id));
   }

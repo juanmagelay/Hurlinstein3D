@@ -5,6 +5,9 @@
 // y grows downward on the map, so facing east (+x) the right hand side is +y:
 // plane points there and the image is not mirrored.
 const playerMaxHealth = 100;
+// TDD 6.6: the camera keeps a small radius, so it never sits flush against a
+// wall face and does not clip a corner. Under 0.5, so a one-cell door still fits.
+const playerRadius = 0.2;
 // D-08: the shotgun holds six shells and the reserve is unlimited
 const magazineSize = 6;
 const reloadDuration = 0.96; // seconds: the 12 reload frames at 0.08 s each (D-08c)
@@ -153,15 +156,30 @@ function updatePlayer(player, pressedKeys, deltaTime) {
   const moveX = player.dirX * moveDirection * moveSpeed * deltaTime;
   const moveY = player.dirY * moveDirection * moveSpeed * deltaTime;
 
-  const nextMapX = Math.floor(player.posX + moveX);
-  const currentMapY = Math.floor(player.posY);
-  if (getCell(nextMapX, currentMapY) === 0) {
+  // Each axis moves on its own, so a blocked axis still lets the other slide.
+  if (moveX !== 0 && canStandAt(player.posX + moveX, player.posY)) {
     player.posX += moveX;
   }
-
-  const currentMapX = Math.floor(player.posX);
-  const nextMapY = Math.floor(player.posY + moveY);
-  if (getCell(currentMapX, nextMapY) === 0) {
+  if (moveY !== 0 && canStandAt(player.posX, player.posY + moveY)) {
     player.posY += moveY;
   }
+}
+
+// TDD 6.6: a position is free when the player's square footprint, side
+// 2 * playerRadius, does not touch any wall cell. This is what keeps the camera
+// a radius away from a wall and stops it from cutting a corner.
+function canStandAt(posX, posY) {
+  const minX = Math.floor(posX - playerRadius);
+  const maxX = Math.floor(posX + playerRadius);
+  const minY = Math.floor(posY - playerRadius);
+  const maxY = Math.floor(posY + playerRadius);
+
+  for (let x = minX; x <= maxX; x += 1) {
+    for (let y = minY; y <= maxY; y += 1) {
+      if (getCell(x, y) !== 0) {
+        return false;
+      }
+    }
+  }
+  return true;
 }

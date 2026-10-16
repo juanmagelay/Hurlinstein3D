@@ -30,7 +30,8 @@ function addEnemy(posX, posY) {
     cellY: Math.floor(posY),
     chunkX: Math.floor(posX / 16),
     chunkY: Math.floor(posY / 16),
-    size: 0.5,
+    width: 0.3,
+    height: 0.6,
     state: "idle",
     stateTime: 0,
   };

@@ -231,9 +231,10 @@ test("an enemy straight ahead projects onto the screen center at its cell depth"
   assert.equal(projection.depth, 3);
 });
 
-test("an enemy ahead is drawn as one centered amber square", () => {
-  // 3 cells ahead: size = 720 * 0.5 / 3 = 120 px, from y 300 to 420, x 580 to 700
-  enemyChunks.set(getEnemyChunkKey(0, 0), [{ posX: 3.5, posY: 0.5, size: 0.5 }]);
+test("an enemy ahead is drawn as one centered amber rectangle", () => {
+  // 3 cells ahead: width = 720 * 0.3 / 3 = 72 px, height = 720 * 0.6 / 3 = 144 px.
+  // So y from 288 to 432, x from 604 to 676.
+  enemyChunks.set(getEnemyChunkKey(0, 0), [{ posX: 3.5, posY: 0.5, width: 0.3, height: 0.6 }]);
   const graphics = createRecordingGraphics();
   drawEnemies(graphics, enemyCamera);
 
@@ -242,10 +243,10 @@ test("an enemy ahead is drawn as one centered amber square", () => {
   assert.deepEqual(graphics.fillColors, [enemyColor]);
   for (const rect of graphics.rects) {
     assert.equal(rect.width, stripWidth);
-    assert.equal(rect.y, 300);
-    assert.equal(rect.height, 120);
+    assert.equal(rect.y, 288);
+    assert.equal(rect.height, 144);
   }
-  assert.equal(graphics.rects[0].x, 580);
+  assert.equal(graphics.rects[0].x, 604);
 });
 
 test("a wall nearer than the enemy hides its strips", () => {

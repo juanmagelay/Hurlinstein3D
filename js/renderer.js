@@ -345,9 +345,9 @@ function getEnemyProjection(enemy, player) {
   return { transformX, depth };
 }
 
-// D-04c2: draw each enemy as a 0.5-cell square centered on the horizon. A strip
-// only paints where the enemy is nearer than the wall depth (D-04c1) in that
-// column, so walls hide enemies behind them.
+// D-04c2: draw each enemy as a thin standing rectangle centered on the horizon.
+// A strip only paints where the enemy is nearer than the wall depth (D-04c1) in
+// that column, so walls hide enemies behind them.
 function drawEnemies(graphics, player) {
   graphics.clear();
 
@@ -359,17 +359,19 @@ function drawEnemies(graphics, player) {
         continue;
       }
 
-      // Square on screen: one cell tall at this depth is screenHeight / depth.
-      const size = screenHeight * enemy.size / depth;
+      // One cell at this depth is screenHeight / depth, so the billboard is a
+      // thin standing rectangle: enemyWidth across, enemyHeight tall.
+      const width = screenHeight * enemy.width / depth;
+      const height = screenHeight * enemy.height / depth;
       const screenX = (screenWidth / 2) * (1 + transformX / depth);
-      const top = Math.max(0, screenHeight / 2 - size / 2);
-      const bottom = Math.min(screenHeight, screenHeight / 2 + size / 2);
+      const top = Math.max(0, screenHeight / 2 - height / 2);
+      const bottom = Math.min(screenHeight, screenHeight / 2 + height / 2);
       if (bottom <= top) {
         continue;
       }
 
-      const firstColumn = Math.max(0, screenX - size / 2);
-      const lastColumn = Math.min(screenWidth - 1, screenX + size / 2);
+      const firstColumn = Math.max(0, screenX - width / 2);
+      const lastColumn = Math.min(screenWidth - 1, screenX + width / 2);
       for (
         let x = Math.floor(firstColumn / stripWidth) * stripWidth;
         x <= lastColumn;

@@ -5,7 +5,7 @@ const { loadScripts } = require("./load-scripts.js");
 const getGlobal = loadScripts();
 getGlobal(`getEnemiesAtCell = function (x, y) {
   if (x === 0 && y === 0) {
-    return [{ posX: 0.5, posY: 0.5, size: 0.5 }];
+    return [{ posX: 0.5, posY: 0.5, width: 0.3 }];
   }
   return [];
 }`);
@@ -42,11 +42,12 @@ test("draws a cell-sized amber enemy marker in the matching minimap cell", () =>
   drawMinimap(graphics, player);
 
   assert.equal(graphics.clearCount, 1);
+  // Marker side is minimapCellSize * enemy.width = 10 * 0.3 = 3, centered on the cell
   assert.ok(graphics.rects.some((rect) => (
-    rect.x === 12.5
-    && rect.y === 12.5
-    && rect.width === 5
-    && rect.height === 5
+    rect.x === 13.5
+    && rect.y === 13.5
+    && rect.width === 3
+    && rect.height === 3
   )));
   assert.ok(graphics.fillColors.includes(enemyColor));
 });

@@ -33,7 +33,8 @@ function addEnemy() {
     posY: 5.5,
     cellX: 5,
     cellY: 5,
-    size: 0.5,
+    width: 0.3,
+    height: 0.6,
     state: "idle",
     stateTime: 0,
   };
@@ -98,7 +99,8 @@ test("an enemy with no open neighbour stays idle", () => {
     posY: 5.5,
     cellX: 5,
     cellY: 5,
-    size: 0.5,
+    width: 0.3,
+    height: 0.6,
     state: "idle",
     stateTime: 0,
   };
@@ -129,7 +131,8 @@ function addLosEnemy() {
     posY: 5.5,
     cellX: 5,
     cellY: 5,
-    size: 0.5,
+    width: 0.3,
+    height: 0.6,
     state: "idle",
     stateTime: 0,
   };
@@ -176,4 +179,24 @@ test("chasing enemy returns to patrol after losing sight for one second", () => 
 
   losUpdateEnemies(chasePlayer, 1);
   assert.equal(enemy.state, "patrol");
+});
+
+// A world with a single wall cell at (7, 5), so an enemy walking toward +X is
+// stopped by the wall instead of passing through it.
+const wallGlobal = loadScripts();
+wallGlobal("getCell = function (x, y) { return (x === 7 && y === 5) ? 1 : 0; }");
+const wallMoveEnemyToward = wallGlobal("moveEnemyToward");
+const wallCanEnemyStandAt = wallGlobal("canEnemyStandAt");
+
+test("an enemy stops at a wall instead of walking through it", () => {
+  const enemy = { posX: 5.5, posY: 5.5 };
+
+  for (let step = 0; step < 50; step += 1) {
+    wallMoveEnemyToward(enemy, { x: 10.5, y: 5.5 }, 0.2);
+  }
+
+  assert.ok(enemy.posX > 5.5, "the enemy never moved");
+  assert.ok(enemy.posX < 7, "the enemy entered the wall cell");
+  assert.equal(wallCanEnemyStandAt(enemy.posX, enemy.posY), true);
+  assert.equal(wallCanEnemyStandAt(enemy.posX + 0.2, enemy.posY), false);
 });

@@ -43,5 +43,7 @@ const shadowRayEpsilon = 0.05;
 
 // D-04: weighted enemy population per generated chunk
 const enemyCountThresholds = [0.5, 0.8, 0.95];
-const enemySize = 0.5;
+// D-04: the enemy is a thin standing rectangle (cells), not a wide square
+const enemyWidth = 0.3;
+const enemyHeight = 0.6;
 const enemyColor = 0xffc857;

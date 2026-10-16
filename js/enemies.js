@@ -9,6 +9,9 @@ const enemyPatrolSpeed = 1 / ticksPerSecond;
 const enemyChaseSpeed = 2 / ticksPerSecond;
 const enemySightDistance = maxRayDistance;
 const enemyLoseSightTicks = ticksPerSecond;
+// TDD 6.6: the enemy keeps half its width away from walls, so its body never
+// crosses a wall even when it cuts a corner
+const enemyCollisionRadius = enemyWidth / 2;
 
 // D-06b: an enemy touching the player deals damage every tick, so a full second
 // of contact costs contactDamagePerSecond.
@@ -126,8 +129,35 @@ function moveEnemyToward(enemy, target, distance) {
     return;
   }
   const step = Math.min(distance, length);
-  enemy.posX += offsetX / length * step;
-  enemy.posY += offsetY / length * step;
+  const moveX = offsetX / length * step;
+  const moveY = offsetY / length * step;
+
+  // Slide by axis against the walls, like the player, so the enemy never walks
+  // into a wall it is chasing past
+  if (canEnemyStandAt(enemy.posX + moveX, enemy.posY)) {
+    enemy.posX += moveX;
+  }
+  if (canEnemyStandAt(enemy.posX, enemy.posY + moveY)) {
+    enemy.posY += moveY;
+  }
+}
+
+// TDD 6.6: a square footprint, side 2 * enemyCollisionRadius, must not touch a
+// wall cell
+function canEnemyStandAt(posX, posY) {
+  const minX = Math.floor(posX - enemyCollisionRadius);
+  const maxX = Math.floor(posX + enemyCollisionRadius);
+  const minY = Math.floor(posY - enemyCollisionRadius);
+  const maxY = Math.floor(posY + enemyCollisionRadius);
+
+  for (let x = minX; x <= maxX; x += 1) {
+    for (let y = minY; y <= maxY; y += 1) {
+      if (getCell(x, y) !== 0) {
+        return false;
+      }
+    }
+  }
+  return true;
 }
 
 // D-05a: the per-cell registry (minimap, D-04b) follows the enemy as it crosses
@@ -158,7 +188,7 @@ function removeEnemyFromCell(enemy) {
 
 // D-07a: the center ray reuses the render DDA. Since dir has length 1,
 // perpWallDist is the true distance to the wall along the ray. An enemy is hit
-// when it is ahead of the player, within its half-size of the ray and nearer
+// when it is ahead of the player, within its half-width of the ray and nearer
 // than the wall, so walls block the shot. One hit removes the enemy.
 function shootCenterRay(player) {
   const ray = castRay(player.posX, player.posY, player.dirX, player.dirY);
@@ -178,7 +208,7 @@ function shootCenterRay(player) {
         offsetX - along * player.dirX,
         offsetY - along * player.dirY,
       );
-      if (lateral <= enemy.size / 2) {
+      if (lateral <= enemy.width / 2) {
         target = enemy;
         targetDistance = along;
       }

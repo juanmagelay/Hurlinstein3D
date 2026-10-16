@@ -8,7 +8,7 @@ const minimapWallColor = 0x2c4a7c;
 const minimapPlayerColor = 0x4de1bd;
 
 function getEnemyMinimapMarker(enemy, firstMapX, firstMapY) {
-  const markerSize = minimapCellSize * enemy.size;
+  const markerSize = minimapCellSize * enemy.width;
   const centerX = minimapX + (enemy.posX - firstMapX) * minimapCellSize;
   const centerY = minimapY + (enemy.posY - firstMapY) * minimapCellSize;
   return {
