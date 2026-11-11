@@ -13,6 +13,28 @@ const shotgunIdleFrame = 0;
 const shotgunFireFrames = [1, 2, 3, 4];
 const shotgunReloadFrames = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
 
+// D-07c: barrel axis of the idle frame, in frame pixels, measured on the strip.
+// The breech is the gold bead between the two barrels; the sight is the front bead.
+const shotgunBreechX = 63;
+const shotgunBreechY = 74;
+const shotgunSightX = 39;
+const shotgunSightY = 35;
+
+// D-07c / TDD 2.3.1 and 3.2: the barrel points along dir, and the center ray
+// (cameraX 0, rayDir equal to dir) meets the horizon at the screen center, where
+// the crosshair is. Returns the sprite x that makes the barrel axis, extended,
+// cross that point. The sprite is only moved, never rotated.
+function getAimedShotgunX() {
+  const scale = shotgunDisplayHeight / shotgunFrameHeight;
+  // The horizon in frame pixels: half a screen above the frame bottom
+  const horizonY = shotgunFrameHeight - screenHeight / 2 / scale;
+  // Follow the axis from the breech up to the horizon (similar triangles)
+  const slope = (shotgunSightX - shotgunBreechX) / (shotgunSightY - shotgunBreechY);
+  const horizonX = shotgunBreechX + slope * (horizonY - shotgunBreechY);
+  // Shift the sprite (anchored at its bottom center) so that point lands on the crosshair
+  return screenWidth / 2 - (horizonX - shotgunFrameWidth / 2) * scale;
+}
+
 // Slices the strip into one canvas per frame. The strip is a data URI, so the
 // canvas is never tainted and can be read back (TDD 6.1).
 function loadShotgunFrames(dataUri) {
@@ -43,7 +65,7 @@ async function createShotgun() {
   const textures = frames.map((canvas) => PIXI.Texture.from(canvas));
   const sprite = new PIXI.Sprite(textures[shotgunIdleFrame]);
   sprite.anchor.set(0.5, 1);
-  sprite.position.set(screenWidth / 2, screenHeight);
+  sprite.position.set(getAimedShotgunX(), screenHeight);
   const scale = shotgunDisplayHeight / shotgunFrameHeight;
   sprite.scale.set(scale);
   return {

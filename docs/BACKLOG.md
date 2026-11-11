@@ -58,6 +58,8 @@ Branches: every story is committed on `develop`, and once validated `develop` is
 | D-09 | Procedural textures on a hidden canvas (wallX, texX), keeping flat color mode | Desirable | 4 | D-08b | done |
 | D-11 | Second room per chunk without breaking connectivity | Desirable | 4 | D-09 | done |
 | D-10 | Raycast lighting with one light per room | Desirable | 4 | D-11 | done |
+| D-07c | Aim the shotgun barrel at the crosshair | Desirable | 4 | D-07b, D-03a | done |
+| D-07d | Document the aimed shotgun in the README | Desirable | 4 | D-07c | pending |
 | D-12 | Strafing and mouse look, only if the team asks for it | Desirable | 4 | H-09o | pending |
 
 ## H-01a: Repo layout
@@ -464,6 +466,27 @@ Decisions:
 - Frames are aligned on the gun body (horizontal centroid of the lower quarter, bottom row) so the gun does not jump when firing.
 - The five frames are pre-processed offline into a small transparent strip and embedded as a data URI in `js/weapon-sheet.js`; under `file://` the canvas would be tainted if the PNG were read from disk (TDD 6.1).
 - The sprite uses the idle frame until a shot calls `triggerShotgun`; the four firing frames play once and fall back to idle.
+
+## D-07c: Aim the shotgun barrel at the crosshair
+
+Acceptance criteria:
+- The barrel axis of the idle frame, extended on screen, crosses the horizon at the crosshair (screen center).
+- The sprite is moved horizontally only: no rotation, same scale, same bottom anchor.
+- The fire and reload frames move with it, since they are aligned on the gun body (D-07b).
+- Tests check the crossing point by projecting the axis to the screen, and the sprite x against a hand computed value (about 791 px).
+
+Decisions:
+- The barrel points along dir, and the center ray (cameraX 0, rayDir equal to dir) meets the horizon at the screen center. So the barrel line on screen has to pass through the crosshair (TDD 2.3.1 and 3.2).
+- The axis was measured on the idle frame: the gold bead at the breech, between the two barrels, at frame pixel (63, 74), and the front sight at (39, 35). It leans about 32 degrees to the left.
+- Moved instead of rotated: the art is a gun held to the right with no roll (both barrels at the same height). Rotating it about 32 degrees would cant the gun and lift its cut bottom edge off the screen. Moving it 151 px right keeps the art intact and makes the axis cross the crosshair.
+- `getAimedShotgunX` derives the x from the two axis points with similar triangles, so a new sprite only needs its two points measured again.
+- The edges of the barrels converge a little below the horizon (about 100 px), on the same axis line: the art has the gun pitched slightly down. Left as is; the aim criterion is the axis line.
+- The README still says "Bottom-center shotgun"; D-07d updates it, to keep this story within four files.
+
+## D-07d: Document the aimed shotgun in the README
+
+Acceptance criteria:
+- The README row for `js/weapon.js` says the shotgun is aimed at the crosshair instead of bottom-center.
 
 ## D-08a: Track six shotgun rounds and reload state
 

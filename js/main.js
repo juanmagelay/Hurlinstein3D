@@ -50,7 +50,8 @@ async function startGame() {
   app.stage.addChild(ammoBar.background);
   app.stage.addChild(ammoBar.fill);
 
-  // D-07b: the shotgun view model sits at the bottom center, under the HUD and overlay
+  // D-07b / D-07c: the shotgun view model sits at the bottom, aimed at the crosshair,
+  // under the HUD and overlay
   const shotgun = await createShotgun();
   app.stage.addChild(shotgun.sprite);
 

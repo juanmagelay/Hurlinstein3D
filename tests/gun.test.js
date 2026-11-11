@@ -91,3 +91,36 @@ test("an idle shotgun ignores the update", () => {
   assert.equal(shotgun.sprite.texture, "idle");
   assert.equal(shotgun.frameIndex, 0);
 });
+
+// D-07c: maps a pixel of the idle frame to the screen, for a sprite anchored at
+// its bottom center on (spriteX, screenHeight) and scaled to the display height.
+function frameToScreen(spriteX, frameX, frameY) {
+  const frameWidth = getGlobal("shotgunFrameWidth");
+  const frameHeight = getGlobal("shotgunFrameHeight");
+  const scale = getGlobal("shotgunDisplayHeight") / frameHeight;
+  return {
+    x: spriteX + (frameX - frameWidth / 2) * scale,
+    y: getGlobal("screenHeight") - (frameHeight - frameY) * scale,
+  };
+}
+
+test("the barrel axis, extended, crosses the horizon at the crosshair", () => {
+  const spriteX = getGlobal("getAimedShotgunX()");
+  const breech = frameToScreen(spriteX, getGlobal("shotgunBreechX"), getGlobal("shotgunBreechY"));
+  const sight = frameToScreen(spriteX, getGlobal("shotgunSightX"), getGlobal("shotgunSightY"));
+  const horizonY = getGlobal("screenHeight") / 2;
+
+  // Point of the screen line through breech and sight at the horizon height
+  const t = (horizonY - breech.y) / (sight.y - breech.y);
+  const horizonX = breech.x + t * (sight.x - breech.x);
+
+  assert.ok(Math.abs(horizonX - getGlobal("screenWidth") / 2) < 1e-9);
+});
+
+test("the aimed shotgun sits right of center, about 151 px", () => {
+  // By hand: scale 260 / 142, horizon at frame y -54.6, axis there at frame x -16.1,
+  // so the sprite moves (66.5 + 16.1) * 1.83 = 151.3 px right of 640.
+  const spriteX = getGlobal("getAimedShotgunX()");
+
+  assert.ok(Math.abs(spriteX - 791.3) < 0.1);
+});
