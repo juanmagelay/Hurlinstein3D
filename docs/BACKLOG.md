@@ -59,7 +59,7 @@ Branches: every story is committed on `develop`, and once validated `develop` is
 | D-11 | Second room per chunk without breaking connectivity | Desirable | 4 | D-09 | done |
 | D-10 | Raycast lighting with one light per room | Desirable | 4 | D-11 | done |
 | D-07c | Aim the shotgun barrel at the crosshair | Desirable | 4 | D-07b, D-03a | done |
-| D-07d | Document the aimed shotgun in the README | Desirable | 4 | D-07c | pending |
+| D-07d | Document the aimed shotgun in the README | Desirable | 4 | D-07c | done |
 | D-07e | Show the whole muzzle flash in the firing frames | Desirable | 4 | D-07c | done |
 | D-13a | Specify the shotgun projectile in the TDD | Desirable | 4 | D-07e | pending |
 | D-13b | Projectile logic: travel, wall range from the center ray DDA, enemy hit | Desirable | 4 | D-13a | pending |
@@ -492,6 +492,10 @@ Decisions:
 
 Acceptance criteria:
 - The README row for `js/weapon.js` says the shotgun is aimed at the crosshair instead of bottom-center.
+
+Decisions:
+- The row also cites TDD 2.3.1, the section that puts the aim on the fixed center crosshair.
+- Found while editing, left out of this story: the README controls table lacks Space (fire) and R (reload), and `js/enemies.js` has no row in the project map.
 
 ## D-07e: Show the whole muzzle flash in the firing frames
 
