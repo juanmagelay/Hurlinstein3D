@@ -61,7 +61,7 @@ Branches: every story is committed on `develop`, and once validated `develop` is
 | D-07c | Aim the shotgun barrel at the crosshair | Desirable | 4 | D-07b, D-03a | done |
 | D-07d | Document the aimed shotgun in the README | Desirable | 4 | D-07c | done |
 | D-07e | Show the whole muzzle flash in the firing frames | Desirable | 4 | D-07c | done |
-| D-13a | Specify the shotgun projectile in the TDD | Desirable | 4 | D-07e | pending |
+| D-13a | Specify the shotgun projectile in the TDD | Desirable | 4 | D-07e | done |
 | D-13b | Projectile logic: travel, wall range from the center ray DDA, enemy hit | Desirable | 4 | D-13a | pending |
 | D-13c | Draw projectiles in 3D and fire them instead of the instant hit | Desirable | 4 | D-13b | pending |
 | D-13d | Projectiles on the minimap and retire the instant center ray hit | Desirable | 4 | D-13c | pending |
@@ -616,6 +616,7 @@ Decisions (option A, confirmed by Juanma; the details were left to Claude):
 - The center ray DDA still decides where the shot meets the wall: when firing, `castRay` from pos along dir (cameraX 0, rayDir equal to dir) gives the wall distance, and the projectile keeps it as its range. Walls never change during the session (TDD 4.4), so the range stays valid. No wall within `maxRayDistance` gives a range of `maxRayDistance`.
 - It starts at the player position and moves along dir as fired; turning afterwards does not steer it. Speed is 20 cells per second (`projectileSpeed`), times `ticker.deltaTime`.
 - Enemy hit per tick: the segment travelled in that tick is tested with the same along and lateral math as D-07a (within `enemy.width / 2` of the line), so a fast projectile cannot skip a thin enemy. The nearest enemy on the segment is hit, removed, and the projectile disappears. One projectile kills at most one enemy.
+- Only the enemies registered in the cells the segment touches are tested (`getEnemiesAtCell`), with the segment's bounding box widened by half an enemy width, so an enemy whose center sits in the next cell is still caught. This is the per-cell registry TDD 2.3.1 describes (spatial hashing), instead of the loop over every enemy that `shootCenterRay` uses.
 - Several projectiles can be in flight; they live in a plain array, not in the per-cell registry, because they are few and short lived.
 - Look: a small warm square (0.08 cells) on the horizon, projected and occluded with the z-buffer like the enemies (Lode part 3), and a dot on the minimap.
 
@@ -624,6 +625,18 @@ Stories:
 - D-13b: `js/projectiles.js` with fire, update and the hit tests; script tag in `index.html` after `enemies.js`; `tests/projectiles.test.js` (wall stop, enemy hit, enemy that moves away, no tunnelling, max range). Nothing visible changes yet.
 - D-13c: `drawProjectiles` in `js/renderer.js`, wiring in `js/main.js` (one Graphics created once, fire spawns a projectile instead of `shootCenterRay`), README row for `js/projectiles.js`.
 - D-13d: projectile dot in `js/minimap.js`; remove `shootCenterRay` from `js/enemies.js` and its tests from `tests/gun.test.js`.
+
+## D-13a: Specify the shotgun projectile in the TDD
+
+Acceptance criteria:
+- TDD 2.3.1 describes the projectile: it leaves the player along the center ray (cameraX 0, rayDir equal to dir), its range is the wall distance the DDA returns when firing, and each frame it advances and checks the segment it travelled.
+- It states the three ways a projectile disappears: it hits an enemy (the enemy dies), it reaches the wall, or it travels the max ray distance with no wall.
+- It keeps the per-cell enemy registry: only the cells the segment touches are checked.
+- The closing note of TDD 2.3.2 says the projectile range, not an instant hit, reuses the chapter 3 DDA.
+
+Decisions:
+- The text was approved by Juanma before editing.
+- The TDD header date is left as is, like the earlier TDD stories (D-04a0, D-06a).
 
 ## Desirables
 

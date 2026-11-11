@@ -50,7 +50,7 @@ El esquema deja afuera a propósito el desplazamiento lateral y el giro con el m
 ### 2.3.1 Combate y supervivencia
 - **Sistema de vida**: el jugador tiene una barra de salud. Recibir daño de un enemigo al colisionar disminuye ese valor, y si llega a cero el jugador muere y pierde la partida.
 
-- **Armamento y disparo**: el jugador dispone de un arma de fuego que se dispara con la barra espaciadora, apuntando con una mira fija en el centro de la pantalla. El impacto se resuelve con raycasting. El rayo del disparo sale del jugador y recorre la grilla celda por celda con el mismo DDA del capítulo 3. Como la mira está fija en el centro, ese rayo es el de la columna central: cameraX vale 0 y rayDir es igual a dir. Cada enemigo queda registrado en la celda que ocupa, así el recorrido distingue las celdas con enemigos de las vacías. Al llegar a una celda con enemigos, se calcula si el rayo pega contra el collider de alguno, circular o rectangular. Si no pega, el rayo sigue, y si antes llega a una pared, el disparo no impacta.
+- **Armamento y disparo**: el jugador dispone de un arma de fuego que se dispara con la barra espaciadora, apuntando con una mira fija en el centro de la pantalla. Cada disparo lanza un proyectil visible que sale del jugador en la dirección de la mira. Como la mira está fija en el centro, esa dirección es la del rayo de la columna central: cameraX vale 0 y rayDir es igual a dir. Al disparar, ese rayo recorre la grilla celda por celda con el mismo DDA del capítulo 3 y devuelve la distancia a la primera pared, que pasa a ser el alcance del proyectil. Como las paredes no cambian durante la partida, ese alcance no se vuelve a calcular. En cada cuadro el proyectil avanza a velocidad constante y se revisa el tramo que recorrió. Cada enemigo queda registrado en la celda que ocupa, así solo se revisan los enemigos de las celdas que toca ese tramo. Si el tramo pasa contra el collider de alguno, el enemigo muere y el proyectil desaparece. Si el proyectil llega a su alcance, choca contra la pared y desaparece, y si no había pared dentro de la distancia máxima del rayo, desaparece al recorrerla. Como el impacto se decide durante el vuelo, un enemigo que se corre a tiempo esquiva el disparo.
 
 - **Gestión de munición**: la reserva total es infinita, para favorecer un ritmo constante, pero el cargador tiene capacidad limitada, así que el jugador debe recargar cada cierta cantidad de disparos.
 
@@ -67,7 +67,7 @@ Los estados previstos son:
 
 - **Persecución**: al detectar al jugador mediante una comprobación de línea de visión, que es un raycast contra el mismo mapa, el enemigo abandona la patrulla, persigue al jugador y le inflige daño por contacto.
 
-Vale la pena notar que la línea de visión del enemigo y el disparo del jugador reutilizan el mismo recorrido DDA del capítulo 3. El render, la percepción de la IA y la detección de impactos son el mismo código con distinto propósito.
+Vale la pena notar que la línea de visión del enemigo y el alcance del proyectil del jugador reutilizan el mismo recorrido DDA del capítulo 3. El render, la percepción de la IA y el punto donde el disparo choca contra la pared salen del mismo código con distinto propósito.
 
 La iluminación también puede resolverse con raycasting.
 
