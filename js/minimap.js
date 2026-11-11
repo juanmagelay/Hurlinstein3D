@@ -6,6 +6,7 @@ const minimapY = 10;
 const minimapBackgroundColor = 0x0d1117;
 const minimapWallColor = 0x2c4a7c;
 const minimapPlayerColor = 0x4de1bd;
+const minimapProjectileRadius = 2;
 
 function getEnemyMinimapMarker(enemy, firstMapX, firstMapY) {
   const markerSize = minimapCellSize * enemy.width;
@@ -17,6 +18,13 @@ function getEnemyMinimapMarker(enemy, firstMapX, firstMapY) {
     width: markerSize,
     height: markerSize,
   };
+}
+
+// D-13d: true when a world position falls inside the 21 by 21 cell window
+function isInsideMinimapWindow(posX, posY, firstMapX, firstMapY) {
+  const insideX = posX >= firstMapX && posX < firstMapX + minimapCellsPerSide;
+  const insideY = posY >= firstMapY && posY < firstMapY + minimapCellsPerSide;
+  return insideX && insideY;
 }
 
 function drawMinimap(graphics, player) {
@@ -56,6 +64,23 @@ function drawMinimap(graphics, player) {
   }
   if (enemyMarkers.length > 0) {
     graphics.fill(enemyColor);
+  }
+
+  // D-13d: each projectile in flight is a small dot, only inside the window
+  let projectileDots = 0;
+  for (const projectile of projectiles) {
+    if (!isInsideMinimapWindow(projectile.posX, projectile.posY, firstMapX, firstMapY)) {
+      continue;
+    }
+    graphics.circle(
+      minimapX + (projectile.posX - firstMapX) * minimapCellSize,
+      minimapY + (projectile.posY - firstMapY) * minimapCellSize,
+      minimapProjectileRadius,
+    );
+    projectileDots += 1;
+  }
+  if (projectileDots > 0) {
+    graphics.fill(projectileColor);
   }
 
   const playerX = minimapX + (player.posX - firstMapX) * minimapCellSize;

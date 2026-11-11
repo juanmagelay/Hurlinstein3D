@@ -31,6 +31,10 @@ async function startGame() {
   const enemies = new PIXI.Graphics();
   app.stage.addChild(enemies);
 
+  // D-13c: projectiles draw over the enemies, with the same wall occlusion
+  const projectileGraphics = new PIXI.Graphics();
+  app.stage.addChild(projectileGraphics);
+
   // TDD 6.4: the minimap Graphics object is created once, above the view
   const minimap = new PIXI.Graphics();
   app.stage.addChild(minimap);
@@ -79,14 +83,18 @@ async function startGame() {
       startReloadAnimation(shotgun);
     }
     updateReload(player, ticker.deltaTime);
+    // D-13c / TDD 2.3.1: a shot launches a projectile along the center ray;
+    // the hit happens later, when the projectile reaches an enemy
     if (fireInput.consumeShot() && tryFire(player)) {
-      shootCenterRay(player);
+      fireProjectile(player);
       triggerShotgun(shotgun);
     }
+    updateProjectiles(ticker.deltaTime);
     updateShotgun(shotgun, ticker.deltaTime);
     damagePlayer(player, getContactDamage(player, ticker.deltaTime));
     drawWalls(walls, player, wallStrips);
     drawEnemies(enemies, player);
+    drawProjectiles(projectileGraphics, player);
     drawMinimap(minimap, player);
   });
 }

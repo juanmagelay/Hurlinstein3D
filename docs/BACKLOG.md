@@ -62,9 +62,9 @@ Branches: every story is committed on `develop`, and once validated `develop` is
 | D-07d | Document the aimed shotgun in the README | Desirable | 4 | D-07c | done |
 | D-07e | Show the whole muzzle flash in the firing frames | Desirable | 4 | D-07c | done |
 | D-13a | Specify the shotgun projectile in the TDD | Desirable | 4 | D-07e | done |
-| D-13b | Projectile logic: travel, wall range from the center ray DDA, enemy hit | Desirable | 4 | D-13a | pending |
-| D-13c | Draw projectiles in 3D and fire them instead of the instant hit | Desirable | 4 | D-13b | pending |
-| D-13d | Projectiles on the minimap and retire the instant center ray hit | Desirable | 4 | D-13c | pending |
+| D-13b | Projectile logic: travel, wall range from the center ray DDA, enemy hit | Desirable | 4 | D-13a | done |
+| D-13c | Draw projectiles in 3D and fire them instead of the instant hit | Desirable | 4 | D-13b | done |
+| D-13d | Projectiles on the minimap and retire the instant center ray hit | Desirable | 4 | D-13c | done |
 | D-12 | Strafing and mouse look, only if the team asks for it | Desirable | 4 | H-09o | pending |
 
 ## H-01a: Repo layout
@@ -607,7 +607,7 @@ Decisions:
 Acceptance criteria:
 - README maps `js/hud.js` to TDD 2.3.3 and 6.4.
 
-## D-13: Shotgun projectile (planned, split in four)
+## D-13: Shotgun projectile (split in four)
 
 Juanma asked for a visible projectile that flies toward the crosshair and disappears when it hits a wall or an enemy. TDD 2.3.1 resolves the shot instantly with the center ray, so the TDD changes first (D-13a).
 
@@ -618,13 +618,15 @@ Decisions (option A, confirmed by Juanma; the details were left to Claude):
 - Enemy hit per tick: the segment travelled in that tick is tested with the same along and lateral math as D-07a (within `enemy.width / 2` of the line), so a fast projectile cannot skip a thin enemy. The nearest enemy on the segment is hit, removed, and the projectile disappears. One projectile kills at most one enemy.
 - Only the enemies registered in the cells the segment touches are tested (`getEnemiesAtCell`), with the segment's bounding box widened by half an enemy width, so an enemy whose center sits in the next cell is still caught. This is the per-cell registry TDD 2.3.1 describes (spatial hashing), instead of the loop over every enemy that `shootCenterRay` uses.
 - Several projectiles can be in flight; they live in a plain array, not in the per-cell registry, because they are few and short lived.
-- Look: a small warm square (0.08 cells) on the horizon, projected and occluded with the z-buffer like the enemies (Lode part 3), and a dot on the minimap.
+- Look: a small square on the horizon, projected and occluded with the z-buffer like the enemies (Lode part 3), and a dot on the minimap. Size and color were settled in D-13c.
 
 Stories:
 - D-13a: rewrite TDD 2.3.1 (and the note in 2.3.2) for the projectile. Files: `docs/TDD.md`, `docs/BACKLOG.md`.
 - D-13b: `js/projectiles.js` with fire, update and the hit tests; script tag in `index.html` after `enemies.js`; `tests/projectiles.test.js` (wall stop, enemy hit, enemy that moves away, no tunnelling, max range). Nothing visible changes yet.
 - D-13c: `drawProjectiles` in `js/renderer.js`, wiring in `js/main.js` (one Graphics created once, fire spawns a projectile instead of `shootCenterRay`), README row for `js/projectiles.js`.
-- D-13d: projectile dot in `js/minimap.js`; remove `shootCenterRay` from `js/enemies.js` and its tests from `tests/gun.test.js`.
+- D-13d: projectile dot in `js/minimap.js`; remove `shootCenterRay` from `js/enemies.js` and its tests from `tests/weapon.test.js` (the plan said `gun.test.js` by mistake; those tests live in `weapon.test.js`).
+
+Juanma asked for D-13b, D-13c and D-13d in one go, without stopping between them. They touch separate files, so each one can still be its own commit; this backlog file goes with D-13d.
 
 ## D-13a: Specify the shotgun projectile in the TDD
 
@@ -637,6 +639,45 @@ Acceptance criteria:
 Decisions:
 - The text was approved by Juanma before editing.
 - The TDD header date is left as is, like the earlier TDD stories (D-04a0, D-06a).
+
+## D-13b: Projectile logic
+
+Acceptance criteria:
+- `fireProjectile` casts the center ray once and keeps the wall distance (or `maxRayDistance`) as the range.
+- `updateProjectiles` moves each projectile `projectileSpeed * deltaTime` along its dir, never past its range, and removes the ones that hit an enemy or reached the range.
+- The hit test checks the whole segment of each tick, only in the cells it touches, and removes the nearest enemy.
+- Tests cover: range from the wall and the max range, the step per tick, the stop on the wall face, a kill, a wall in front of the enemy, an enemy that steps aside, a long step that would skip the enemy, an enemy centered in the next cell, an enemy beside the line, an enemy behind the player, the nearest of two, and negative coordinates.
+
+Decisions:
+- `projectileSpeed` (20 cells per second) lives at the top of `js/projectiles.js`, like the enemy constants in `js/enemies.js`, instead of `config.js`, to keep the story within four files.
+- `advanceProjectile` returns "done" from the distance asked versus the distance left, not from comparing the accumulated float with the range, so rounding cannot keep a projectile alive at the wall.
+- The script loads right after `enemies.js`, because it uses `ticksPerSecond`, `removeEnemy` and the enemy registry.
+
+## D-13c: Draw projectiles and fire them
+
+Acceptance criteria:
+- Space launches a projectile instead of the instant hit; the firing animation and the ammo work as before.
+- The projectile shows as a small square on the horizon that shrinks as it flies away, and walls hide it like they hide enemies.
+- It disappears at the wall, at the max distance, or on the enemy it kills.
+- The Graphics object is created once, outside the ticker (TDD 6.4).
+
+Decisions:
+- Size 0.05 cells, color red-orange `0xff5a1f`. A pale yellow was tried first and was hard to see over the amber enemies (checked in headless Chrome).
+- Not drawn closer than 0.75 cells, where it would be a square of about 50 px or more over the crosshair; at 20 cells per second that hides only its first two ticks.
+- `drawProjectiles` reuses `getEnemyProjection`, which only reads `posX` and `posY`, and repeats the per-strip occlusion loop of `drawEnemies` instead of refactoring it into a shared helper (no refactor mixed with a new feature).
+- Projectiles are drawn above the enemies, so one in front of an enemy is visible.
+- The README gains a row for `js/projectiles.js`, and the `js/renderer.js` row now lists enemies and projectiles.
+
+## D-13d: Projectiles on the minimap, retire the instant hit
+
+Acceptance criteria:
+- Each projectile inside the 21 by 21 window shows as a small dot with the projectile color.
+- `shootCenterRay` is gone; `removeEnemy` stays, used by the projectiles.
+- The instant shot tests are removed; their "enemy behind the player" case moved to `tests/projectiles.test.js` so no case is lost.
+
+Decisions:
+- `isInsideMinimapWindow` keeps dots of projectiles outside the window from being drawn over the rest of the screen.
+- The dots are accumulated and painted with a single `fill()`, like the walls and the enemy markers.
 
 ## Desirables
 

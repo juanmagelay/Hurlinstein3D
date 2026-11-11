@@ -27,7 +27,8 @@ The player collides with walls and slides along them. The minimap is overlaid in
 | `js/world.js` | Cantor-keyed chunk storage, `getCell` and room lights | 5.1, 5.2, 6.8 |
 | `js/player.js` | Camera state, keyboard input, movement, collisions, health and ammo | 3.2, 6.6 |
 | `js/raycaster.js` | Camera rays and grid DDA | 3.2, 3.3, 3.4 |
-| `js/renderer.js` | Ceiling, floor, wall strips, procedural wall textures and point lights | 6.4, 6.5 |
+| `js/renderer.js` | Ceiling, floor, wall strips, procedural wall textures, point lights, enemies and projectiles | 2.3.1, 6.4, 6.5 |
+| `js/projectiles.js` | Shotgun projectiles: range from the center ray DDA, flight, and enemy hits through the per-cell registry | 2.3.1 |
 | `js/minimap.js` | 21 by 21 cell minimap, player position and direction | 6.7 |
 | `js/hud.js` | Center crosshair, health bar, ammo bar and defeat overlay | 2.3.3, 6.4 |
 | `js/weapon.js` | Shotgun aimed at the crosshair, idle, firing and reload animation | 2.3.1, 2.3.3, 6.4 |

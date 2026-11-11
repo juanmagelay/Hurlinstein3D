@@ -386,3 +386,46 @@ function drawEnemies(graphics, player) {
 
   fillStrips(graphics, enemyStrips, enemyColor);
 }
+
+// D-13c: look of a projectile, a small red-orange square, like the muzzle flash
+// and easy to tell apart from the amber enemies. It is not drawn closer than
+// projectileMinDepth, where it would be a big square over the crosshair.
+const projectileSize = 0.05;
+const projectileColor = 0xff5a1f;
+const projectileMinDepth = 0.75;
+
+// D-13c: each projectile is a small square centered on the horizon (it flies
+// at eye height), projected like the enemies (Lode part 3) and hidden strip by
+// strip behind nearer walls (D-04c1). getEnemyProjection only reads posX and
+// posY, so it projects a projectile too.
+function drawProjectiles(graphics, player) {
+  graphics.clear();
+
+  const projectileStrips = [];
+  for (const projectile of projectiles) {
+    const { transformX, depth } = getEnemyProjection(projectile, player);
+    if (depth < projectileMinDepth || depth > maxRayDistance) {
+      continue;
+    }
+
+    // One cell at this depth is screenHeight / depth pixels tall
+    const size = screenHeight * projectileSize / depth;
+    const screenX = (screenWidth / 2) * (1 + transformX / depth);
+    const top = Math.max(0, screenHeight / 2 - size / 2);
+    const bottom = Math.min(screenHeight, screenHeight / 2 + size / 2);
+
+    const firstColumn = Math.max(0, screenX - size / 2);
+    const lastColumn = Math.min(screenWidth - 1, screenX + size / 2);
+    for (
+      let x = Math.floor(firstColumn / stripWidth) * stripWidth;
+      x <= lastColumn;
+      x += stripWidth
+    ) {
+      if (depth < wallDepthBuffer[x / stripWidth]) {
+        projectileStrips.push({ x, drawStart: top, drawEnd: bottom });
+      }
+    }
+  }
+
+  fillStrips(graphics, projectileStrips, projectileColor);
+}
