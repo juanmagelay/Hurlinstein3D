@@ -60,6 +60,11 @@ Branches: every story is committed on `develop`, and once validated `develop` is
 | D-10 | Raycast lighting with one light per room | Desirable | 4 | D-11 | done |
 | D-07c | Aim the shotgun barrel at the crosshair | Desirable | 4 | D-07b, D-03a | done |
 | D-07d | Document the aimed shotgun in the README | Desirable | 4 | D-07c | pending |
+| D-07e | Show the whole muzzle flash in the firing frames | Desirable | 4 | D-07c | done |
+| D-13a | Specify the shotgun projectile in the TDD | Desirable | 4 | D-07e | pending |
+| D-13b | Projectile logic: travel, wall range from the center ray DDA, enemy hit | Desirable | 4 | D-13a | pending |
+| D-13c | Draw projectiles in 3D and fire them instead of the instant hit | Desirable | 4 | D-13b | pending |
+| D-13d | Projectiles on the minimap and retire the instant center ray hit | Desirable | 4 | D-13c | pending |
 | D-12 | Strafing and mouse look, only if the team asks for it | Desirable | 4 | H-09o | pending |
 
 ## H-01a: Repo layout
@@ -488,6 +493,21 @@ Decisions:
 Acceptance criteria:
 - The README row for `js/weapon.js` says the shotgun is aimed at the crosshair instead of bottom-center.
 
+## D-07e: Show the whole muzzle flash in the firing frames
+
+Acceptance criteria:
+- No firing frame loses part of its muzzle flash at the left or right edge of the frame.
+- The gun keeps its place on screen and stays aimed at the crosshair (sprite x about 791 px).
+- Idle and reload frames are unchanged, pixel for pixel.
+- A test checks that the strip width in the PNG header is the frame count times the frame width.
+
+Decisions:
+- Cause: the strip frames were 133 px windows aligned on the gun body, and the flame of firing frames 2 to 4 reaches up to 23 px left of that window (frames 2 and 3 were also limited by the grid cell of the original sheet). Nothing was off screen.
+- The frame is now 179 px: the old 133 plus 23 transparent px on each side. A symmetric margin keeps the bottom-center anchor on the same gun pixel, so `getAimedShotgunX` returns the same value; only `shotgunBreechX` and `shotgunSightX` move 23 px (86 and 62).
+- Firing frames 1 to 4 were re-cut from `Sgun.png` at the same alignment, keeping every pixel of the frame's own cluster (gun plus flame, with gaps of up to 4 px bridged so loose flame particles stay with their frame). Idle and reload frames were copied as they were, centered. Every old pixel was checked to be kept unchanged.
+- Rows above the sheet cannot be recovered: the flame of frame 3 already touches the top edge of `Sgun.png`, and frame 4 loses one 7 px row at the top. Not visible.
+- The strip is regenerated offline (Node, zlib only) and embedded again; `js/weapon-sheet.js` went from about 233 KB to about 157 KB, because the new PNG is compressed better.
+
 ## D-08a: Track six shotgun rounds and reload state
 
 Acceptance criteria:
@@ -583,9 +603,28 @@ Decisions:
 Acceptance criteria:
 - README maps `js/hud.js` to TDD 2.3.3 and 6.4.
 
+## D-13: Shotgun projectile (planned, split in four)
+
+Juanma asked for a visible projectile that flies toward the crosshair and disappears when it hits a wall or an enemy. TDD 2.3.1 resolves the shot instantly with the center ray, so the TDD changes first (D-13a).
+
+Decisions (option A, confirmed by Juanma; the details were left to Claude):
+- The projectile carries the hit: an enemy dies only when a projectile reaches it. If the enemy moves out of the way first, the shot misses.
+- The center ray DDA still decides where the shot meets the wall: when firing, `castRay` from pos along dir (cameraX 0, rayDir equal to dir) gives the wall distance, and the projectile keeps it as its range. Walls never change during the session (TDD 4.4), so the range stays valid. No wall within `maxRayDistance` gives a range of `maxRayDistance`.
+- It starts at the player position and moves along dir as fired; turning afterwards does not steer it. Speed is 20 cells per second (`projectileSpeed`), times `ticker.deltaTime`.
+- Enemy hit per tick: the segment travelled in that tick is tested with the same along and lateral math as D-07a (within `enemy.width / 2` of the line), so a fast projectile cannot skip a thin enemy. The nearest enemy on the segment is hit, removed, and the projectile disappears. One projectile kills at most one enemy.
+- Several projectiles can be in flight; they live in a plain array, not in the per-cell registry, because they are few and short lived.
+- Look: a small warm square (0.08 cells) on the horizon, projected and occluded with the z-buffer like the enemies (Lode part 3), and a dot on the minimap.
+
+Stories:
+- D-13a: rewrite TDD 2.3.1 (and the note in 2.3.2) for the projectile. Files: `docs/TDD.md`, `docs/BACKLOG.md`.
+- D-13b: `js/projectiles.js` with fire, update and the hit tests; script tag in `index.html` after `enemies.js`; `tests/projectiles.test.js` (wall stop, enemy hit, enemy that moves away, no tunnelling, max range). Nothing visible changes yet.
+- D-13c: `drawProjectiles` in `js/renderer.js`, wiring in `js/main.js` (one Graphics created once, fire spawns a projectile instead of `shootCenterRay`), README row for `js/projectiles.js`.
+- D-13d: projectile dot in `js/minimap.js`; remove `shootCenterRay` from `js/enemies.js` and its tests from `tests/gun.test.js`.
+
 ## Desirables
 
 Open questions to settle before each story:
+- D-08d (possible): some reload frames are also cut (frames 10, 11, 13, 15 and 16 lose part of the hand) and frames 6 and 7 are one drawing split in two. Ask before fixing.
 - D-05: optional vision cone with the dot product, like the zombie radar from the presentation. To confirm.
 - D-06: the TDD does not define a victory condition. Ask.
 - D-08: the TDD does not define the reload key. Ask.

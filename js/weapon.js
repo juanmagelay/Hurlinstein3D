@@ -1,9 +1,12 @@
 // D-07b / D-08c: shotgun view model. The embedded strip (js/weapon-sheet.js)
 // holds the idle frame, then the four firing frames, then the reload frames,
 // all the same size.
+// D-07e: frames are 179 px wide (the old 133 plus 23 transparent px per side),
+// so the muzzle flash, which reaches 23 px left of the old frame, is not cut.
+// The margin is the same on both sides, so the gun keeps its place on screen.
 
 const shotgunFrameCount = 17;
-const shotgunFrameWidth = 133;
+const shotgunFrameWidth = 179;
 const shotgunFrameHeight = 142;
 const shotgunFrameDuration = 0.08; // seconds per animation frame
 const shotgunDisplayHeight = 260;  // on-screen height in pixels
@@ -15,9 +18,10 @@ const shotgunReloadFrames = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
 
 // D-07c: barrel axis of the idle frame, in frame pixels, measured on the strip.
 // The breech is the gold bead between the two barrels; the sight is the front bead.
-const shotgunBreechX = 63;
+// D-07e: x moved 23 px with the wider frame.
+const shotgunBreechX = 86;
 const shotgunBreechY = 74;
-const shotgunSightX = 39;
+const shotgunSightX = 62;
 const shotgunSightY = 35;
 
 // D-07c / TDD 2.3.1 and 3.2: the barrel points along dir, and the center ray

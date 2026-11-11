@@ -33,6 +33,15 @@ test("the sheet holds the idle, firing and reload frames", () => {
   assert.match(shotgunSheetDataUri, /^data:image\/png;base64,/);
 });
 
+// D-07e: a PNG stores its width and height in the IHDR chunk, at bytes 16 and 20
+test("the strip is exactly frame count times frame width wide", () => {
+  const base64 = shotgunSheetDataUri.slice("data:image/png;base64,".length);
+  const header = Buffer.from(base64.slice(0, 32), "base64");
+
+  assert.equal(header.readUInt32BE(16), shotgunFrameCount * getGlobal("shotgunFrameWidth"));
+  assert.equal(header.readUInt32BE(20), getGlobal("shotgunFrameHeight"));
+});
+
 test("a trigger starts the animation on its first firing frame", () => {
   const shotgun = makeShotgun();
 
@@ -118,8 +127,9 @@ test("the barrel axis, extended, crosses the horizon at the crosshair", () => {
 });
 
 test("the aimed shotgun sits right of center, about 151 px", () => {
-  // By hand: scale 260 / 142, horizon at frame y -54.6, axis there at frame x -16.1,
-  // so the sprite moves (66.5 + 16.1) * 1.83 = 151.3 px right of 640.
+  // By hand: scale 260 / 142, horizon at frame y -54.6, axis there at frame x 6.9,
+  // so the sprite moves (89.5 - 6.9) * 1.83 = 151.3 px right of 640. Same value
+  // as with the 133 px frame (D-07e): the margin is symmetric.
   const spriteX = getGlobal("getAimedShotgunX()");
 
   assert.ok(Math.abs(spriteX - 791.3) < 0.1);
