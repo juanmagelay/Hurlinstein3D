@@ -17,7 +17,7 @@ Open `index.html` directly in Chrome. No installation, network access or develop
 | Space | Fire the shotgun |
 | R | Reload the shotgun |
 
-The player collides with walls and slides along them. The minimap is overlaid in the upper-left corner.
+The player collides with walls and slides along them. Life and ammo are in the upper-left corner and the minimap in the upper-right corner.
 
 ## Project map
 
@@ -33,7 +33,7 @@ The player collides with walls and slides along them. The minimap is overlaid in
 | `js/enemies.js` | Enemy state machine (idle, patrol, chase), DDA line of sight, wall sliding and contact damage | 2.3.1, 2.3.2 |
 | `js/projectiles.js` | Shotgun projectiles: range from the center ray DDA, flight, and enemy hits through the per-cell registry | 2.3.1 |
 | `js/minimap.js` | 21 by 21 cell minimap, player position and direction, enemies and projectiles | 6.7 |
-| `js/hud.js` | Center crosshair, health bar, ammo bar and defeat overlay | 2.3.3, 6.4 |
+| `js/hud.js` | Center crosshair, LIFE and AMMO labels with their bars, defeat overlay | 2.3.3, 6.4 |
 | `js/weapon.js` | Shotgun aimed at the crosshair, idle, firing and reload animation | 2.3.1, 2.3.3, 6.4 |
 | `js/weapon-sheet.js` | Embedded shotgun strip generated from `assets/gun-sprites/Sgun.png` | 6.1 |
 | `js/main.js` | PixiJS application, scene and ticker | 6.4 |

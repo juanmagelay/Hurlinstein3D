@@ -31,6 +31,19 @@ test("the ammo fill width follows the loaded fraction of the magazine", () => {
   assert.equal(getAmmoBarWidth(0, 6), 0);
 });
 
+test("LIFE and AMMO rows sit in the top-left corner, one under the other", () => {
+  const getHudRowY = getGlobal("getHudRowY");
+  const getHudBarX = getGlobal("getHudBarX");
+  const barBandHeight = getGlobal("barBandHeight");
+
+  // Bars start after the 16 px margin and the 56 px label column
+  assert.equal(getHudBarX(), 72);
+  assert.equal(getHudRowY(0), 16);
+  assert.equal(getHudRowY(1), 40);
+  // An 8 px gap between rows, so the bars never overlap
+  assert.equal(getHudRowY(1) - getHudRowY(0) - barBandHeight, 8);
+});
+
 test("the ammo fill width is clamped", () => {
   assert.equal(getAmmoBarWidth(-1, 6), 0);
   assert.equal(getAmmoBarWidth(9, 6), barSheetWidth);

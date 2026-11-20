@@ -49,10 +49,14 @@ async function startGame() {
   app.stage.addChild(healthBar.background);
   app.stage.addChild(healthBar.fill);
 
-  // D-08b: the six-round ammo bar, bottom-right, loaded once (no network)
+  // D-08b: the six-round ammo bar, under the health bar, loaded once (no network)
   const ammoBar = await createAmmoBar();
   app.stage.addChild(ammoBar.background);
   app.stage.addChild(ammoBar.fill);
+
+  // D-15b: LIFE and AMMO labels to the left of their bars, created once
+  app.stage.addChild(createHudLabel("LIFE", 0));
+  app.stage.addChild(createHudLabel("AMMO", 1));
 
   // D-07b / D-07c: the shotgun view model sits at the bottom, aimed at the crosshair,
   // under the HUD and overlay

@@ -1,8 +1,10 @@
 // TDD 6.7: a fixed-size top-down window over the player's current cell
 const minimapCellsPerSide = 21;
 const minimapCellSize = 10;
-const minimapX = 10;
-const minimapY = 10;
+// D-15a / TDD 2.3.3: the window sits in the top-right corner
+const minimapMargin = 10;
+const minimapX = screenWidth - minimapMargin - minimapCellsPerSide * minimapCellSize;
+const minimapY = minimapMargin;
 const minimapBackgroundColor = 0x0d1117;
 const minimapWallColor = 0x2c4a7c;
 const minimapPlayerColor = 0x4de1bd;

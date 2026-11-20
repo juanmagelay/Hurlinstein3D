@@ -69,9 +69,9 @@ Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added i
 | D-13d | Projectiles on the minimap and retire the instant center ray hit | Desirable | 4 | D-13c | done |
 | D-14a | Sync the docs with the code: enemy size in TDD 2.3.2, README controls and project map | P0 | 4 | D-13d | done |
 | D-14a2 | Describe the player's square footprint in TDD 6.6 | P0 | 4 | D-14a | done |
-| D-14b | Specify the new scope in the TDD: victory with a boss, HUD layout, screens, score and ranking, admin panel | P0 | 4 | D-14a2 | pending |
-| D-15a | Move the minimap to the top-right corner | P1 | 4 | D-14a | pending |
-| D-15b | Life and ammo bars in the top-left corner with LIFE and AMMO labels | P1 | 4 | D-15a | pending |
+| D-14b | Specify the new scope in the TDD: victory with a boss, HUD layout, screens, score and ranking, admin panel | P0 | 4 | D-14a2 | done |
+| D-15a | Move the minimap to the top-right corner | P1 | 4 | D-14a | done |
+| D-15b | Life and ammo bars in the top-left corner with LIFE and AMMO labels | P1 | 4 | D-15a | done |
 | D-16a | Scale the game to the window keeping 16:9, inside a game frame | P1 | 4 | D-14b | pending |
 | D-16b | Collapsible admin panel with live info | P1 | 4 | D-16a | pending |
 | D-17a | Reset a game: new world, enemies, projectiles and player | P1 | 4 | D-14b | pending |
@@ -790,6 +790,14 @@ Acceptance criteria:
 
 Files: `docs/TDD.md`, `docs/BACKLOG.md`.
 
+Decisions:
+- Juanma approved every proposed default of the review and asked to move faster, so the text was written straight from those decisions and is reviewed in the diff.
+- Screens and the admin panel went into 2.3.4 and 2.3.5, inside the desirable scope of 2.3, instead of new top-level sections.
+- Boss size is 0.45 by 0.9 cells, 1.5 times the regular 0.3 by 0.6.
+- 2.3.2 also says the future enemy sprite is a licensed image embedded as a data URI and textured per strip like the walls, so D-21 needs no TDD story of its own.
+- 1.3 now lists the boss, the menus with ranking and the admin panel in the desirable scope.
+- 6.3 gets a second table with every desirable file, the ones that exist (enemies, projectiles, hud, weapon-sheet, weapon) and the planned ones (enemy-sheet, game-state, ranking, screens, admin).
+
 ## D-15a: Move the minimap to the top-right corner
 
 Acceptance criteria:
@@ -798,6 +806,10 @@ Acceptance criteria:
 - A test checks the right edge of the window at `screenWidth - 10`.
 
 Files: `js/minimap.js`, `tests/minimap.test.js`, `README.md`.
+
+Decisions:
+- `minimapX` is computed from `screenWidth` (1060 today), so it follows any canvas size change. The 10 px margin of H-06 is kept as `minimapMargin`.
+- The enemy marker test now measures from `minimapX` instead of a fixed 13.5 px.
 
 ## D-15b: Life and ammo bars in the top-left corner
 
@@ -808,6 +820,15 @@ Acceptance criteria:
 - Tests check the bar and label positions against hand computed values.
 
 Files: `js/hud.js`, `js/main.js`, `tests/hud.test.js`, `README.md`.
+
+Decisions:
+- Each label sits to the left of its bar, on the same row: a 56 px label column after the 16 px margin, so the bars start at x 72. Rows are 24 px apart (16 px bar plus an 8 px gap), LIFE at y 16 and AMMO at y 40. Row 2 is left for KILLS (D-19a).
+- Text style: system monospace, 14 px, bold, light gray `0xe6edf3` with a 3 px black stroke, so it still reads when a wall reaches the top of the view.
+- Checked in `lib/pixi.min.js` before use: v8 builds a Text from `new PIXI.Text({ text, style })`, and `stroke` is an object with `color` and `width`.
+- The labels never change, so `main.js` adds them to the stage and keeps no reference.
+- The bars keep their 98 by 16 px size. Both bottom corners are now free; only the shotgun sits at the bottom.
+- `healthBarMargin` and `ammoBarMargin` were replaced by `hudMargin`.
+- Checked with headless Chrome on `file://`: LIFE and AMMO line up with their bars in the top-left corner and the minimap sits in the top-right corner.
 
 ## D-16a: Scale the game to the window keeping 16:9
 
