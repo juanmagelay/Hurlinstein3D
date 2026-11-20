@@ -38,10 +38,10 @@ test("enemies are counted across every loaded chunk", () => {
   assert.equal(world("countLoadedEnemies()"), 3);
 });
 
-test("D-16c1e: enemies created read against the game total", () => {
-  const formatAdminEnemiesCreated = getGlobal("formatAdminEnemiesCreated");
-  assert.equal(formatAdminEnemiesCreated(7, 20), "7 / 20");
-  assert.equal(formatAdminEnemiesCreated(12345, 100000), "12,345 / 100,000");
+test("D-24: enemies alive read against the game total", () => {
+  const formatAdminEnemiesAlive = getGlobal("formatAdminEnemiesAlive");
+  assert.equal(formatAdminEnemiesAlive(87, 100), "87 / 100");
+  assert.equal(formatAdminEnemiesAlive(12345, 100000), "12,345 / 100,000");
 });
 
 test("D-23: the active enemies are the ones near the player, or all with the toggle off", () => {
@@ -57,7 +57,7 @@ test("D-23: the active enemies are the ones near the player, or all with the tog
 test("every live value is text, ready for textContent", () => {
   const info = getGlobal("getAdminInfo")(getGlobal("player"), 59.6);
   assert.equal(info.fps, "60");
-  for (const name of ["fps", "position", "chunk", "health", "ammo", "created", "enemies", "active", "chunks"]) {
+  for (const name of ["fps", "position", "chunk", "health", "ammo", "enemies", "active", "chunks"]) {
     assert.equal(typeof info[name], "string", name);
   }
 });
@@ -107,10 +107,21 @@ test("turn speed and god mode only change the setting, the game reads them every
   assert.deepEqual(player, { health: 4, maxHealth: 10, ammo: 2, reloadsLeft: 1 });
 });
 
+test("D-24: a new total from the panel places that many enemies around the player", () => {
+  const world = loadScripts();
+  const player = { posX: 8.5, posY: 8.5, health: 10, maxHealth: 10, ammo: 6, reloadsLeft: Infinity };
+
+  world("changeSetting")(player, createMemoryStorage(), "enemiesPerGame", "100");
+  assert.equal(world("countLoadedEnemies()"), 100);
+  world("changeSetting")(player, createMemoryStorage(), "enemiesPerGame", "30");
+  assert.equal(world("countLoadedEnemies()"), 30);
+});
+
 test("Reset puts the defaults back on the settings and the player", () => {
   const world = loadScripts();
   const storage = createMemoryStorage();
-  const player = { health: 1, maxHealth: 30, ammo: 15, reloadsLeft: 2 };
+  // D-24: Reset places the default 20 enemies around this position
+  const player = { posX: 8.5, posY: 8.5, health: 1, maxHealth: 30, ammo: 15, reloadsLeft: 2 };
   world("gameSettings.magazineSize = 20; gameSettings.turnSpeed = 300; gameSettings.unlimitedReloads = false");
 
   world("resetSettings")(player, storage);
@@ -119,5 +130,6 @@ test("Reset puts the defaults back on the settings and the player", () => {
   assert.equal(player.health, 10);
   assert.equal(player.ammo, 6);
   assert.equal(player.reloadsLeft, Infinity);
+  assert.equal(world("countLoadedEnemies()"), 20);
   assert.equal(JSON.parse(storage.items.get(world("settingsStorageKey"))).turnSpeed, 120);
 });

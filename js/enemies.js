@@ -46,6 +46,74 @@ function getActiveEnemyLists(player) {
   return lists;
 }
 
+// D-25: the chunk the player stood in the last time far enemies were gathered
+let gatheredChunkX = null;
+let gatheredChunkY = null;
+
+// D-25 / TDD 2.3.2: when the player enters another chunk, the enemies left
+// outside the active area reappear in free air cells of the 8 chunks around
+// the player, so the ones still alive are never lost in the infinite world.
+// Outside the active area they are not drawn, so the player never sees one
+// vanish. With no free cell left, an enemy waits where it is.
+function gatherFarEnemies(player) {
+  const playerChunkX = Math.floor(player.posX / chunkSize);
+  const playerChunkY = Math.floor(player.posY / chunkSize);
+  if (playerChunkX === gatheredChunkX && playerChunkY === gatheredChunkY) {
+    return;
+  }
+  gatheredChunkX = playerChunkX;
+  gatheredChunkY = playerChunkY;
+
+  // Collected first and moved after, so no list changes while it is being walked
+  const farEnemies = [];
+  for (const enemies of enemiesByChunk.values()) {
+    for (const enemy of enemies) {
+      const distance = Math.max(
+        Math.abs(enemy.chunkX - playerChunkX),
+        Math.abs(enemy.chunkY - playerChunkY),
+      );
+      if (distance > activeChunkRadius) {
+        farEnemies.push(enemy);
+      }
+    }
+  }
+  if (farEnemies.length === 0) {
+    return;
+  }
+
+  const freeCells = getFreeAirCellsAround(playerChunkX, playerChunkY);
+  const moves = Math.min(farEnemies.length, freeCells.length);
+  for (let index = 0; index < moves; index += 1) {
+    const cell = pickRandomCell(freeCells, index);
+    moveEnemyToCell(farEnemies[index], cell.x, cell.y);
+  }
+}
+
+// D-25: air cells of the 8 chunks around this chunk with no enemy in them,
+// so two enemies never share a cell (TDD 2.3.2)
+function getFreeAirCellsAround(chunkX, chunkY) {
+  const airCells = [];
+  addRingAirCells(airCells, chunkX, chunkY, enemyPlacementRadius);
+  return airCells.filter((cell) => getEnemiesAtCell(cell.x, cell.y).length === 0);
+}
+
+// D-25: the enemy reappears idle at the center of the new cell, listed in its
+// new chunk and cell
+function moveEnemyToCell(enemy, cellX, cellY) {
+  removeEnemyFromCell(enemy);
+  removeEnemyFromChunk(enemy);
+  enemy.posX = cellX + 0.5;
+  enemy.posY = cellY + 0.5;
+  enemy.cellX = cellX;
+  enemy.cellY = cellY;
+  enemy.chunkX = Math.floor(cellX / chunkSize);
+  enemy.chunkY = Math.floor(cellY / chunkSize);
+  enemy.state = "idle";
+  enemy.stateTime = 0;
+  addEnemyToChunk(enemy);
+  registerEnemyAtCell(enemy);
+}
+
 function getContactDamage(player, deltaTime) {
   let damage = 0;
   for (const enemies of getActiveEnemyLists(player)) {
@@ -240,11 +308,7 @@ function moveEnemyToItsChunk(enemy) {
   removeEnemyFromChunk(enemy);
   enemy.chunkX = Math.floor(enemy.cellX / chunkSize);
   enemy.chunkY = Math.floor(enemy.cellY / chunkSize);
-  const chunkKey = getChunkKey(enemy.chunkX, enemy.chunkY);
-  if (!enemiesByChunk.has(chunkKey)) {
-    enemiesByChunk.set(chunkKey, []);
-  }
-  enemiesByChunk.get(chunkKey).push(enemy);
+  addEnemyToChunk(enemy);
 }
 
 function removeEnemyFromChunk(enemy) {

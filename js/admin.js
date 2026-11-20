@@ -59,9 +59,9 @@ function countActiveEnemies(player) {
   return total;
 }
 
-// D-16c1e: enemies created so far against the game total, "7 / 20"
-function formatAdminEnemiesCreated(created, total) {
-  return `${created.toLocaleString("en-US")} / ${total.toLocaleString("en-US")}`;
+// D-24: enemies alive against the game total, "87 / 100"
+function formatAdminEnemiesAlive(alive, total) {
+  return `${alive.toLocaleString("en-US")} / ${total.toLocaleString("en-US")}`;
 }
 
 // Every live value as text, ready for textContent
@@ -72,8 +72,7 @@ function getAdminInfo(player, framesPerSecond) {
     chunk: formatAdminChunk(player.posX, player.posY),
     health: formatAdminHealth(player.health, player.maxHealth),
     ammo: formatAdminAmmo(player.ammo, gameSettings.magazineSize, player.reloading, player.reloadsLeft),
-    created: formatAdminEnemiesCreated(enemiesCreated, gameSettings.enemiesPerGame),
-    enemies: String(countLoadedEnemies()),
+    enemies: formatAdminEnemiesAlive(countLoadedEnemies(), gameSettings.enemiesPerGame),
     active: String(countActiveEnemies(player)),
     chunks: String(generatedChunks.size),
   };
@@ -88,6 +87,9 @@ function applySetting(player, name) {
     applyMagazineSize(player, gameSettings.magazineSize);
   } else if (name === "unlimitedReloads" || name === "reloadLimit") {
     applyReloadAllowance(player, gameSettings);
+  } else if (name === "enemiesPerGame") {
+    // D-24: a new total replaces the live enemies with new ones around the player
+    placeGameEnemies(player, gameSettings.enemiesPerGame);
   }
 }
 

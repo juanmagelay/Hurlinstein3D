@@ -84,6 +84,8 @@ Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added i
 | D-16c1d | Reload limit with the x3 counter next to the ammo bar | P1 | 4 | D-16c1c | done |
 | D-16c1e | Enemies per game: chunks stop rolling enemies once the total is reached | P1 | 4 | D-16c1b | done |
 | D-23 | Update and draw only the enemies near the player, with an admin toggle to compare | P1 | 4 | D-16c1e | done |
+| D-24 | Place every enemy of the game in the 8 chunks around the player; a new total replaces them | P1 | 4 | D-23 | done |
+| D-25 | Enemies left outside the active area reappear near the player's new chunk | P1 | 4 | D-24 | done |
 | D-16e1 | Strip width setting: 1, 2, 4 or 8 px per ray | P1 | 4 | D-16c1b | done |
 | D-16e2 | Fisheye toggle: walls drawn with the Euclidean distance | P1 | 4 | D-16c1b | done |
 | D-16e3 | Rays on the minimap | P1 | 4 | D-16c1b | done |
@@ -1026,6 +1028,7 @@ Decisions:
 - The total counts created enemies, so a killed enemy does not give its place back: the boss comes after the last of them dies (TDD 2.1).
 - The panel shows "Enemies created 7 / 20" and the range "1 to 100,000" with a thousands separator; the number fields and range labels are 76 px wide so 100000 fits.
 - Done in the same batch as D-23, D-16e1 to D-16e3 and D-16f (2026-11-20).
+- Replaced by D-24: the per-chunk roll and the created count are gone.
 
 ## D-16e1: Strip width setting
 
@@ -1164,6 +1167,47 @@ Decisions:
 - TDD 2.3.2 and 2.3.5 now describe the active area, its toggle and the new live values.
 
 Other ideas to measure with the FPS before doing them: group enemy strips into one `fill()` per frame (already the case), and skip the minimap enemy loop outside its 21 by 21 window (already the case, it reads cells).
+
+## D-24: Place the enemies of the game around the player
+
+Request (2026-11-20, Juanma): the professor wants to see the enemies change when the total changes. With D-16c1e each chunk rolled 0 to 3 enemies (0.75 on average) and the total only capped the rolls, so 20 or 100 looked the same near the player.
+
+Acceptance criteria:
+- At the start of the game the whole total (20 by default) is placed at once, in distinct random air cells of the 8 chunks around the player's chunk. The player's chunk stays empty.
+- A new total from the admin panel (or Reset) removes the live enemies and places the new total around the player's current chunk.
+- When the total does not fit in the 8 chunks (about 600 air cells), the area grows one ring of chunks at a time until it fits.
+- Chunks generated while exploring have no enemies.
+- The panel shows "Enemies alive 87 / 100" and "Enemies active"; "Enemies created" and "Enemies loaded" are gone.
+- Tests: 100 enemies in distinct air cells of the 8 neighbors and none in the player's chunk, a new total replaces the old enemies in both registries, more than the 8 neighbors can hold reaches ring 2, a chunk generated later has no enemies, the panel change and Reset.
+
+Files: `js/world.js`, `js/enemies.js`, `js/config.js`, `js/admin.js`, `js/main.js`, `index.html`, `tests/world.test.js`, `tests/admin.test.js`, `docs/TDD.md` (2.3.2, 2.3.5), `README.md`.
+
+Decisions (2026-11-20, Juanma):
+- A new total replaces every enemy instead of adding the difference, so lowering it also shows.
+- The 8 neighbor chunks instead of the 5 by 5 active area: 100 enemies give about 12 per chunk, most of them near the minimap window.
+- The far world stays empty; the enemies only leave their area when they chase the player, since patrol walks between two neighbor cells. Free roaming would be a new story.
+- The pick is a partial Fisher-Yates shuffle, so 100,000 picks cost the same as 100 and no cell is picked twice (the old `splice` would be quadratic).
+- `addEnemyToChunk` is shared by the placement and the chunk change of D-23. `enemyCountThresholds`, `getEnemyCountForRoll` and `enemiesCreated` are removed.
+- Checked with headless Chrome on `file://`: 20 enemies at the start spread over the 8 neighbors, 100 from the panel give 8 to 19 per chunk and show on the minimap, and 100,000 take 41 ms to place over 1521 chunks. With 100,000, enemy work per frame is 30 ms with every enemy and 0.56 ms with the active area (1642 active), so the D-23 toggle now shows in the FPS.
+
+## D-25: Bring the far enemies back near the player
+
+Request (2026-11-20, Juanma): after clearing one neighbor chunk and walking on, the other enemies stayed behind and were lost in the infinite map.
+
+Acceptance criteria:
+- When the player enters another chunk, every live enemy more than two chunks away (outside the active area of D-23) moves to a free air cell of the 8 chunks around the player's new chunk, idle, in both registries.
+- Enemies inside the active area stay where they are. Nothing moves while the player stays in the same chunk.
+- Two enemies never share a cell; with no free cell left, a far enemy waits where it is.
+- Tests: a far enemy reappears idle in a neighbor and leaves its old cell and chunk, an enemy two chunks away stays, nothing moves inside the same chunk, gathered enemies get distinct cells, a full ring leaves the far enemy in place.
+
+Files: `js/enemies.js`, `js/world.js`, `js/main.js`, `tests/enemies.test.js`, `docs/TDD.md` (2.3.2), `README.md`.
+
+Decisions:
+- Only enemies outside the active area move: they are not drawn, so the player never sees one vanish. The ones at two chunks follow as soon as the player walks one chunk further. A gathered enemy can appear in view in a neighbor chunk, which reads as a respawn.
+- `gatherFarEnemies` runs in the ticker before `updateEnemies`, outside it, so the D-23 tests of frozen enemies still hold. It walks every live enemy only when the player changes chunk; the total is fixed by D-24, so that cost does not grow with exploration.
+- It works with the active area toggle on or off: the toggle only decides which enemies are updated and drawn.
+- `pickRandomCell` (one step of the partial Fisher-Yates shuffle) is shared with the placement of D-24.
+- Checked with headless Chrome on `file://`: with 20 enemies, one killed and the player moved 4 chunks east, the 19 alive were all within two chunks of the player (12 in the neighbors), with no console errors.
 
 ## D-16c2: Admin settings for the boss flow
 

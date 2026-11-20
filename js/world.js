@@ -2,13 +2,14 @@
 const generatedChunks = new Map();
 // D-10: one light per room center, in world coordinates, kept per chunk
 const lightsByChunk = new Map();
+// TDD 2.3.2: every enemy is listed in the chunk it stands in and in its cell
 const enemiesByChunk = new Map();
 const enemiesByCell = new Map();
 let spawnRoomCenter = null;
 let nextEnemyId = 1;
-// D-16c1e / TDD 2.3.2: regular enemies created so far in the game, against the
-// enemiesPerGame total of the admin settings
-let enemiesCreated = 0;
+// D-24 / TDD 2.3.2: the enemies of the game are placed in the chunks this
+// close to the player's chunk, the 8 neighbors. The player's chunk stays empty.
+const enemyPlacementRadius = 1;
 
 // TDD 6.8: map signed chunk coordinates to non-negative integers, then pair them.
 function getChunkKey(cx, cy) {
@@ -24,11 +25,6 @@ function getChunkCells(cx, cy) {
     const generatedChunk = generateChunk();
     generatedChunks.set(key, generatedChunk.cells);
     lightsByChunk.set(key, createChunkLights(generatedChunk, cx, cy));
-    const enemies = generateEnemiesForChunk(cx, cy, generatedChunk.cells);
-    enemiesByChunk.set(key, enemies);
-    for (const enemy of enemies) {
-      registerEnemyAtCell(enemy);
-    }
     if (cx === 0 && cy === 0) {
       spawnRoomCenter = generatedChunk.roomCenter;
     }
@@ -55,67 +51,104 @@ function getLightsAtCell(cellX, cellY) {
   return lightsByChunk.get(getChunkKey(cx, cy)) || [];
 }
 
-// D-16c1e: what is left of the game total. Read when each chunk is generated,
-// so a new total from the admin panel applies to the next chunks.
-function getEnemiesLeftToCreate() {
-  return Math.max(0, gameSettings.enemiesPerGame - enemiesCreated);
+// D-24 / TDD 2.3.2: all the enemies of the game are placed at once, at the
+// start and every time the admin panel changes the total. The live ones are
+// removed, then count new ones go to random air cells of the chunks around the
+// player's chunk. Chunks generated later, while exploring, have no enemies.
+function placeGameEnemies(player, count) {
+  removeAllEnemies();
+  const cells = getEnemyPlacementCells(player, count);
+  for (let index = 0; index < count; index += 1) {
+    const cell = pickRandomCell(cells, index);
+    addEnemyAtCell(cell.x, cell.y);
+  }
 }
 
-// D-04: zero enemies in the spawn chunk, weighted population in other chunks.
-function getEnemyCountForRoll(roll) {
-  if (roll < enemyCountThresholds[0]) {
-    return 0;
-  }
-  if (roll < enemyCountThresholds[1]) {
-    return 1;
-  }
-  if (roll < enemyCountThresholds[2]) {
-    return 2;
-  }
-  return 3;
+// Partial Fisher-Yates shuffle, one step: picks a random cell among the ones
+// from index on (the ones not picked yet) and swaps it to index. Called with
+// index 0, 1, 2... no cell is picked twice and every pick costs the same, even
+// with 100,000 enemies.
+function pickRandomCell(cells, index) {
+  const pick = index + Math.floor(Math.random() * (cells.length - index));
+  const cell = cells[pick];
+  cells[pick] = cells[index];
+  cells[index] = cell;
+  return cell;
 }
 
-// D-16c1e: the roll never goes over the enemies left in the game total, and
-// once the total is reached new chunks are empty
-function generateEnemiesForChunk(cx, cy, cells) {
-  if (cx === 0 && cy === 0) {
-    return [];
-  }
+function removeAllEnemies() {
+  enemiesByChunk.clear();
+  enemiesByCell.clear();
+}
 
-  const enemyCount = Math.min(getEnemyCountForRoll(Math.random()), getEnemiesLeftToCreate());
-  const openCells = [];
-  for (let index = 0; index < cells.length; index += 1) {
-    if (cells[index] === 0) {
-      openCells.push(index);
+// The air cells of the 8 chunks around the player's chunk. TDD 2.3.2 allows
+// one enemy per cell, so when they are not enough the area grows one ring of
+// chunks at a time until every enemy fits (100,000 reach about 18 rings).
+function getEnemyPlacementCells(player, count) {
+  const playerChunkX = Math.floor(player.posX / chunkSize);
+  const playerChunkY = Math.floor(player.posY / chunkSize);
+  const cells = [];
+  let radius = enemyPlacementRadius;
+  addRingAirCells(cells, playerChunkX, playerChunkY, radius);
+  while (cells.length < count) {
+    radius += 1;
+    addRingAirCells(cells, playerChunkX, playerChunkY, radius);
+  }
+  return cells;
+}
+
+// Adds the air cells of every chunk at this ring distance from the center
+// chunk, in world cells. Ring 1 is the 8 neighbors, ring 2 the 16 around them.
+function addRingAirCells(cells, centerChunkX, centerChunkY, radius) {
+  for (let cy = centerChunkY - radius; cy <= centerChunkY + radius; cy += 1) {
+    for (let cx = centerChunkX - radius; cx <= centerChunkX + radius; cx += 1) {
+      const onRing = Math.max(Math.abs(cx - centerChunkX), Math.abs(cy - centerChunkY)) === radius;
+      if (onRing) {
+        addChunkAirCells(cells, cx, cy);
+      }
     }
   }
+}
 
-  const enemies = [];
-  for (let count = 0; count < enemyCount && openCells.length > 0; count += 1) {
-    const openCellIndex = Math.floor(Math.random() * openCells.length);
-    const cellIndex = openCells.splice(openCellIndex, 1)[0];
-    const localX = cellIndex % chunkSize;
-    const localY = Math.floor(cellIndex / chunkSize);
-    const cellX = cx * chunkSize + localX;
-    const cellY = cy * chunkSize + localY;
-    enemies.push({
-      id: nextEnemyId,
-      posX: cellX + 0.5,
-      posY: cellY + 0.5,
-      cellX,
-      cellY,
-      chunkX: cx,
-      chunkY: cy,
-      width: enemyWidth,
-      height: enemyHeight,
-      color: enemyColor,
-      state: "idle",
-      stateTime: 0,
-    });
-    nextEnemyId += 1;
+function addChunkAirCells(cells, cx, cy) {
+  const chunkCells = getChunkCells(cx, cy);
+  for (let index = 0; index < chunkCells.length; index += 1) {
+    if (chunkCells[index] === 0) {
+      const localX = index % chunkSize;
+      const localY = Math.floor(index / chunkSize);
+      cells.push({ x: cx * chunkSize + localX, y: cy * chunkSize + localY });
+    }
   }
-  enemiesCreated += enemies.length;
-  return enemies;
+}
+
+// A new idle enemy at the center of the cell, listed in its chunk and its cell
+function addEnemyAtCell(cellX, cellY) {
+  const enemy = {
+    id: nextEnemyId,
+    posX: cellX + 0.5,
+    posY: cellY + 0.5,
+    cellX,
+    cellY,
+    chunkX: Math.floor(cellX / chunkSize),
+    chunkY: Math.floor(cellY / chunkSize),
+    width: enemyWidth,
+    height: enemyHeight,
+    color: enemyColor,
+    state: "idle",
+    stateTime: 0,
+  };
+  nextEnemyId += 1;
+  addEnemyToChunk(enemy);
+  registerEnemyAtCell(enemy);
+  return enemy;
+}
+
+function addEnemyToChunk(enemy) {
+  const chunkKey = getChunkKey(enemy.chunkX, enemy.chunkY);
+  if (!enemiesByChunk.has(chunkKey)) {
+    enemiesByChunk.set(chunkKey, []);
+  }
+  enemiesByChunk.get(chunkKey).push(enemy);
 }
 
 function registerEnemyAtCell(enemy) {

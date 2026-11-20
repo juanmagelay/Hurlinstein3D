@@ -26,6 +26,9 @@ async function startGame() {
   screenWidth = getScreenWidthForWindow(window.innerWidth, window.innerHeight);
   setCameraPlaneLength(player, getCameraPlaneLength());
 
+  // D-24 / TDD 2.3.2: the enemies of the game are placed once, around the spawn
+  placeGameEnemies(player, gameSettings.enemiesPerGame);
+
   const app = new PIXI.Application();
   await app.init({
     width: screenWidth,
@@ -137,6 +140,8 @@ async function startGame() {
       return;
     }
     updatePlayer(player, pressedKeys, ticker.deltaTime);
+    // D-25: enemies left far behind come back near the player's new chunk
+    gatherFarEnemies(player);
     updateEnemies(player, ticker.deltaTime);
     if (reloadInput.consumeReload() && startReload(player)) {
       startReloadAnimation(shotgun);
