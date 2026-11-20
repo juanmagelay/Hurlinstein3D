@@ -1,12 +1,40 @@
+// D-16a: the game frame takes the CSS size that fills the window; the canvas
+// inside it stretches to 100% of the frame
+function fitGameFrame(gameFrame) {
+  const size = getGameFrameSize(window.innerWidth, window.innerHeight, screenWidth);
+  gameFrame.style.width = `${size.width}px`;
+  gameFrame.style.height = `${size.height}px`;
+}
+
+// D-16a / TDD 6.4: a new canvas width creates nothing. The renderer and the
+// camera plane take the new width, the drawings made once are drawn again and
+// the shotgun moves back under the crosshair.
+function applyScreenWidth(app, scene, width) {
+  screenWidth = width;
+  app.renderer.resize(screenWidth, screenHeight);
+  setCameraPlaneLength(player, getCameraPlaneLength());
+  drawCeilingAndFloor(scene.ceilingAndFloor);
+  drawHud(scene.hud);
+  drawDefeatOverlay(scene.defeatOverlay);
+  scene.shotgun.sprite.x = getAimedShotgunX();
+}
+
 // TDD 6.4: app.init is async, so startup lives in an async function
 async function startGame() {
+  // D-16a: the canvas starts with the shape of the window, and H-10c: the
+  // camera plane with the matching length
+  screenWidth = getScreenWidthForWindow(window.innerWidth, window.innerHeight);
+  setCameraPlaneLength(player, getCameraPlaneLength());
+
   const app = new PIXI.Application();
   await app.init({
     width: screenWidth,
     height: screenHeight,
     background: backgroundColor,
   });
-  document.body.appendChild(app.canvas);
+  const gameFrame = document.getElementById("game-frame");
+  gameFrame.appendChild(app.canvas);
+  fitGameFrame(gameFrame);
 
   // TDD 6.4: Graphics objects are created once, outside the ticker.
   // Ceiling and floor never change, so they are drawn here, once.
@@ -72,8 +100,27 @@ async function startGame() {
   const fireInput = createFireInput(window);
   const reloadInput = createReloadInput(window);
 
+  // D-16b: the admin panel is HTML over the game, wired once
+  const adminPanel = createAdminPanel(document, player);
+
+  // D-16a: resizing the window, or entering full screen, refits the game.
+  // Registered once; a drag fires many events, so the canvas only changes when
+  // the rounded width does. Called once now in case the window changed during init.
+  const scene = { ceilingAndFloor, hud, defeatOverlay, shotgun };
+  function onWindowResize() {
+    const width = getScreenWidthForWindow(window.innerWidth, window.innerHeight);
+    if (width !== screenWidth) {
+      applyScreenWidth(app, scene, width);
+    }
+    fitGameFrame(gameFrame);
+  }
+  window.addEventListener("resize", onWindowResize);
+  onWindowResize();
+
   // TDD 6.4: inside the ticker goes only what changes every frame
   app.ticker.add((ticker) => {
+    // D-16b: counts frames for the FPS and refreshes the panel four times per second
+    adminPanel.update(ticker.deltaMS);
     setBarFill(healthBar, getHealthBarWidth(player.health / player.maxHealth));
     setBarFill(ammoBar, getAmmoBarWidth(player.ammo, magazineSize));
     // D-06b: at zero health the game freezes on the last frame

@@ -195,7 +195,8 @@ test("the wall depth buffer stores the DDA perpendicular distance per strip", ()
   const camera = { posX: 7.5, posY: 1.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66 };
   drawWalls(createRecordingGraphics(), camera);
 
-  assert.equal(wallDepthBuffer.length, screenWidth / stripWidth);
+  // D-16a: sized for the widest canvas (21:9, 1680 px), so a resize never reallocates it
+  assert.equal(wallDepthBuffer.length, 1680 / stripWidth);
   assert.equal(wallDepthBuffer[screenWidth / 2 / stripWidth], 6.5);
   assert.equal(getWallDepthAtColumn(screenWidth / 2), 6.5);
   // Columns inside the same strip share one depth

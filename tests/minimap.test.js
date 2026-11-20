@@ -11,7 +11,7 @@ getGlobal(`getEnemiesAtCell = function (x, y) {
 }`);
 const drawMinimap = getGlobal("drawMinimap");
 const enemyColor = getGlobal("enemyColor");
-const minimapX = getGlobal("minimapX");
+const minimapX = getGlobal("getMinimapX()");
 const screenWidth = getGlobal("screenWidth");
 
 function createRecordingGraphics() {
@@ -69,4 +69,18 @@ test("the minimap window sits in the top-right corner, 10 px from the edges", ()
   assert.equal(background.width, 210);
   assert.equal(background.height, 210);
   assert.equal(background.x + background.width, screenWidth - 10);
+});
+
+test("D-16a: after a resize the minimap still ends 10 px from the right edge", () => {
+  const graphics = createRecordingGraphics();
+  const player = { posX: 10.5, posY: 10.5, dirX: 1, dirY: 0 };
+
+  getGlobal("screenWidth = 1680");
+  try {
+    drawMinimap(graphics, player);
+    const background = graphics.rects[0];
+    assert.equal(background.x, 1680 - 10 - 210);
+  } finally {
+    getGlobal("screenWidth = 1280");
+  }
 });

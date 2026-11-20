@@ -3,14 +3,20 @@ const minimapCellsPerSide = 21;
 const minimapCellSize = 10;
 // D-15a / TDD 2.3.3: the window sits in the top-right corner
 const minimapMargin = 10;
-const minimapX = screenWidth - minimapMargin - minimapCellsPerSide * minimapCellSize;
 const minimapY = minimapMargin;
+
+// D-16a: the left edge follows the canvas width, so the window stays in the
+// top-right corner after a resize. Read once per draw.
+function getMinimapX() {
+  return screenWidth - minimapMargin - minimapCellsPerSide * minimapCellSize;
+}
 const minimapBackgroundColor = 0x0d1117;
 const minimapWallColor = 0x2c4a7c;
 const minimapPlayerColor = 0x4de1bd;
 const minimapProjectileRadius = 2;
 
 function getEnemyMinimapMarker(enemy, firstMapX, firstMapY) {
+  const minimapX = getMinimapX();
   const markerSize = minimapCellSize * enemy.width;
   const centerX = minimapX + (enemy.posX - firstMapX) * minimapCellSize;
   const centerY = minimapY + (enemy.posY - firstMapY) * minimapCellSize;
@@ -30,6 +36,7 @@ function isInsideMinimapWindow(posX, posY, firstMapX, firstMapY) {
 }
 
 function drawMinimap(graphics, player) {
+  const minimapX = getMinimapX();
   graphics.clear();
   graphics.rect(
     minimapX,

@@ -1,7 +1,10 @@
 // TDD 6.3: global constants, read by every other script
 
-// Canvas size in pixels (TDD 6.5)
-const screenWidth = 1280;
+// TDD 6.5: the canvas height is fixed and its width follows the window shape,
+// so the game fills any window without distortion. 1280 (16:9) is the starting
+// value and the one the tests use; main.js sets the real width at load and on
+// every resize (D-16a).
+let screenWidth = 1280;
 const screenHeight = 720;
 
 const backgroundColor = 0x111e30;
@@ -14,9 +17,43 @@ const maxRayDistance = 24;
 const moveSpeed = 200 / 64 / 60;
 const rotationSpeed = 3 / 60;
 
-// TDD 6.5: width of each wall strip in pixels. One ray per strip, so 2 px on an
-// 800 px canvas casts 400 rays. The main performance lever.
+// TDD 6.5: width of each wall strip in pixels. One ray per strip, so 2 px on a
+// 1280 px canvas casts 640 rays. The main performance lever.
 const stripWidth = 2;
+
+// D-16a / TDD 6.5: the canvas width follows the window between 4:3 and 21:9.
+// Outside that range the game keeps the nearest limit and the page color shows
+// around it, so a narrow or very wide window never squeezes the HUD.
+const minScreenAspect = 4 / 3;
+const maxScreenAspect = 21 / 9;
+const maxScreenWidth = getScreenWidthForAspect(maxScreenAspect);
+
+// Rounded to a whole number of strips, so every strip is the same width
+function getScreenWidthForAspect(aspect) {
+  return Math.round(screenHeight * aspect / stripWidth) * stripWidth;
+}
+
+function getScreenWidthForWindow(windowWidth, windowHeight) {
+  const aspect = windowWidth / windowHeight;
+  const clampedAspect = Math.min(Math.max(aspect, minScreenAspect), maxScreenAspect);
+  return getScreenWidthForAspect(clampedAspect);
+}
+
+// D-16a: CSS size of the game frame, the largest box with the canvas shape that
+// fits the window. A gap under 2 px comes from rounding the width to whole
+// strips, so that side is stretched to the window edge instead of leaving a line.
+function getGameFrameSize(windowWidth, windowHeight, canvasWidth) {
+  const scale = Math.min(windowWidth / canvasWidth, windowHeight / screenHeight);
+  let width = canvasWidth * scale;
+  let height = screenHeight * scale;
+  if (windowWidth - width < 2) {
+    width = windowWidth;
+  }
+  if (windowHeight - height < 2) {
+    height = windowHeight;
+  }
+  return { width, height };
+}
 
 // TDD 1.3: flat colors, from the demo palette
 const ceilingColor = 0x1a1a2e;

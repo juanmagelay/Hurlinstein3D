@@ -1,5 +1,5 @@
 // TDD 3.2: the camera is six numbers. dir has length 1 and plane is perpendicular
-// to dir with length 0.66, which gives a field of view of about 66 degrees.
+// to dir. The field of view is implicit, 2 * atan(|plane|), and never stored.
 
 // TDD 5.2: spawn at the center of the generated room in chunk (0, 0).
 // y grows downward on the map, so facing east (+x) the right hand side is +y:
@@ -18,13 +18,29 @@ const player = {
   dirX: 1,
   dirY: 0,
   planeX: 0,
-  planeY: 0.66,
+  planeY: getCameraPlaneLength(),
   health: playerMaxHealth,
   maxHealth: playerMaxHealth,
   ammo: magazineSize,
   reloading: false,
   reloadTime: 0,
 };
+
+// H-10c / TDD 3.2: a wall is drawn screenHeight / perpWallDist pixels tall, so
+// one cell across must also cover screenHeight / perpWallDist pixels for a wall
+// face to look square. A cell spans screenWidth / (2 * |plane|) pixels across, so
+// |plane| = screenWidth / screenHeight / 2. On a 4:3 screen that is Lode's 0.66
+// (about 67 degrees); a wider screen sees more to the sides (83 degrees at 16:9)
+// with the same vertical view. One division, only when the canvas size changes.
+function getCameraPlaneLength() {
+  return screenWidth / screenHeight / 2;
+}
+
+// Keeps plane perpendicular to dir, turned right (x' = -y, y' = x), with a new length
+function setCameraPlaneLength(player, length) {
+  player.planeX = -player.dirY * length;
+  player.planeY = player.dirX * length;
+}
 
 // D-06b: health never goes below zero, and zero health means defeat.
 function damagePlayer(player, amount) {

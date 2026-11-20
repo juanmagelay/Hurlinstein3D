@@ -1,4 +1,5 @@
-// TDD 2.3.3 and 6.4: static center crosshair, drawn once outside the ticker
+// TDD 2.3.3 and 6.4: static center crosshair, drawn once outside the ticker and
+// again only when the canvas width changes (D-16a)
 const crosshairColor = 0x4de1bd;
 const crosshairArmLength = 8;
 const crosshairGap = 4;
@@ -160,11 +161,17 @@ async function createAmmoBar() {
 // D-06c: dark overlay with a red frame, hidden until the player is defeated.
 function createDefeatOverlay() {
   const overlay = new PIXI.Graphics();
+  drawDefeatOverlay(overlay);
+  overlay.alpha = 0.65;
+  overlay.visible = false;
+  return overlay;
+}
+
+// D-16a: drawn again, not created again, when the canvas width changes
+function drawDefeatOverlay(overlay) {
+  overlay.clear();
   overlay.rect(0, 0, screenWidth, screenHeight).fill(0x000000);
   overlay
     .rect(screenWidth / 2 - 220, screenHeight / 2 - 50, 440, 100)
     .stroke({ color: 0xff3b3b, width: 6 });
-  overlay.alpha = 0.65;
-  overlay.visible = false;
-  return overlay;
 }

@@ -3,8 +3,10 @@
 // D-04c1: perpendicular wall depth per screen strip, kept after each draw so
 // enemies (D-04c2) can be hidden behind walls. Missed strips use the max
 // distance, the same depth their background strip is drawn at.
-const wallStripCount = screenWidth / stripWidth;
-const wallDepthBuffer = new Array(wallStripCount).fill(maxRayDistance);
+// D-16a: sized once for the widest canvas; only the first
+// screenWidth / stripWidth entries are used at the current width.
+const maxWallStripCount = maxScreenWidth / stripWidth;
+const wallDepthBuffer = new Array(maxWallStripCount).fill(maxRayDistance);
 
 function getWallDepthAtColumn(columnX) {
   return wallDepthBuffer[Math.floor(columnX / stripWidth)];
@@ -131,10 +133,11 @@ function getWallStripColor(player, stripX, ray) {
   return getLitWallColor(ray.mapX, ray.mapY, ray.side, lightFactor);
 }
 
-// TDD 6.4 and 6.5: runs once, outside the ticker. Ceiling above the horizon,
-// floor below it.
+// TDD 6.4 and 6.5: runs once, outside the ticker, and again only when the
+// canvas width changes (D-16a). Ceiling above the horizon, floor below it.
 function drawCeilingAndFloor(graphics) {
   const horizonY = screenHeight / 2;
+  graphics.clear();
   graphics.rect(0, 0, screenWidth, horizonY).fill(ceilingColor);
   graphics.rect(0, horizonY, screenWidth, screenHeight - horizonY).fill(floorColor);
 }
@@ -196,11 +199,11 @@ function initWallTextures() {
 }
 
 // D-09 (Lode part 2): one pre-created sprite per strip, reused every frame
-// (TDD 6.4). Two objects instead of 640 makes the reuse explicit.
+// (TDD 6.4). D-16a: created for the widest canvas, so a resize never creates one.
 function createWallStripSprites() {
   const container = new PIXI.Container();
   const sprites = [];
-  for (let index = 0; index < wallStripCount; index++) {
+  for (let index = 0; index < maxWallStripCount; index++) {
     const sprite = new PIXI.Sprite();
     sprite.visible = false;
     container.addChild(sprite);
@@ -284,9 +287,14 @@ function drawWalls(graphics, player, wallStrips) {
 function drawTexturedWalls(graphics, player, wallStrips) {
   const missedStrips = [];
 
-  for (let index = 0; index < wallStripCount; index++) {
+  for (let index = 0; index < maxWallStripCount; index++) {
     const x = index * stripWidth;
     const sprite = wallStrips.sprites[index];
+    // D-16a: strips past the current canvas width stay hidden
+    if (x >= screenWidth) {
+      sprite.visible = false;
+      continue;
+    }
     const ray = castRayForColumn(player, x);
     if (!ray.hit) {
       wallDepthBuffer[index] = maxRayDistance;

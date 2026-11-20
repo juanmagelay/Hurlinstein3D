@@ -72,24 +72,29 @@ Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added i
 | D-14b | Specify the new scope in the TDD: victory with a boss, HUD layout, screens, score and ranking, admin panel | P0 | 4 | D-14a2 | done |
 | D-15a | Move the minimap to the top-right corner | P1 | 4 | D-14a | done |
 | D-15b | Life and ammo bars in the top-left corner with LIFE and AMMO labels | P1 | 4 | D-15a | done |
-| D-16a | Scale the game to the window keeping 16:9, inside a game frame | P1 | 4 | D-14b | pending |
-| D-16b | Collapsible admin panel with live info | P1 | 4 | D-16a | pending |
+| D-16a1 | Specify the full-window game, the camera plane by aspect and the top admin panel in the TDD | P1 | 4 | D-14b | done |
+| H-10c | Camera plane length follows the canvas aspect | Required | 3 | D-16a1 | done |
+| D-16a2 | Canvas width follows the window at load, inside `#game-frame` | P1 | 4 | H-10c | done |
+| D-16a3 | Live resize: strips, ceiling and floor, crosshair, minimap, shotgun and plane follow the window | P1 | 4 | D-16a2 | done |
+| D-16b1 | Admin panel shell: top hover strip, pinned full-width panel, close buttons, P key, Lucide icons | P1 | 4 | D-16a2 | done |
+| D-16b2 | Live info in the admin panel, four times per second | P1 | 4 | D-16b1 | done |
+| D-16c1 | Admin settings: enemies per chunk, player health and contact damage, magazine 2 to 20, turn speed, god mode, refill ammo | P1 | 4 | D-16b2 | pending |
 | D-17a | Reset a game: new world, enemies, projectiles and player | P1 | 4 | D-14b | pending |
 | D-17b | Game state machine: menu, playing, victory, defeat | P1 | 4 | D-17a | pending |
-| D-18a | Main menu: title, start game, controls, credits | P1 | 4 | D-16a, D-17b | pending |
+| D-18a | Main menu: title, start game, controls, credits | P1 | 4 | D-16a3, D-17b | pending |
 | D-18b | Controls and credits screens | P1 | 4 | D-18a | pending |
 | D-20a | Defeat screen with play again and main menu | P1 | 4 | D-18a | pending |
 | D-19a | Kill counter and KILLS label on the HUD | P2 | 4 | D-15b, D-17a | pending |
-| D-16c | Admin gameplay controls: god mode, refill ammo, kill target | P2 | 4 | D-16b, D-19a | pending |
 | D-19b | Enemy hit points, one for regular enemies | P2 | 4 | D-19a | pending |
 | D-19c | Boss appears after the kill target | P2 | 4 | D-19b | pending |
+| D-16c2 | Admin settings for the boss flow: kill target, enemy and boss hit points, spawn boss | P2 | 4 | D-16c1, D-19c | pending |
 | D-19d | Victory when the boss dies, victory screen | P2 | 4 | D-19c, D-20a | pending |
 | D-20b | Score and local ranking storage | P2 | 4 | D-19d | pending |
 | D-20c | Ranking on the victory and defeat screens | P2 | 4 | D-20b | pending |
 | D-21a | Pick a licensed enemy sprite and embed it as a data URI | P2 | 4 | D-14b | pending |
 | D-21b | Textured enemies with z-buffer occlusion | P2 | 4 | D-21a | pending |
 | D-21c | Boss as a tinted, larger enemy sprite | P2 | 4 | D-21b, D-19c | pending |
-| D-16d | Admin render toggles: textures, lighting, flat color | P2 | 4 | D-16b | pending |
+| D-16d | Admin render toggles: textures, lighting, flat color | P2 | 4 | D-16b2 | pending |
 | D-08d | Fix the cut reload frames, only if the team asks for it | P3 | 4 | D-08c | pending |
 | D-22 | Player initials in the ranking, optional | P3 | 4 | D-20c | pending |
 | D-12 | Strafing and mouse look, only if the team asks for it | P3 | 4 | H-09o | pending |
@@ -830,24 +835,121 @@ Decisions:
 - `healthBarMargin` and `ammoBarMargin` were replaced by `hudMargin`.
 - Checked with headless Chrome on `file://`: LIFE and AMMO line up with their bars in the top-left corner and the minimap sits in the top-right corner.
 
-## D-16a: Scale the game to the window keeping 16:9
+## D-16a1: Specify the full-window game in the TDD
 
 Acceptance criteria:
-- The canvas keeps its 1280 by 720 internal resolution and is scaled with CSS to the largest 16:9 box that fits the window, with the page color around it.
-- A `#game-frame` element holds the canvas, so later overlays (menus, end screens) sit on top of it and scale with it.
-- Resizing the window rescales the game with no distortion; the keyboard still works.
+- TDD 2.3.5: the game fills the window, and the admin panel is a full-width HTML panel for the team, opened from a strip at the top edge or with P, over the game without resizing or pausing it. It lists the live values and every editable setting agreed on 2026-11-20.
+- TDD 3.2: |plane| = width / height / 2, with the reason (square wall faces under the 3.4 projection) and the field of view it gives on 4:3 and 16:9.
+- TDD 6.4: the resize listener lives outside the ticker and creates nothing.
+- TDD 6.5: the canvas is 720 px tall and its width follows the window between 4:3 and 21:9, with the ray count range.
+- README: P key, full-window behavior, `js/admin.js`, credits for PixiJS and Lucide.
 
-Files: `index.html`, `js/main.js`.
+Files: `docs/TDD.md`, `docs/BACKLOG.md`, `README.md`.
 
-## D-16b: Collapsible admin panel with live info
+Decisions:
+- Juanma asked for the game to fill any screen instead of a 16:9 box with bands, and for a full-width admin panel opened from the top edge instead of a right sidebar that shrinks the game.
+- The canvas keeps a fixed 720 px height and only its width follows the window: the HUD, the textures and alturaFranja = alturaPantalla / distPerp stay the same on every screen, and rendering at the native height of a high density screen would double the rays.
+- Aspect clamped to 4:3 to 21:9 (960 to 1680 px), so a portrait window or a 32:9 monitor never squeezes the HUD or opens the view past about 98 degrees. Outside that range the page color shows around the game.
+- Strip width stays 2 px on every screen: 480 to 840 rays, 640 at 16:9. If a machine needs it, the strip width is the lever (TDD 6.5). The FPS in the admin panel is the measure.
+- Finite reloads (a limited number of magazines) were discussed and discarded for now. TDD 2.3.1 already says the reserve is infinite, so no document changes.
+
+## H-10c: Camera plane length follows the canvas aspect
 
 Acceptance criteria:
-- An HTML panel on the right side opens and closes with a button and a key. Closed, the game frame fills the window; open, the game scales into the space left.
-- It shows FPS, `posX` and `posY`, the current chunk, health, ammo and the number of enemies in the loaded chunks, refreshed about four times per second, not every frame.
+- `getCameraPlaneLength()` returns `screenWidth / screenHeight / 2`; `setCameraPlaneLength(player, length)` keeps plane perpendicular to dir and to its right.
+- The player starts with that length, and main.js applies it at load and on every canvas width change.
+- Tests: 0.888... on the 1280 by 720 test canvas, 2 / 3 on a 4:3 canvas, about 83.3 degrees at 16:9, and perpendicularity after a new length.
+
+Files: `js/player.js`, `tests/player.test.js`.
+
+Decisions:
+- Found while specifying D-16a: H-10a moved the canvas to 16:9 but kept Lode's 0.66, which is his value for a 4:3 screen (640 / 480 / 2). With the walls drawn screenHeight / perpWallDist tall, every wall face looked 35% wider than tall: (1280 / 720) / (2 * 0.66) = 1.35. With a window-dependent width the stretch would have changed from screen to screen.
+- Juanma asked whether the field of view could stay near 66 degrees. It can only with a different projection formula (alturaFranja would stop being alturaPantalla / distPerp) and a smaller vertical view on wide screens, which reads as zoomed in. Wide screen first person games keep the vertical view and widen the horizontal one (Hor+), and PC shooters default to 90 or more horizontal degrees at 16:9, so the team kept Hor+: 66 degrees on 4:3, 83 on 16:9.
+- It departs from the class presentation, which said plane 0.66 and 66 degrees. Defense line: the field of view is still implicit, 2 * atan(|plane|), and 0.66 is the 4:3 case of width / height / 2.
+- No per frame cost: one division when the canvas width changes. The enemies have no field of view of their own (their line of sight is a DDA ray), and their projection already used the same camera.
+- The algorithm tests keep their own cameras with plane 0.66; their expected values are hand computed for that camera, so they did not change.
+
+## D-16a2: Canvas width follows the window at load
+
+Acceptance criteria:
+- `screenWidth` becomes a `let` that starts at 1280 (the tests use it) and main.js sets it from the window before `app.init`.
+- `getScreenWidthForWindow(width, height)` clamps the aspect to 4:3 to 21:9 and rounds the width to whole strips; `maxScreenWidth` is 1680.
+- `#game-frame` holds the canvas; `getGameFrameSize` gives it the largest CSS box with the canvas shape, and a gap under 2 px from the rounding is stretched to the window edge.
+- Tests: 16:9 keeps 1280, 1512 by 860 gives 1266, 16:10 gives 1152, the clamp at both ends, a full window frame inside the range and a centered one outside it.
+
+Files: `index.html`, `js/config.js`, `js/main.js`, `tests/screen.test.js` (new).
+
+Decisions:
+- The scaling is the browser default (smooth). Hard pixels are one CSS line (`image-rendering: pixelated`) if the team prefers them after seeing both.
+- Checked with headless Chrome on `file://`: 1512 by 860 fills the window with a 1266 by 720 canvas, and a 600 by 900 portrait window shows a centered 4:3 game with bands above and below.
+
+## D-16a3: Live resize
+
+Acceptance criteria:
+- A window resize, or entering full screen, refits the game without reloading. When the rounded width changes, `app.renderer.resize` gets it, plane gets its new length, ceiling and floor, crosshair and defeat overlay are drawn again, and the shotgun moves back under the crosshair.
+- Nothing is created on resize (TDD 6.4): the wall depth buffer and the wall strip sprites are sized once for `maxScreenWidth`, and strips past the current width stay hidden.
+- The minimap reads its left edge from the current width (`getMinimapX()`), so it stays in the top-right corner.
+- Tests: the depth buffer has 840 entries, and the minimap still ends 10 px from the right edge on a 1680 px canvas.
+
+Files: `js/renderer.js`, `js/minimap.js`, `js/hud.js`, `js/main.js`, `tests/renderer.test.js`, `tests/minimap.test.js`.
+
+Decisions:
+- `minimapX` became `getMinimapX()`, read once per draw. `drawDefeatOverlay` split from `createDefeatOverlay` so it can be drawn again; D-20a replaces it anyway.
+- The resize listener is registered after the scene exists and runs once right away, in case the window changed during `app.init`.
+- Checked with headless Chrome: 1512 by 860 to 1920 by 820 to 1440 by 900 gives canvases of 1266, 1680 (clamped at 21:9) and 1152 px, plane 0.88, 1.17 and 0.80, with the minimap and shotgun in place and no console errors.
+
+## D-16b1: Admin panel shell
+
+Acceptance criteria:
+- Three states in `body[data-admin]`: hidden (start), peek and open.
+- A 48 px invisible band along the top edge shows a centered strip with Open admin panel and a chevron-down icon, sliding down in 200 ms. It slides back up 400 ms after the mouse leaves the band and the strip.
+- The button opens a full-width panel that stays until closed with the X at the top right, the Close admin panel button (chevron-up) at the bottom center, or P. P also opens it from any state.
+- The panel floats over the game and never resizes or pauses it.
+- Panel buttons drop the focus after a click, so Space keeps firing the shotgun.
+- Animations are off when the system asks for reduced motion.
+- Icons come from Lucide, inline as SVG `<symbol>` elements in `index.html`, with the license in `assets/icons/LICENSE` and the credit in the README.
+
+Files: `index.html`, `js/admin.js` (new), `js/main.js`, `README.md`, `assets/icons/LICENSE` (new).
+
+Decisions:
+- Lucide 1.77.0 (2410 icons, ISC, consistent 24 px grid with a 2 px stroke, Figma plugin) was taken from `npm pack lucide-static`, like PixiJS in H-01b. Inline symbols need no network and no extra file on `file://` (TDD 6.2), follow the text color and can be added one by one.
+- The panel has a fixed CSS size and lives outside `#game-frame`: it is a team tool, readable on any screen, and does not scale with the game.
+- P is ignored while typing in a panel field (`isTypingInField`), ready for the fields of D-16c1.
+- Known overlap: in macOS full screen the top edge also reveals the system menu bar. The 48 px band shows the strip before the edge is reached, and P is the fallback.
+
+## D-16b2: Live info in the admin panel
+
+Acceptance criteria:
+- FPS, position, chunk, health, ammo (with the reload state), enemies in the loaded chunks and loaded chunks.
+- The ticker only counts frames and time; the DOM is written every 250 ms and only while the panel is open, plus once when it opens.
 - Values are written with `textContent`, never `innerHTML`.
-- Game keys ignore key events that come from a panel form field, so typing in the panel never moves the player.
+- Tests on the pure helpers: position, chunk with negatives, health rounded up, ammo with reload, enemy count across chunks, every value as text, field detection.
 
-Files: `index.html`, `js/admin.js` (new), `js/main.js`, `tests/admin.test.js` (pure formatting helpers).
+Files: `index.html`, `js/admin.js`, `js/main.js`, `tests/admin.test.js` (new).
+
+Decisions:
+- FPS is frames over elapsed time in each 250 ms window, steadier than the instant `ticker.FPS`.
+- Loaded chunks was added next to loaded enemies: both are what the stress test of D-16c1 grows.
+- Health is rounded up so the panel only shows 0 at a real defeat.
+
+## D-16c1: Admin settings
+
+Acceptance criteria:
+- Number fields in the admin panel, each with its allowed range shown next to it:
+  - Enemies per chunk: the maximum a generated chunk can get, with a high cap to measure memory and performance. Applies to chunks generated after the change.
+  - Player health and contact damage per second.
+  - Magazine size, from 2 to 20 rounds ("2 to 20"). The ammo bar draws any size.
+  - Turn speed of A and D in degrees per second, 120 by default (today about 172, 3 rad/s).
+- God mode (no damage) and refill ammo.
+- Game keys ignore key events typed into a field (`isTypingInField`).
+- Out of range values are clamped and the field shows the value in use.
+- Tests on the pure parts: clamping, degrees to radians per ticker unit, the ammo bar for any magazine size.
+
+Files: `index.html`, `js/admin.js`, `js/config.js`, `js/player.js`, `js/world.js`, `js/hud.js`, tests. Split before implementing if it goes over four files per story.
+
+Open questions:
+- Do settings persist in `localStorage` with a button to restore the defaults, or reset on every page load?
+- Enemies per chunk: the cap for the stress test (proposed 50).
 
 ## D-17a: Reset a game
 
@@ -907,13 +1009,15 @@ Acceptance criteria:
 
 Files: `js/game-state.js`, `js/projectiles.js`, `js/hud.js`, `tests/projectiles.test.js`. `js/main.js` adds the label to the stage; split the story if it goes over four files.
 
-## D-16c: Admin gameplay controls
+## D-16c2: Admin settings for the boss flow
 
 Acceptance criteria:
-- God mode (no damage), refill ammo, and a kill target field that changes `bossKillTarget` for the current game and updates the HUD.
+- Kill target field: how many kills make the boss appear, for the current game; updates the HUD.
+- Hit points of the regular enemy and of the boss.
+- Spawn boss button for quick validation.
 - Controls are disabled outside `playing`.
 
-Files: `index.html`, `js/admin.js`, `js/player.js`, `js/main.js`.
+Files: `index.html`, `js/admin.js`, `js/enemies.js`, `js/main.js`.
 
 ## D-19b: Enemy hit points
 

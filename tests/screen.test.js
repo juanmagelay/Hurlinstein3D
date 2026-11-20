@@ -1,0 +1,40 @@
+// D-16a: canvas width from the window shape, and the CSS size of the game frame
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const { loadScripts } = require("./load-scripts.js");
+
+const getGlobal = loadScripts();
+const getScreenWidthForWindow = getGlobal("getScreenWidthForWindow");
+const getGameFrameSize = getGlobal("getGameFrameSize");
+
+test("a 16:9 window keeps the 1280 by 720 canvas", () => {
+  assert.equal(getScreenWidthForWindow(1920, 1080), 1280);
+});
+
+test("the width follows the window shape and stays a whole number of strips", () => {
+  // 1512 by 860: 720 * 1512 / 860 = 1265.86, rounded to the nearest even number
+  assert.equal(getScreenWidthForWindow(1512, 860), 1266);
+  // 16:10: 720 * 1.6 = 1152
+  assert.equal(getScreenWidthForWindow(1440, 900), 1152);
+});
+
+test("the shape is clamped between 4:3 and 21:9", () => {
+  // A portrait window gets the 4:3 canvas, a 32:9 monitor the 21:9 one
+  assert.equal(getScreenWidthForWindow(600, 900), 960);
+  assert.equal(getScreenWidthForWindow(5120, 1440), 1680);
+  assert.equal(getGlobal("maxScreenWidth"), 1680);
+});
+
+test("inside the range the frame covers the whole window", () => {
+  const width = getScreenWidthForWindow(1512, 860);
+  const frame = getGameFrameSize(1512, 860, width);
+  assert.equal(frame.width, 1512);
+  assert.equal(frame.height, 860);
+});
+
+test("outside the range the frame keeps the canvas shape, centered by CSS", () => {
+  // Portrait 600 by 900 with a 960 by 720 canvas: scale 0.625, 600 by 450
+  const frame = getGameFrameSize(600, 900, 960);
+  assert.equal(frame.width, 600);
+  assert.equal(frame.height, 450);
+});

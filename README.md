@@ -16,15 +16,18 @@ Open `index.html` directly in Chrome. No installation, network access or develop
 | D | Turn right |
 | Space | Fire the shotgun |
 | R | Reload the shotgun |
+| P | Open or close the admin panel |
 
 The player collides with walls and slides along them. Life and ammo are in the upper-left corner and the minimap in the upper-right corner.
+
+The game fills the browser window on any screen between 4:3 and 21:9, and adapts live when the window is resized or goes full screen. For the team, moving the mouse to the top edge shows an Open admin panel button; the panel shows live FPS, position, chunk, health, ammo, loaded enemies and loaded chunks.
 
 ## Project map
 
 | File | Responsibility | TDD |
 |---|---|---|
 | `lib/pixi.min.js` | Local PixiJS 8.21.0 browser bundle | 6.1, 6.2 |
-| `js/config.js` | 1280 by 720 canvas, movement and rendering constants, texture and lighting toggles | 6.3 |
+| `js/config.js` | 720 px tall canvas whose width follows the window, movement and rendering constants, texture and lighting toggles | 6.3, 6.5 |
 | `js/mapgen.js` | Generates a connected room (and often a second one) plus four corridors in each chunk | 4.2, 4.3 |
 | `js/world.js` | Cantor-keyed chunk storage, `getCell`, room lights, enemy population and the per-cell enemy registry | 2.3.2, 5.1, 5.2, 6.8 |
 | `js/player.js` | Camera state, keyboard input, movement, collisions, health and ammo | 3.2, 6.6 |
@@ -36,14 +39,16 @@ The player collides with walls and slides along them. Life and ammo are in the u
 | `js/hud.js` | Center crosshair, LIFE and AMMO labels with their bars, defeat overlay | 2.3.3, 6.4 |
 | `js/weapon.js` | Shotgun aimed at the crosshair, idle, firing and reload animation | 2.3.1, 2.3.3, 6.4 |
 | `js/weapon-sheet.js` | Embedded shotgun strip generated from `assets/gun-sprites/Sgun.png` | 6.1 |
-| `js/main.js` | PixiJS application, scene and ticker | 6.4 |
+| `js/admin.js` | Admin panel: top strip, pinned panel, P key and live info | 2.3.5 |
+| `js/main.js` | PixiJS application, scene, window resize and ticker | 6.4, 6.5 |
+| `assets/icons/LICENSE` | License of the Lucide icons embedded in `index.html` | 2.3.5 |
 | `tests/` | Node tests for world generation, DDA, movement, projection, enemies, projectiles, HUD and weapon | 8.7 |
 
 ## Verification
 
 ### TDD 7.3 success criteria
 
-- [x] Opening `index.html` directly in Chrome creates the 1280 by 720 (16:9) game canvas.
+- [x] Opening `index.html` directly in Chrome creates a 720 px tall game canvas that fills the window (1280 by 720 on a 16:9 screen).
 - [x] The player moves and turns through the procedural world, including across a chunk boundary into negative coordinates, without crossing walls.
 - [x] Generated chunks remain cached during the session, so revisiting a chunk returns the same map.
 - [x] The minimap and first-person view read the same `getCell` world.
@@ -58,6 +63,11 @@ The player collides with walls and slides along them. Life and ammo are in the u
 - [x] Projection uses perpendicular wall distance; numerical tests cover the expected distance and strip height.
 - [x] Wall strips are grouped by face color, and Pixi objects are created outside the ticker.
 - [x] The required scope stays focused on exploration, movement, collisions and the minimap.
+
+## Credits
+
+- [PixiJS](https://pixijs.com) 8.21.0, MIT license.
+- [Lucide](https://lucide.dev) icons 1.77.0, ISC license (chevron-down, chevron-up and x derive from Feather, MIT). See `assets/icons/LICENSE`.
 
 ## Course
 

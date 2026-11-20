@@ -31,18 +31,41 @@ test("dir has length 1", () => {
   assertClose(length(player.dirX, player.dirY), 1);
 });
 
-test("plane is perpendicular to dir and 0.66 long", () => {
+// H-10c: on the 1280 by 720 test canvas, |plane| = 1280 / 720 / 2 = 0.888...
+const planeLength = 1280 / 720 / 2;
+
+test("plane is perpendicular to dir and screenWidth / screenHeight / 2 long", () => {
   // Dot product 0: neither in front of nor behind dir
   const dot = player.dirX * player.planeX + player.dirY * player.planeY;
   assertClose(dot, 0);
-  assertClose(length(player.planeX, player.planeY), 0.66);
+  assertClose(length(player.planeX, player.planeY), planeLength);
 });
 
 test("plane points to the right of dir, so the view is not mirrored", () => {
   // dir rotated 90 degrees: x' = -y, y' = x. With y growing downward on the map,
   // that turn is to the right.
-  assertClose(player.planeX, -player.dirY * 0.66);
-  assertClose(player.planeY, player.dirX * 0.66);
+  assertClose(player.planeX, -player.dirY * planeLength);
+  assertClose(player.planeY, player.dirX * planeLength);
+});
+
+test("H-10c: a 4:3 canvas gives Lode's plane of about 0.66", () => {
+  const world = loadScripts();
+  world("screenWidth = 960");
+  assertClose(world("getCameraPlaneLength()"), 2 / 3);
+});
+
+test("H-10c: the implicit field of view is about 83 degrees at 16:9", () => {
+  const degrees = 2 * Math.atan(getGlobal("getCameraPlaneLength")()) * 180 / Math.PI;
+  assert.ok(Math.abs(degrees - 83.3) < 0.1, `${degrees} is not about 83.3`);
+});
+
+test("H-10c: a new plane length keeps plane perpendicular to dir and to its right", () => {
+  const camera = { dirX: 0.6, dirY: 0.8, planeX: 0, planeY: 0 };
+  getGlobal("setCameraPlaneLength")(camera, 1.1);
+  assertClose(camera.dirX * camera.planeX + camera.dirY * camera.planeY, 0);
+  assertClose(length(camera.planeX, camera.planeY), 1.1);
+  assertClose(camera.planeX, -0.8 * 1.1);
+  assertClose(camera.planeY, 0.6 * 1.1);
 });
 
 test("the player spawns on an air cell", () => {
