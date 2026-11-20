@@ -250,7 +250,7 @@ El techo y el piso son dos rectángulos en un Graphics que se dibuja una sola ve
 El canvas del proyecto mide **1280 por 720 píxeles**, una relación de aspecto 16:9. El ancho de franja es configurable y es la palanca principal de rendimiento: con franjas de 2 píxeles, un canvas de 1280 de ancho lanza 640 rayos en vez de 1280.
 
 ## 6.6 Movimiento y colisiones
-El movimiento prueba cada eje por separado: si la celda de destino en x está libre, el jugador avanza en x, y lo mismo en y. El efecto es que el jugador se desliza contra las paredes cuando camina en diagonal, en lugar de quedarse trabado.
+El jugador ocupa un cuadrado de 0,4 celdas de lado centrado en su posición. El movimiento prueba cada eje por separado: si el cuadrado, desplazado en x, no toca ninguna celda de pared, el jugador avanza en x, y lo mismo en y. El efecto es que el jugador se desliza contra las paredes cuando camina en diagonal, en lugar de quedarse trabado. El margen de 0,2 celdas alrededor de la cámara evita que quede pegada a una pared o que corte una esquina, y como el cuadrado mide menos de una celda, el jugador pasa por las puertas de una celda de ancho.
 
 ## 6.7 Minimapa
 Dibuja una ventana de 21 por 21 celdas centrada en el jugador, leyendo getCell, más un punto y una línea para la posición y la dirección. Las celdas se agrupan por color igual que las franjas de pared. Además de servirle al jugador, es la herramienta de depuración del motor: si la vista en primera persona y el minimapa no coinciden, el error está en el raycaster.

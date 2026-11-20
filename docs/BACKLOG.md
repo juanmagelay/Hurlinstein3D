@@ -68,7 +68,8 @@ Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added i
 | D-13c | Draw projectiles in 3D and fire them instead of the instant hit | Desirable | 4 | D-13b | done |
 | D-13d | Projectiles on the minimap and retire the instant center ray hit | Desirable | 4 | D-13c | done |
 | D-14a | Sync the docs with the code: enemy size in TDD 2.3.2, README controls and project map | P0 | 4 | D-13d | done |
-| D-14b | Specify the new scope in the TDD: victory with a boss, HUD layout, screens, score and ranking, admin panel | P0 | 4 | D-14a | pending |
+| D-14a2 | Describe the player's square footprint in TDD 6.6 | P0 | 4 | D-14a | done |
+| D-14b | Specify the new scope in the TDD: victory with a boss, HUD layout, screens, score and ranking, admin panel | P0 | 4 | D-14a2 | pending |
 | D-15a | Move the minimap to the top-right corner | P1 | 4 | D-14a | pending |
 | D-15b | Life and ammo bars in the top-left corner with LIFE and AMMO labels | P1 | 4 | D-15a | pending |
 | D-16a | Scale the game to the window keeping 16:9, inside a game frame | P1 | 4 | D-14b | pending |
@@ -763,7 +764,18 @@ Decisions:
 - TDD 2.3.2 now says the enemy is a flat color rectangle, 0.3 cells wide and 0.6 tall in the first person view, with a 0.3 cell square footprint on the map that slides by axis against walls like the player.
 - The D-04a0 and D-04a sections keep their original 0.5 cell square text, as a record of what was decided then; a52ec0c replaced it.
 - The README rows for `js/world.js` (enemy population and registry), `js/minimap.js` (enemies and projectiles) and `tests/` were outdated too, so they were updated in the same pass.
-- Found while checking a52ec0c: it also gave the player a 0.2 cell radius (a 0.4 cell square footprint, `canStandAt` in `js/player.js`). TDD 6.6 talks about "la celda de destino" and H-05a records a point collider. Left for Juanma to decide whether TDD 6.6 gets one sentence about it.
+- Found while checking a52ec0c: it also gave the player a 0.2 cell radius (a 0.4 cell square footprint, `canStandAt` in `js/player.js`). TDD 6.6 talks about "la celda de destino" and H-05a records a point collider. Settled in D-14a2.
+
+## D-14a2: Describe the player's square footprint in TDD 6.6
+
+Acceptance criteria:
+- TDD 6.6 says the player is a 0.4 cell square centered on its position, and that each axis moves only when the shifted square touches no wall cell.
+- It gives the reason for the 0.2 cell margin (the camera never sits against a wall or cuts a corner) and why it still fits through a one cell door.
+- No code changes.
+
+Decisions:
+- Juanma asked for a plainer wording than the first proposal. The footprint goes into the existing paragraph instead of a separate sentence.
+- The H-05a section keeps its point collider decision as a record; a52ec0c replaced it.
 
 ## D-14b: Specify the new scope in the TDD
 
