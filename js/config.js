@@ -13,9 +13,9 @@ const backgroundColor = 0x111e30;
 // Measured like perpWallDist, along dir.
 const maxRayDistance = 24;
 
-// TDD 6.6: demo speeds converted to cells and radians per 60 Hz ticker unit
+// TDD 6.6: demo speed converted to cells per 60 Hz ticker unit. The turn speed
+// is an admin setting (js/settings.js).
 const moveSpeed = 200 / 64 / 60;
-const rotationSpeed = 3 / 60;
 
 // TDD 6.5: width of each wall strip in pixels. One ray per strip, so 2 px on a
 // 1280 px canvas casts 640 rays. The main performance lever.

@@ -30,9 +30,16 @@ function formatAdminHealth(health, maxHealth) {
   return `${Math.ceil(health)} / ${maxHealth}`;
 }
 
-function formatAdminAmmo(ammo, magazine, reloading) {
-  const rounds = `${ammo} / ${magazine}`;
-  return reloading ? `${rounds}, reloading` : rounds;
+// The reloads left only show when they are limited (a finite number)
+function formatAdminAmmo(ammo, magazine, reloading, reloadsLeft) {
+  const parts = [`${ammo} / ${magazine}`];
+  if (Number.isFinite(reloadsLeft)) {
+    parts.push(`${reloadsLeft} reloads left`);
+  }
+  if (reloading) {
+    parts.push("reloading");
+  }
+  return parts.join(", ");
 }
 
 function countLoadedEnemies() {
@@ -50,23 +57,115 @@ function getAdminInfo(player, framesPerSecond) {
     position: formatAdminPosition(player.posX, player.posY),
     chunk: formatAdminChunk(player.posX, player.posY),
     health: formatAdminHealth(player.health, player.maxHealth),
-    ammo: formatAdminAmmo(player.ammo, magazineSize, player.reloading),
+    ammo: formatAdminAmmo(player.ammo, gameSettings.magazineSize, player.reloading, player.reloadsLeft),
     enemies: String(countLoadedEnemies()),
     chunks: String(generatedChunks.size),
   };
 }
 
-// Key events typed into a panel field (D-16c) must never reach the game
-function isTypingInField(event) {
-  const target = event.target;
-  if (!target || !target.tagName) {
-    return false;
+// D-16c1: what a changed setting does to the game right away. Turn speed and
+// god mode need nothing here: the game reads them every frame.
+function applySetting(player, name) {
+  if (name === "playerHitPoints") {
+    applyPlayerHitPoints(player, gameSettings.playerHitPoints);
+  } else if (name === "magazineSize") {
+    applyMagazineSize(player, gameSettings.magazineSize);
+  } else if (name === "unlimitedReloads" || name === "reloadLimit") {
+    applyReloadAllowance(player, gameSettings);
   }
-  const tag = target.tagName.toLowerCase();
-  return tag === "input" || tag === "textarea" || tag === "select" || Boolean(target.isContentEditable);
+}
+
+// D-16c1: a field value (text or checkbox) becomes the setting in use, is
+// applied to the game and saved. Returns the value in use, for the field.
+function changeSetting(player, storage, name, fieldValue) {
+  gameSettings[name] = normalizeSetting(name, fieldValue);
+  applySetting(player, name);
+  saveSettings(storage, gameSettings);
+  return gameSettings[name];
+}
+
+// D-16c1: Reset puts every default back, applies it and saves it
+function resetSettings(player, storage) {
+  Object.assign(gameSettings, getDefaultSettings());
+  for (const name in settingDefinitions) {
+    applySetting(player, name);
+  }
+  saveSettings(storage, gameSettings);
 }
 
 // --- Browser part, wired once by main.js (TDD 6.4) ---
+
+// A clicked button keeps the focus, and Space would press it again instead
+// of firing the shotgun, so every panel button lets the focus go
+function onAdminButton(button, action) {
+  button.addEventListener("click", () => {
+    action();
+    button.blur();
+  });
+}
+
+// D-16c1: every element with data-setting is the field of the setting with
+// that name; data-setting-range shows its range. Fields show the value in use.
+function createAdminSettings(page, player, onApplied) {
+  const storage = getBrowserStorage();
+  const fields = {};
+  for (const field of page.querySelectorAll("[data-setting]")) {
+    fields[field.dataset.setting] = field;
+  }
+  for (const element of page.querySelectorAll("[data-setting-range]")) {
+    element.textContent = formatSettingRange(element.dataset.settingRange);
+  }
+
+  function writeFields() {
+    for (const name in fields) {
+      if (isFlagSetting(name)) {
+        fields[name].checked = gameSettings[name];
+      } else {
+        fields[name].value = String(gameSettings[name]);
+      }
+    }
+    // The limit only matters while reloads are limited
+    fields.reloadLimit.disabled = gameSettings.unlimitedReloads;
+  }
+
+  for (const name in fields) {
+    const field = fields[name];
+    if (!isFlagSetting(name)) {
+      field.min = String(settingDefinitions[name].min);
+      field.max = String(settingDefinitions[name].max);
+      field.step = "1";
+    }
+    // A number field changes when it loses the focus or on Enter, so a value
+    // half typed (1 on the way to 15) is never applied
+    field.addEventListener("change", () => {
+      const fieldValue = isFlagSetting(name) ? field.checked : field.value;
+      changeSetting(player, storage, name, fieldValue);
+      writeFields();
+      onApplied();
+      // A focused checkbox would take Space; give the keys back to the game
+      if (isFlagSetting(name)) {
+        field.blur();
+      }
+    });
+    field.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        field.blur();
+      }
+    });
+  }
+
+  onAdminButton(page.querySelector("[data-admin-action='refill-ammo']"), () => {
+    refillAmmo(player, gameSettings);
+    onApplied();
+  });
+  onAdminButton(page.querySelector("[data-admin-action='reset-settings']"), () => {
+    resetSettings(player, storage);
+    writeFields();
+    onApplied();
+  });
+
+  writeFields();
+}
 
 function createAdminPanel(page, player) {
   const body = page.body;
@@ -137,23 +236,15 @@ function createAdminPanel(page, player) {
     }
   }
 
-  // A clicked button keeps the focus, and Space would press it again instead
-  // of firing the shotgun, so every panel button lets the focus go
-  function onButton(button, action) {
-    button.addEventListener("click", () => {
-      action();
-      button.blur();
-    });
-  }
-
   hoverZone.addEventListener("mouseenter", showPeek);
   hoverZone.addEventListener("mouseleave", scheduleHide);
   peek.addEventListener("mouseenter", showPeek);
   peek.addEventListener("mouseleave", scheduleHide);
-  onButton(openButton, open);
+  onAdminButton(openButton, open);
   for (const button of closeButtons) {
-    onButton(button, close);
+    onAdminButton(button, close);
   }
+  createAdminSettings(page, player, writeInfo);
 
   page.defaultView.addEventListener("keydown", (event) => {
     if (event.repeat || isTypingInField(event)) {

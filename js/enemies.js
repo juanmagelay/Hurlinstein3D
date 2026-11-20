@@ -14,9 +14,10 @@ const enemyLoseSightTicks = ticksPerSecond;
 const enemyCollisionRadius = enemyWidth / 2;
 
 // D-06b: an enemy touching the player deals damage every tick, so a full second
-// of contact costs contactDamagePerSecond.
+// of contact costs contactDamagePerSecond. TDD 2.3.1 / D-16c1: health is in hit
+// points, so a second of contact takes one.
 const contactDistance = 0.6;
-const contactDamagePerSecond = 10;
+const contactDamagePerSecond = 1;
 
 function getContactDamage(player, deltaTime) {
   let damage = 0;

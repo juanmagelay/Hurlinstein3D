@@ -35,7 +35,7 @@ El **alcance deseable** son las extensiones que se implementan solo si el alcanc
 
 # 2. Descripción del juego
 ## 2.1 Bucle de juego
-El jugador aparece en el centro de una sala y explora la mazmorra en primera persona. En el alcance mínimo no hay condición de victoria ni de derrota: el bucle es caminar, girar y orientarse con el minimapa. El alcance deseable suma las dos condiciones. La partida se pierde cuando la vida del jugador llega a cero. Se gana al matar al jefe, que aparece cuando el jugador ya eliminó 20 enemigos comunes: el enemigo número 21 es el jefe (2.3.2). Al terminar, con victoria o con derrota, el juego muestra el puntaje y el ranking de partidas anteriores (2.3.4).
+El jugador aparece en el centro de una sala y explora la mazmorra en primera persona. En el alcance mínimo no hay condición de victoria ni de derrota: el bucle es caminar, girar y orientarse con el minimapa. El alcance deseable suma las dos condiciones. La partida se pierde cuando la vida del jugador llega a cero. Se gana al matar al jefe, que aparece cuando el jugador eliminó a todos los enemigos comunes de la partida, 20 por defecto (2.3.2). Al terminar, con victoria o con derrota, el juego muestra el puntaje y el ranking de partidas anteriores (2.3.4).
 
 ## 2.2 Controles del jugador
 El esquema de movimiento usa las teclas WASD:
@@ -48,16 +48,16 @@ El esquema deja afuera a propósito el desplazamiento lateral y el giro con el m
 
 ## 2.3 Alcance deseable: posibles extensiones
 ### 2.3.1 Combate y supervivencia
-- **Sistema de vida**: el jugador tiene una barra de salud. Recibir daño de un enemigo al colisionar disminuye ese valor, y si llega a cero el jugador muere y pierde la partida.
+- **Sistema de vida**: el jugador tiene una barra de salud. Recibir daño de un enemigo al colisionar disminuye ese valor, y si llega a cero el jugador muere y pierde la partida. La vida se cuenta en puntos, igual que la del enemigo y la del jefe: el jugador tiene 10, y cada segundo de contacto con un enemigo común le quita uno de forma continua, así la barra baja de a poco.
 
 - **Armamento y disparo**: el jugador dispone de un arma de fuego que se dispara con la barra espaciadora, apuntando con una mira fija en el centro de la pantalla. Cada disparo lanza un proyectil visible que sale del jugador en la dirección de la mira. Como la mira está fija en el centro, esa dirección es la del rayo de la columna central: cameraX vale 0 y rayDir es igual a dir. Al disparar, ese rayo recorre la grilla celda por celda con el mismo DDA del capítulo 3 y devuelve la distancia a la primera pared, que pasa a ser el alcance del proyectil. Como las paredes no cambian durante la partida, ese alcance no se vuelve a calcular. En cada cuadro el proyectil avanza a velocidad constante y se revisa el tramo que recorrió. Cada enemigo queda registrado en la celda que ocupa, así solo se revisan los enemigos de las celdas que toca ese tramo. Si el tramo pasa contra el collider de alguno, el proyectil desaparece y el enemigo pierde un punto de vida. Un enemigo común tiene un solo punto, así que muere con un disparo, y cada muerte suma uno al contador de enemigos eliminados. Si el proyectil llega a su alcance, choca contra la pared y desaparece, y si no había pared dentro de la distancia máxima del rayo, desaparece al recorrerla. Como el impacto se decide durante el vuelo, un enemigo que se corre a tiempo esquiva el disparo.
 
-- **Gestión de munición**: la reserva total es infinita, para favorecer un ritmo constante, pero el cargador tiene capacidad limitada, así que el jugador debe recargar cada cierta cantidad de disparos.
+- **Gestión de munición**: el cargador tiene capacidad limitada, seis balas por defecto, así que el jugador debe recargar cada cierta cantidad de disparos. Las recargas son infinitas por defecto, para favorecer un ritmo constante. El panel de administración (2.3.5) puede limitarlas: entonces un contador junto a la munición muestra cuántas quedan, y con el cargador y las recargas agotados la escopeta deja de disparar.
 
 ### 2.3.2 Enemigos y comportamiento
 La mazmorra estaría habitada por un tipo de enemigo común y un jefe, controlados por la misma **máquina de estados**. En esta primera iteración el enemigo se representa como un rectángulo de color plano, sin textura, lo que deja preparado el terreno para aplicarle sprites más adelante. Ese sprite es una imagen con licencia libre embebida como data URI (6.2), que se proyecta igual que el rectángulo y elige en cada franja su columna de textura, como las paredes.
 
-Cada chunk distinto de (0, 0) sortea una población una sola vez: 50% de probabilidad de cero enemigos, 30% de uno, 15% de dos y 5% de tres. El chunk (0, 0) no tiene enemigos. Se ubican en celdas de aire distintas, tanto en salas como en corredores, y son de color ámbar. En la vista en primera persona cada enemigo es un rectángulo parado de 0,3 celdas de ancho por 0,6 de alto. En el mapa ocupa un cuadrado de 0,3 celdas de lado: con esa huella se desliza por eje contra las paredes, igual que el jugador, y su cuerpo nunca las atraviesa. Su registro por celda se conserva durante la sesión.
+Cada chunk distinto de (0, 0) sortea una población una sola vez: 50% de probabilidad de cero enemigos, 30% de uno, 15% de dos y 5% de tres. El chunk (0, 0) no tiene enemigos. La partida tiene un total de enemigos comunes, 20 por defecto: los chunks sortean su población a medida que se generan, sin pasarse de ese total, y una vez completado los chunks nuevos nacen vacíos. Se ubican en celdas de aire distintas, tanto en salas como en corredores, y son de color ámbar. En la vista en primera persona cada enemigo es un rectángulo parado de 0,3 celdas de ancho por 0,6 de alto. En el mapa ocupa un cuadrado de 0,3 celdas de lado: con esa huella se desliza por eje contra las paredes, igual que el jugador, y su cuerpo nunca las atraviesa. Su registro por celda se conserva durante la sesión.
 
 Los estados previstos son:
 
@@ -67,7 +67,7 @@ Los estados previstos son:
 
 - **Persecución**: al detectar al jugador mediante una comprobación de línea de visión, que es un raycast contra el mismo mapa, el enemigo abandona la patrulla, persigue al jugador y le inflige daño por contacto.
 
-Cuando el contador de enemigos eliminados llega a 20, aparece un único **jefe** en el centro de una sala de uno de los cuatro chunks vecinos al del jugador. Usa la misma máquina de estados y las mismas velocidades que un enemigo común, mide una vez y media su tamaño (0,45 por 0,9 celdas), es de color carmesí, necesita cinco impactos para morir y hace 20 puntos de daño por segundo de contacto, el doble que un enemigo común. Los chunks nuevos siguen trayendo enemigos comunes. Matar al jefe gana la partida.
+Cuando el jugador elimina al último enemigo común de ese total, aparece un único **jefe** en el centro de una sala de uno de los cuatro chunks vecinos al del jugador. Usa la misma máquina de estados y las mismas velocidades que un enemigo común, mide una vez y media su tamaño (0,45 por 0,9 celdas), es de color carmesí, tiene cinco puntos de vida, así que necesita cinco impactos para morir, y quita dos puntos por segundo de contacto, el doble que un enemigo común. Matar al jefe gana la partida.
 
 Vale la pena notar que la línea de visión del enemigo y el alcance del proyectil del jugador reutilizan el mismo recorrido DDA del capítulo 3. El render, la percepción de la IA y el punto donde el disparo choca contra la pared salen del mismo código con distinto propósito.
 
@@ -80,9 +80,9 @@ La vista en primera persona se acompaña de un HUD minimalista con cinco element
 
 - **Barra de vida**: indicador del estado de salud actual, en la esquina superior izquierda, con la etiqueta LIFE.
 
-- **Contador de munición**: disparos restantes antes de tener que recargar, debajo de la vida, con la etiqueta AMMO.
+- **Contador de munición**: disparos restantes antes de tener que recargar, debajo de la vida, con la etiqueta AMMO. Si el panel limita las recargas, a la derecha de la barra se lee cuántas quedan, en la forma x3.
 
-- **Contador de enemigos eliminados**: debajo de la munición, en la forma KILLS 3 / 20, para que el jugador sepa cuánto le falta para que aparezca el jefe.
+- **Contador de enemigos eliminados**: debajo de la munición, en la forma KILLS 3 / 20, donde 20 es el total de enemigos comunes de la partida, para que el jugador sepa cuánto le falta para que aparezca el jefe.
 
 - **Minimapa**: representación reducida del mapa 2D sobre el que se renderiza el entorno, en la esquina superior derecha. Sirve a la vez como herramienta de orientación para el jugador y como validación visual del motor lógico. Es el único de los cinco elementos que forma parte del alcance mínimo.
 
@@ -102,7 +102,21 @@ Los menús y las pantallas son elementos HTML superpuestos al canvas, dentro del
 ### 2.3.5 Panel de administración
 El juego ocupa toda la ventana en cualquier pantalla (6.5). Sobre él hay un panel de administración en HTML para el equipo, que sirve para configurar cómo se juega y para mostrar el motor en la defensa. Arranca oculto. Al acercar el mouse al borde superior baja un zócalo centrado con el botón Open admin panel, que se vuelve a esconder cuando el mouse se aleja. Al hacer clic, el panel baja a todo el ancho y queda fijo hasta cerrarlo con la X de arriba a la derecha, con el botón Close admin panel de abajo o con la tecla P, que también lo abre. El panel se superpone al juego sin achicarlo ni pausarlo, así los valores cambian a la vista mientras se juega. Sus íconos son de la familia Lucide, embebidos como SVG en index.html.
 
-El panel muestra datos en vivo, actualizados unas cuatro veces por segundo: cuadros por segundo, posición del jugador, chunk actual, vida, munición, enemigos en los chunks cargados y cantidad de chunks cargados. También tiene configuraciones editables: la cantidad de enemigos que hay que eliminar para que aparezca el jefe, la cantidad de enemigos por chunk, con un tope alto para medir memoria y rendimiento, los puntos de vida del enemigo común y del jefe, la vida del jugador y el daño por segundo de contacto, el tamaño del cargador, entre 2 y 20 balas con el rango indicado junto al campo, y la velocidad de giro de A y D en grados por segundo, 120 por defecto. Suma invulnerabilidad, recargar la munición, hacer aparecer al jefe y activar o desactivar las texturas, la iluminación y el modo de colores planos. Mientras se escribe en un campo del panel, las teclas del juego quedan sin efecto.
+El panel muestra datos en vivo, actualizados unas cuatro veces por segundo: cuadros por segundo, posición del jugador, chunk actual, vida, munición, enemigos en los chunks cargados y cantidad de chunks cargados. También tiene configuraciones editables, cada una con su rango indicado junto al campo. Se aplican en el momento y se guardan en localStorage para la próxima vez; el botón Reset vuelve a los valores por defecto, y si el navegador bloquea localStorage se usan esos mismos valores. Las configuraciones son:
+
+- **Partida**: el total de enemigos comunes, entre 1 y 100.000, 20 por defecto, que con un número enorme sirve para medir memoria y rendimiento a medida que se explora; y los puntos de vida del jugador (10), del enemigo común (1) y del jefe (5).
+
+- **Arma**: el tamaño del cargador, entre 2 y 20 balas, y las recargas, sin límite o con un tope entre 0 y 99.
+
+- **Jugador**: la velocidad de giro de A y D en grados por segundo, 120 por defecto, y la invulnerabilidad.
+
+- **Raycasting**: el ancho de franja, de 1, 2, 4 u 8 píxeles, que cambia la cantidad de rayos por cuadro (6.5); el ojo de pez, que dibuja las paredes con la distancia euclídea en lugar de distPerp para mostrar la curva que describe 3.4; y los rayos sobre el minimapa, que muestran hasta dónde llega cada rayo del DDA.
+
+- **Generación procedural**: las fronteras de los chunks dibujadas sobre el minimapa.
+
+- **Render**: texturas, iluminación y modo de colores planos.
+
+Suma dos acciones, recargar la munición y hacer aparecer al jefe. Mientras se escribe en un campo del panel, las teclas del juego quedan sin efecto.
 
 # 3. Algoritmo 1: raycasting sobre grilla con DDA
 ## 3.1 Qué resuelve
@@ -265,6 +279,7 @@ El alcance deseable suma estos archivos, también como scripts clásicos cargado
 
 | **Archivo**  | **Responsabilidad**                                                                  |
 |--------------|--------------------------------------------------------------------------------------|
+| settings     | Configuraciones del panel: valores por defecto, rangos y guardado en localStorage     |
 | enemies      | Máquina de estados, línea de visión, deslizamiento contra paredes y daño por contacto |
 | projectiles  | Proyectiles de la escopeta: alcance, vuelo e impacto contra enemigos                  |
 | hud          | Mira, barras de vida y munición, etiquetas y contador de enemigos eliminados          |

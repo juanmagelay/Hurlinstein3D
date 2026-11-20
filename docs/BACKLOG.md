@@ -78,8 +78,16 @@ Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added i
 | D-16a3 | Live resize: strips, ceiling and floor, crosshair, minimap, shotgun and plane follow the window | P1 | 4 | D-16a2 | done |
 | D-16b1 | Admin panel shell: top hover strip, pinned full-width panel, close buttons, P key, Lucide icons | P1 | 4 | D-16a2 | done |
 | D-16b2 | Live info in the admin panel, four times per second | P1 | 4 | D-16b1 | done |
-| D-16c1 | Admin settings: enemies per chunk, player health and contact damage, magazine 2 to 20, turn speed, god mode, refill ammo | P1 | 4 | D-16b2 | pending |
-| D-23 | Update and draw only the enemies near the player, with an admin toggle to compare | P1 | 4 | D-16c1 | pending |
+| D-16c1a | Specify the settings Juanma asked for in the TDD: enemies per game, hit points, reload limit, turn speed, raycasting and chunk settings | P1 | 4 | D-16b2 | done |
+| D-16c1b | Settings store and panel fields: ranges, localStorage, Reset, turn speed in degrees per second, game keys ignored while typing | P1 | 4 | D-16c1a | done |
+| D-16c1c | Player hit points, god mode, magazine size and refill ammo | P1 | 4 | D-16c1b | done |
+| D-16c1d | Reload limit with the x3 counter next to the ammo bar | P1 | 4 | D-16c1c | done |
+| D-16c1e | Enemies per game: chunks stop rolling enemies once the total is reached | P1 | 4 | D-16c1b | pending |
+| D-23 | Update and draw only the enemies near the player, with an admin toggle to compare | P1 | 4 | D-16c1e | pending |
+| D-16e1 | Strip width setting: 1, 2, 4 or 8 px per ray | P1 | 4 | D-16c1b | pending |
+| D-16e2 | Fisheye toggle: walls drawn with the Euclidean distance | P1 | 4 | D-16c1b | pending |
+| D-16e3 | Rays on the minimap | P1 | 4 | D-16c1b | pending |
+| D-16f | Chunk borders on the minimap | P1 | 4 | D-16c1b | pending |
 | D-17a | Reset a game: new world, enemies, projectiles and player | P1 | 4 | D-14b | pending |
 | D-17b | Game state machine: menu, playing, victory, defeat | P1 | 4 | D-17a | pending |
 | D-18a | Main menu: title, start game, controls, credits | P1 | 4 | D-16a3, D-17b | pending |
@@ -88,7 +96,7 @@ Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added i
 | D-19a | Kill counter and KILLS label on the HUD | P2 | 4 | D-15b, D-17a | pending |
 | D-19b | Enemy hit points, one for regular enemies | P2 | 4 | D-19a | pending |
 | D-19c | Boss appears after the kill target | P2 | 4 | D-19b | pending |
-| D-16c2 | Admin settings for the boss flow: kill target, enemy and boss hit points, spawn boss | P2 | 4 | D-16c1, D-19c | pending |
+| D-16c2 | Admin settings for the boss flow: enemy and boss hit points, spawn boss | P2 | 4 | D-16c1e, D-19c | pending |
 | D-19d | Victory when the boss dies, victory screen | P2 | 4 | D-19c, D-20a | pending |
 | D-20b | Score and local ranking storage | P2 | 4 | D-19d | pending |
 | D-20c | Ranking on the victory and defeat screens | P2 | 4 | D-20b | pending |
@@ -933,24 +941,125 @@ Decisions:
 - Loaded chunks was added next to loaded enemies: both are what the stress test of D-16c1 grows.
 - Health is rounded up so the panel only shows 0 at a real defeat.
 
-## D-16c1: Admin settings
+## D-16c1a: Specify the admin settings in the TDD
 
 Acceptance criteria:
-- Number fields in the admin panel, each with its allowed range shown next to it:
-  - Enemies per chunk: the maximum a generated chunk can get, with a high cap to measure memory and performance. Applies to chunks generated after the change.
-  - Player health and contact damage per second.
-  - Magazine size, from 2 to 20 rounds ("2 to 20"). The ammo bar draws any size.
-  - Turn speed of A and D in degrees per second, 120 by default (today about 172, 3 rad/s).
-- God mode (no damage) and refill ammo.
-- Game keys ignore key events typed into a field (`isTypingInField`).
-- Out of range values are clamped and the field shows the value in use.
-- Tests on the pure parts: clamping, degrees to radians per ticker unit, the ammo bar for any magazine size.
+- TDD 2.1 and 2.3.2: the game has a total of regular enemies, 20 by default. Chunks roll their population as they are generated without going over it, chunks generated after that are empty, and the boss appears when the last of them dies.
+- TDD 2.3.1: health is in hit points, like the enemy's and the boss's. The player has 10, and a second of contact with a regular enemy takes one (the boss takes two). Reloads are unlimited by default, and the admin panel can limit them.
+- TDD 2.3.3: the reloads left show as x3 to the right of the ammo bar when they are limited, and KILLS 3 / 20 uses the total of the game.
+- TDD 2.3.5: the settings by group (game, weapon, player, raycasting, procedural generation, render), with their defaults and ranges, saved in localStorage with a Reset button.
+- TDD 6.3: `settings` in the desirable file table.
 
-Files: `index.html`, `js/admin.js`, `js/config.js`, `js/player.js`, `js/world.js`, `js/hud.js`, tests. Split before implementing if it goes over four files per story.
+Files: `docs/TDD.md`, `docs/BACKLOG.md`.
 
 Decisions (2026-11-20, Juanma):
-- Settings persist in `localStorage` and the panel has a Reset button that restores the defaults. If `localStorage` is blocked or holds invalid data, the defaults are used and nothing breaks.
-- Enemies per chunk goes up to 1000, because the professor wants exaggerated numbers to push the machine and judge whether the game is efficient. Today each enemy takes a distinct air cell; past the chunk's air cells, enemies share cells (the per-cell registry already holds a list).
+- "Enemies per chunk" was replaced by a total per game. The world is infinite and built as the player walks, so the total is spent as chunks are generated (Juanma chose this over creating every enemy at the start). It keeps generation on demand (TDD 4); the cost is that a huge total only weighs on the machine as the player explores. Measured in Node: a chunk with its enemies takes about 25 µs and 1 KB.
+- The separate kill target is gone: the boss comes after the last enemy of the total, so one number sets both.
+- Enemies do not shoot, so the player's "hits before dying" are hit points drained by contact. 10 hit points at one per second plays the same as the old 100 health at 10 per second.
+- Finite reloads were discarded in D-16a1 and come back on request, unlimited by default so the TDD 2.3.1 pace stays the same.
+- Juanma said the arrows felt too sensitive. The arrow keys are not bound (TDD 2.2); he meant A and D, which turned at 172 degrees per second. The default is now 120.
+- Raycasting settings chosen: strip width, fisheye and rays on the minimap (max ray distance was offered and left out). Procedural generation: chunk borders on the minimap (room size, second room chance and a new world button were offered and left out).
+
+## D-16c1b: Settings store and panel fields
+
+Acceptance criteria:
+- `js/settings.js` holds every setting's default and integer range, clamps and rounds field values, and reads and writes `localStorage` under `hurlinstein3d.settings`. Blocked storage, invalid JSON, unknown names and out of range values fall back to the defaults or the nearest limit.
+- The admin panel has a Settings section with one box per group; each number field shows its range next to it ("2 to 20") and, after a change, the value in use.
+- A number field applies its value on Enter or when it loses the focus, never halfway through typing. Checkboxes give the focus back after a click.
+- Reset settings restores every default, applies it and saves it.
+- W, A, S, D, Space and R are ignored while a panel field has the focus (`isTypingInField`, moved to `js/player.js` next to the other input code).
+- Turn speed of A and D in degrees per second, 30 to 360, 120 by default.
+- Tests: defaults, clamping and rounding, empty and invalid values, flags, stored data (valid, invalid, unknown names), blocked storage, 120 degrees per second over 60 ticker units is a third of a turn, a 90 degree turn with the setting at 90, keys typed into a field.
+
+Files: `js/settings.js` (new), `index.html`, `js/admin.js`, `js/player.js`, `js/config.js`, `tests/settings.test.js` (new), `tests/admin.test.js`, `tests/player.test.js`.
+
+Decisions:
+- `rotationSpeed` left `js/config.js`; `getRotationPerTick` converts the setting every frame (one multiplication).
+- `settings.js` loads right after `config.js`, so `player.js` builds the player with the stored values.
+- The panel reads the fields and ranges from `js/settings.js` through `data-setting` and `data-setting-range`, so a range lives in one place.
+
+## D-16c1c: Player hit points, god mode, magazine size and refill ammo
+
+Acceptance criteria:
+- The player has `gameSettings.playerHitPoints` (10, from 1 to 100); a regular enemy takes one per second of contact (`contactDamagePerSecond` is 1). The health bar and the panel ("7 / 10") follow.
+- A new value restores full health with the new maximum. If the player was defeated, the game resumes and the defeat overlay hides.
+- God mode ignores every damage (`damagePlayer`).
+- Magazine size from 2 to 20. A smaller one drops the extra rounds; a bigger one fills on the next reload. The ammo bar draws any size as a fraction.
+- Refill ammo fills the magazine and the reload allowance.
+- Tests: default hit points, contact damage per second, god mode, new hit points revive, magazine size on reload and on change, refill.
+
+Files: `js/player.js`, `js/enemies.js`, `js/admin.js`, `js/main.js`, `tests/health.test.js`, `tests/ammo.test.js`, `tests/hud.test.js`.
+
+Decisions:
+- The defeat overlay now follows the health every frame instead of staying on, because new hit points bring the player back. D-20a replaces it anyway.
+- The ammo sprite keeps its six segments; with another magazine size it is cropped as a fraction, so a segment no longer means one round.
+
+## D-16c1d: Reload limit
+
+Acceptance criteria:
+- Unlimited reloads (default) or a limit from 0 to 99. Each reload spends one; with none left, R does nothing and an empty magazine cannot fire.
+- When limited, the HUD shows the reloads left to the right of the ammo bar (x3), with the label style. When unlimited it is hidden.
+- The panel's Ammo line adds "2 reloads left" when limited.
+- Changing the limit, or turning it on, sets the reloads left to the new limit.
+- Tests: unlimited reloads never run out, a limited allowance runs out, the counter text, position (x 178) and visibility, the panel text.
+
+Files: `js/player.js`, `js/hud.js`, `js/main.js`, `js/admin.js`, `index.html`, `tests/ammo.test.js`, `tests/hud.test.js`, `tests/admin.test.js`.
+
+Decisions:
+- Unlimited is `Infinity`: `Infinity - 1` is still `Infinity` and `Infinity > 0` is true, so the reload code has no special case, like deltaDist with a zero ray component.
+- The counter is a PixiJS Text created once; its text is set every frame and PixiJS only redraws it when the text changes (checked in `lib/pixi.min.js`: the setter returns when the value is equal).
+- A reload is spent when it starts, since nothing cancels a reload.
+- Checked with headless Chrome on `file://`: fields show their ranges, 50 in the magazine field becomes 20, settings survive a reload, W typed into a field does not move the player, god mode blocks damage, new hit points revive a defeated player, x2 shows next to AMMO, and the console has no errors.
+
+## D-16c1e: Enemies per game
+
+Acceptance criteria:
+- `enemiesPerGame` setting, 1 to 100,000, 20 by default, in the Game box.
+- `world.js` counts the enemies created in the game. A new chunk rolls its population as before (TDD 2.3.2) and takes at most the enemies left in the total; once the total is reached, new chunks are empty. Chunk (0, 0) stays empty.
+- The setting applies live: raising it lets new chunks get enemies again; lowering it below the count stops new ones.
+- The panel shows "Enemies created 7 / 20" next to the loaded enemies.
+- Tests: the cap, chunks after the cap are empty, raising the total resumes, chunk (0, 0).
+
+Files: `js/settings.js`, `js/world.js`, `js/admin.js`, `index.html`, tests.
+
+## D-16e1: Strip width setting
+
+Acceptance criteria:
+- Strip width of 1, 2, 4 or 8 px in a Raycasting box, applied live: 1680 to 105 rays on the widest canvas. The FPS in the panel shows the cost (TDD 3.6, 6.5).
+- Nothing is created on change (TDD 6.4): the depth buffer and the wall strip sprites are sized once for 1 px strips on the widest canvas, and the unused ones stay hidden.
+- Tests: rays per width, the depth buffer size, a strip x for each width.
+
+Files: `js/config.js`, `js/settings.js`, `js/renderer.js`, `js/main.js`, `index.html`, tests. Split if it goes over four files.
+
+Open point: the canvas width is rounded to whole 2 px strips today (D-16a2). Rounding it to multiples of 8 keeps every width exact; 1512 by 860 would give 1264 instead of 1266, and `tests/screen.test.js` changes with it.
+
+## D-16e2: Fisheye toggle
+
+Acceptance criteria:
+- A Fisheye checkbox draws the walls with the Euclidean distance, perpWallDist * |rayDir|, instead of distPerp, so the curve of TDD 3.4 shows live. Off by default.
+- One multiplication and one square root per ray only while it is on; the DDA is unchanged.
+- Tests: with the toggle on, a wall straight ahead keeps its height at the center column and gets shorter toward the edges.
+
+Files: `js/settings.js`, `js/renderer.js`, `index.html`, tests.
+
+Note: enemies keep the perpendicular projection and the wall depth stays perpendicular, so in fisheye mode enemies and walls disagree a little at the edges. It is a teaching mode.
+
+## D-16e3: Rays on the minimap
+
+Acceptance criteria:
+- A checkbox draws rays on the minimap from the player to each wall hit, at pos + perpWallDist * rayDir (the ray parameter at the hit), clipped to the 21 by 21 window. A ray without a hit stops at the distance cap.
+- The rays come from the same frame's wall pass; none is cast again. Every eighth ray is drawn, so the fan reads clearly, with one stroke per frame.
+- Tests: the hit point of a hand computed ray.
+
+Files: `js/settings.js`, `js/renderer.js`, `js/minimap.js`, `index.html`, tests.
+
+## D-16f: Chunk borders on the minimap
+
+Acceptance criteria:
+- A checkbox in a Procedural generation box draws the chunk borders (every 16 cells, with Math.floor so negatives work) over the minimap window.
+- Tests: the border lines inside a window that crosses x = 0 and y = -16.
+
+Files: `js/settings.js`, `js/minimap.js`, `index.html`, tests.
 
 ## D-17a: Reset a game
 
@@ -1004,7 +1113,7 @@ Files: `index.html`, `js/screens.js`, `js/main.js`, `js/hud.js`.
 
 Acceptance criteria:
 - Each enemy a projectile kills adds one to the kill count; `resetGame()` sets it back to 0.
-- `bossKillTarget` (20) is a constant.
+- The target is the enemies per game setting (D-16c1e), 20 by default.
 - The HUD shows "KILLS 3 / 20" under AMMO. The `Text` object is created once and its text changes only when the count changes.
 - Tests: a kill adds one, a miss adds nothing, a reset clears the count.
 
@@ -1012,7 +1121,7 @@ Files: `js/game-state.js`, `js/projectiles.js`, `js/hud.js`, `tests/projectiles.
 
 ## D-23: Update and draw only the enemies near the player
 
-Problem found while planning the D-16c1 stress test: `updateEnemies`, `getContactDamage` (`js/enemies.js`) and `drawEnemies` (`js/renderer.js`) walk every enemy of every generated chunk on every frame. Chunks persist for the session (TDD 4.4), so the cost grows with how much of the world was explored, against the TDD 3.6 idea that world size stays out of the per-frame cost. With 1000 enemies per chunk it shows quickly.
+Problem found while planning the D-16c1 stress test: `updateEnemies`, `getContactDamage` (`js/enemies.js`) and `drawEnemies` (`js/renderer.js`) walk every enemy of every generated chunk on every frame. Chunks persist for the session (TDD 4.4), so the cost grows with how much of the world was explored, against the TDD 3.6 idea that world size stays out of the per-frame cost. Measured in Node: only reading the positions of 83,000 enemies takes 11 ms, most of a 16.7 ms frame, before any state machine or line of sight.
 
 Acceptance criteria:
 - Only the chunks around the player's chunk are active: the radius covers `maxRayDistance` (24 cells, so 2 chunks each way, a 5 by 5 block). Enemies there are updated, drawn and can do contact damage; the rest stay frozen in place and keep their registry.
@@ -1027,8 +1136,7 @@ Other ideas to measure with the FPS before doing them: group enemy strips into o
 ## D-16c2: Admin settings for the boss flow
 
 Acceptance criteria:
-- Kill target field: how many kills make the boss appear, for the current game; updates the HUD.
-- Hit points of the regular enemy and of the boss.
+- Hit points of the regular enemy (1 to 10, 1 by default) and of the boss (1 to 50, 5 by default), in the Game box. The boss takes two of the player's hit points per second of contact (TDD 2.3.2).
 - Spawn boss button for quick validation.
 - Controls are disabled outside `playing`.
 
@@ -1046,7 +1154,7 @@ Files: `js/world.js`, `js/projectiles.js`, `tests/projectiles.test.js`.
 ## D-19c: Boss appears after the kill target
 
 Acceptance criteria:
-- When the kill count reaches `bossKillTarget`, one boss spawns, with the hit points, size, color, contact damage and spawn point set in D-14b.
+- When the kill count reaches the enemies per game (the last regular enemy dies), one boss spawns, with the hit points, size, color, contact damage and spawn point set in D-14b.
 - There is only one boss per game, and regular enemies keep spawning.
 - The boss is drawn in its color in the first person view and on the minimap, and is registered per cell like any enemy.
 - The admin panel gets a Spawn boss button for quick validation.

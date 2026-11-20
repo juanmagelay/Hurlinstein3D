@@ -27,6 +27,8 @@ test("ammo shows the magazine and the reload state", () => {
   const formatAdminAmmo = getGlobal("formatAdminAmmo");
   assert.equal(formatAdminAmmo(4, 6, false), "4 / 6");
   assert.equal(formatAdminAmmo(0, 6, true), "0 / 6, reloading");
+  assert.equal(formatAdminAmmo(4, 6, false, Infinity), "4 / 6");
+  assert.equal(formatAdminAmmo(0, 6, true, 2), "0 / 6, 2 reloads left, reloading");
 });
 
 test("enemies are counted across every loaded chunk", () => {
@@ -49,4 +51,57 @@ test("keys typed into a panel field are recognized, so the game can ignore them"
   assert.equal(isTypingInField({ target: { tagName: "INPUT" } }), true);
   assert.equal(isTypingInField({ target: { tagName: "BUTTON" } }), false);
   assert.equal(isTypingInField({ target: { tagName: "BODY", isContentEditable: false } }), false);
+});
+
+// D-16c1: settings changed from the panel
+function createMemoryStorage() {
+  const items = new Map();
+  return { getItem: (key) => items.get(key) ?? null, setItem: (key, value) => items.set(key, value), items };
+}
+
+test("a field value is clamped, applied to the player and saved", () => {
+  const world = loadScripts();
+  const storage = createMemoryStorage();
+  const player = { health: 3, maxHealth: 10, ammo: 6, reloadsLeft: Infinity };
+
+  assert.equal(world("changeSetting")(player, storage, "playerHitPoints", "500"), 100);
+  assert.equal(player.health, 100);
+  assert.equal(player.maxHealth, 100);
+
+  world("changeSetting")(player, storage, "magazineSize", "3");
+  assert.equal(player.ammo, 3);
+
+  world("changeSetting")(player, storage, "unlimitedReloads", false);
+  assert.equal(player.reloadsLeft, 5);
+
+  const saved = JSON.parse(storage.items.get(world("settingsStorageKey")));
+  assert.equal(saved.playerHitPoints, 100);
+  assert.equal(saved.magazineSize, 3);
+  assert.equal(saved.unlimitedReloads, false);
+});
+
+test("turn speed and god mode only change the setting, the game reads them every frame", () => {
+  const world = loadScripts();
+  const player = { health: 4, maxHealth: 10, ammo: 2, reloadsLeft: 1 };
+
+  world("changeSetting")(player, createMemoryStorage(), "turnSpeed", "200");
+  world("changeSetting")(player, createMemoryStorage(), "godMode", true);
+  assert.equal(world("gameSettings.turnSpeed"), 200);
+  assert.equal(world("gameSettings.godMode"), true);
+  assert.deepEqual(player, { health: 4, maxHealth: 10, ammo: 2, reloadsLeft: 1 });
+});
+
+test("Reset puts the defaults back on the settings and the player", () => {
+  const world = loadScripts();
+  const storage = createMemoryStorage();
+  const player = { health: 1, maxHealth: 30, ammo: 15, reloadsLeft: 2 };
+  world("gameSettings.magazineSize = 20; gameSettings.turnSpeed = 300; gameSettings.unlimitedReloads = false");
+
+  world("resetSettings")(player, storage);
+  assert.equal(world("gameSettings.magazineSize"), 6);
+  assert.equal(world("gameSettings.turnSpeed"), 120);
+  assert.equal(player.health, 10);
+  assert.equal(player.ammo, 6);
+  assert.equal(player.reloadsLeft, Infinity);
+  assert.equal(JSON.parse(storage.items.get(world("settingsStorageKey"))).turnSpeed, 120);
 });

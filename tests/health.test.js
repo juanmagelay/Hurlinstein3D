@@ -4,7 +4,7 @@ const { loadScripts } = require("./load-scripts.js");
 
 const getGlobal = loadScripts();
 getGlobal("getCell = function () { return 0; }");
-const playerMaxHealth = getGlobal("playerMaxHealth");
+const playerHitPoints = getGlobal("gameSettings.playerHitPoints");
 const damagePlayer = getGlobal("damagePlayer");
 const isPlayerDefeated = getGlobal("isPlayerDefeated");
 const getContactDamage = getGlobal("getContactDamage");
@@ -14,19 +14,19 @@ const enemiesByChunk = getGlobal("enemiesByChunk");
 const getChunkKey = getGlobal("getChunkKey");
 const ticksPerSecond = getGlobal("ticksPerSecond");
 
-test("the player starts at full health", () => {
-  assert.equal(playerMaxHealth, 100);
+test("the player starts at full health, 10 hit points by default", () => {
+  assert.equal(playerHitPoints, 10);
   const player = getGlobal("player");
-  assert.equal(player.health, 100);
-  assert.equal(player.maxHealth, 100);
+  assert.equal(player.health, 10);
+  assert.equal(player.maxHealth, 10);
   assert.equal(isPlayerDefeated(player), false);
 });
 
 test("damage lowers health and clamps it at zero", () => {
-  const player = { health: playerMaxHealth, maxHealth: playerMaxHealth };
+  const player = { health: playerHitPoints, maxHealth: playerHitPoints };
 
-  damagePlayer(player, 30);
-  assert.equal(player.health, 70);
+  damagePlayer(player, 3);
+  assert.equal(player.health, 7);
   assert.equal(isPlayerDefeated(player), false);
 
   damagePlayer(player, 1000);
@@ -34,13 +34,13 @@ test("damage lowers health and clamps it at zero", () => {
   assert.equal(isPlayerDefeated(player), true);
 });
 
-test("a touching enemy deals ten damage over one second", () => {
+test("a touching enemy takes one hit point over one second", () => {
   enemiesByChunk.clear();
   enemiesByChunk.set(getChunkKey(0, 0), [{ posX: 0.6, posY: 0.5 }]);
   const player = { posX: 0.5, posY: 0.5 };
 
-  assert.equal(contactDamagePerSecond, 10);
-  assert.equal(getContactDamage(player, ticksPerSecond), 10);
+  assert.equal(contactDamagePerSecond, 1);
+  assert.equal(getContactDamage(player, ticksPerSecond), 1);
 });
 
 test("an enemy beyond contact distance deals no damage", () => {
@@ -49,4 +49,23 @@ test("an enemy beyond contact distance deals no damage", () => {
   const player = { posX: 0.5, posY: 0.5 };
 
   assert.equal(getContactDamage(player, ticksPerSecond), 0);
+});
+
+test("god mode ignores every damage", () => {
+  const world = loadScripts();
+  world("gameSettings.godMode = true");
+  const player = { health: 10, maxHealth: 10 };
+
+  world("damagePlayer")(player, 5);
+  assert.equal(player.health, 10);
+});
+
+test("new hit points restore full health with the new maximum", () => {
+  const applyPlayerHitPoints = getGlobal("applyPlayerHitPoints");
+  const player = { health: 0, maxHealth: 10 };
+
+  applyPlayerHitPoints(player, 25);
+  assert.equal(player.health, 25);
+  assert.equal(player.maxHealth, 25);
+  assert.equal(isPlayerDefeated(player), false);
 });

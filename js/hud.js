@@ -81,6 +81,35 @@ function createHudLabel(text, row) {
   return label;
 }
 
+// D-16c1 / TDD 2.3.3: when the admin panel limits the reloads, the ones left
+// show to the right of the ammo bar, as x3. Unlimited reloads (Infinity) hide it.
+const reloadCounterGap = 8;
+
+function formatReloadCounter(reloadsLeft) {
+  return `x${reloadsLeft}`;
+}
+
+function getReloadCounterX() {
+  return getHudBarX() + barSheetWidth + reloadCounterGap;
+}
+
+// Created once, outside the ticker (TDD 6.4), with the label style
+function createReloadCounter() {
+  const counter = new PIXI.Text({ text: formatReloadCounter(0), style: hudLabelStyle });
+  counter.anchor.set(0, 0.5);
+  counter.position.set(getReloadCounterX(), getHudRowY(1) + barBandHeight / 2);
+  counter.visible = false;
+  return counter;
+}
+
+// Called every frame: PixiJS only redraws a Text when its text really changes
+function updateReloadCounter(counter, reloadsLeft) {
+  counter.visible = Number.isFinite(reloadsLeft);
+  if (counter.visible) {
+    counter.text = formatReloadCounter(reloadsLeft);
+  }
+}
+
 // D-06c: the fill width follows the health fraction, clamped to the bar.
 function getHealthBarWidth(healthFraction) {
   const clamped = Math.min(Math.max(healthFraction, 0), 1);

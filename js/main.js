@@ -86,6 +86,10 @@ async function startGame() {
   app.stage.addChild(createHudLabel("LIFE", 0));
   app.stage.addChild(createHudLabel("AMMO", 1));
 
+  // D-16c1: reloads left, right of the ammo bar, only while they are limited
+  const reloadCounter = createReloadCounter();
+  app.stage.addChild(reloadCounter);
+
   // D-07b / D-07c: the shotgun view model sits at the bottom, aimed at the crosshair,
   // under the HUD and overlay
   const shotgun = await createShotgun();
@@ -122,10 +126,14 @@ async function startGame() {
     // D-16b: counts frames for the FPS and refreshes the panel four times per second
     adminPanel.update(ticker.deltaMS);
     setBarFill(healthBar, getHealthBarWidth(player.health / player.maxHealth));
-    setBarFill(ammoBar, getAmmoBarWidth(player.ammo, magazineSize));
-    // D-06b: at zero health the game freezes on the last frame
-    if (isPlayerDefeated(player)) {
-      defeatOverlay.visible = true;
+    setBarFill(ammoBar, getAmmoBarWidth(player.ammo, gameSettings.magazineSize));
+    updateReloadCounter(reloadCounter, player.reloadsLeft);
+    // D-06b: at zero health the game freezes on the last frame. D-16c1: new
+    // hit points from the admin panel bring the player back, so the overlay
+    // follows the health every frame.
+    const defeated = isPlayerDefeated(player);
+    defeatOverlay.visible = defeated;
+    if (defeated) {
       return;
     }
     updatePlayer(player, pressedKeys, ticker.deltaTime);

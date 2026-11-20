@@ -6,7 +6,7 @@ const getGlobal = loadScripts();
 const getHealthBarWidth = getGlobal("getHealthBarWidth");
 const getAmmoBarWidth = getGlobal("getAmmoBarWidth");
 const barSheetWidth = getGlobal("barSheetWidth");
-const magazineSize = getGlobal("magazineSize");
+const magazineSize = getGlobal("gameSettings.magazineSize");
 const ammoBarDataUri = getGlobal("ammoBarDataUri");
 
 test("the health fill width follows the health fraction", () => {
@@ -47,4 +47,28 @@ test("LIFE and AMMO rows sit in the top-left corner, one under the other", () =>
 test("the ammo fill width is clamped", () => {
   assert.equal(getAmmoBarWidth(-1, 6), 0);
   assert.equal(getAmmoBarWidth(9, 6), barSheetWidth);
+});
+
+test("the ammo bar draws any magazine size from 2 to 20 as a fraction", () => {
+  assert.equal(getAmmoBarWidth(2, 2), barSheetWidth);
+  assert.equal(getAmmoBarWidth(10, 20), barSheetWidth / 2);
+  assert.equal(getAmmoBarWidth(1, 2), barSheetWidth / 2);
+});
+
+// D-16c1: reloads left, as x3, after the ammo bar and an 8 px gap
+test("the reload counter reads x3 and sits right of the ammo bar", () => {
+  assert.equal(getGlobal("formatReloadCounter")(3), "x3");
+  assert.equal(getGlobal("getReloadCounterX")(), 72 + 98 + 8);
+});
+
+test("the reload counter only shows while reloads are limited", () => {
+  const updateReloadCounter = getGlobal("updateReloadCounter");
+  const counter = { text: "x0", visible: false };
+
+  updateReloadCounter(counter, 2);
+  assert.equal(counter.visible, true);
+  assert.equal(counter.text, "x2");
+
+  updateReloadCounter(counter, Infinity);
+  assert.equal(counter.visible, false);
 });

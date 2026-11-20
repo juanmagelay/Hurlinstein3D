@@ -1,16 +1,16 @@
 // TDD 3.2: the camera is six numbers. dir has length 1 and plane is perpendicular
 // to dir. The field of view is implicit, 2 * atan(|plane|), and never stored.
 
-// TDD 5.2: spawn at the center of the generated room in chunk (0, 0).
-// y grows downward on the map, so facing east (+x) the right hand side is +y:
-// plane points there and the image is not mirrored.
-const playerMaxHealth = 100;
 // TDD 6.6: the camera keeps a small radius, so it never sits flush against a
 // wall face and does not clip a corner. Under 0.5, so a one-cell door still fits.
 const playerRadius = 0.2;
-// D-08: the shotgun holds six shells and the reserve is unlimited
-const magazineSize = 6;
 const reloadDuration = 0.96; // seconds: the 12 reload frames at 0.08 s each (D-08c)
+
+// TDD 5.2: spawn at the center of the generated room in chunk (0, 0).
+// y grows downward on the map, so facing east (+x) the right hand side is +y:
+// plane points there and the image is not mirrored.
+// TDD 2.3.1 / D-16c1: health is in hit points, and the magazine and the reload
+// allowance come from the admin settings (js/settings.js).
 const spawnPosition = getSpawnPosition();
 const player = {
   posX: spawnPosition.x,
@@ -19,9 +19,10 @@ const player = {
   dirY: 0,
   planeX: 0,
   planeY: getCameraPlaneLength(),
-  health: playerMaxHealth,
-  maxHealth: playerMaxHealth,
-  ammo: magazineSize,
+  health: gameSettings.playerHitPoints,
+  maxHealth: gameSettings.playerHitPoints,
+  ammo: gameSettings.magazineSize,
+  reloadsLeft: getReloadAllowance(gameSettings),
   reloading: false,
   reloadTime: 0,
 };
@@ -43,7 +44,11 @@ function setCameraPlaneLength(player, length) {
 }
 
 // D-06b: health never goes below zero, and zero health means defeat.
+// D-16c1: god mode, from the admin panel, ignores every damage.
 function damagePlayer(player, amount) {
+  if (gameSettings.godMode) {
+    return;
+  }
   player.health = Math.max(0, player.health - amount);
 }
 
@@ -64,11 +69,13 @@ function tryFire(player) {
   return true;
 }
 
-// D-08: reload only tops up an incomplete magazine, adds no reserve
+// D-08: reload only tops up an incomplete magazine. D-16c1: it spends one
+// reload of the allowance, which is Infinity unless the admin panel limits it.
 function startReload(player) {
-  if (player.reloading || player.ammo >= magazineSize) {
+  if (player.reloading || player.ammo >= gameSettings.magazineSize || player.reloadsLeft <= 0) {
     return false;
   }
+  player.reloadsLeft -= 1;
   player.reloading = true;
   player.reloadTime = 0;
   return true;
@@ -85,8 +92,40 @@ function updateReload(player, deltaTime) {
   }
   player.reloading = false;
   player.reloadTime = 0;
-  player.ammo = magazineSize;
+  player.ammo = gameSettings.magazineSize;
   return true;
+}
+
+// D-16c1: a new number of hit points restores full health with that maximum
+function applyPlayerHitPoints(player, hitPoints) {
+  player.maxHealth = hitPoints;
+  player.health = hitPoints;
+}
+
+// D-16c1: a smaller magazine drops the extra rounds; a bigger one fills on the
+// next reload
+function applyMagazineSize(player, size) {
+  player.ammo = Math.min(player.ammo, size);
+}
+
+function applyReloadAllowance(player, settings) {
+  player.reloadsLeft = getReloadAllowance(settings);
+}
+
+// D-16c1: the admin panel's refill fills the magazine and the reload allowance
+function refillAmmo(player, settings) {
+  player.ammo = settings.magazineSize;
+  applyReloadAllowance(player, settings);
+}
+
+// D-16c1: keys typed into an admin panel field never reach the game
+function isTypingInField(event) {
+  const target = event.target;
+  if (!target || !target.tagName) {
+    return false;
+  }
+  const tag = target.tagName.toLowerCase();
+  return tag === "input" || tag === "textarea" || tag === "select" || Boolean(target.isContentEditable);
 }
 
 // TDD 6.6: only the four controls from TDD 2.2 affect the player
@@ -97,7 +136,7 @@ function createKeyboardInput(target) {
 
   target.addEventListener("keydown", (event) => {
     const key = event.key.toLowerCase();
-    if (movementKeys.has(key)) {
+    if (movementKeys.has(key) && !isTypingInField(event)) {
       pressedKeys.add(key);
     }
   });
@@ -114,7 +153,7 @@ function createKeyboardInput(target) {
 function createFireInput(target) {
   let pendingShot = false;
   target.addEventListener("keydown", (event) => {
-    if (event.key === " " && !event.repeat) {
+    if (event.key === " " && !event.repeat && !isTypingInField(event)) {
       event.preventDefault();
       pendingShot = true;
     }
@@ -134,7 +173,7 @@ function createFireInput(target) {
 function createReloadInput(target) {
   let pendingReload = false;
   target.addEventListener("keydown", (event) => {
-    if (event.key.toLowerCase() === "r" && !event.repeat) {
+    if (event.key.toLowerCase() === "r" && !event.repeat && !isTypingInField(event)) {
       pendingReload = true;
     }
   });
@@ -149,10 +188,11 @@ function createReloadInput(target) {
   };
 }
 
-// TDD 6.6: rotate the camera, move along dir and slide along walls by axis
+// TDD 6.6: rotate the camera, move along dir and slide along walls by axis.
+// D-16c1: the turn speed is the admin setting, in degrees per second.
 function updatePlayer(player, pressedKeys, deltaTime) {
   const turn = Number(pressedKeys.has("d")) - Number(pressedKeys.has("a"));
-  const rotation = turn * rotationSpeed * deltaTime;
+  const rotation = turn * getRotationPerTick(gameSettings.turnSpeed) * deltaTime;
 
   if (rotation !== 0) {
     const cosRotation = Math.cos(rotation);

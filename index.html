@@ -192,6 +192,97 @@
       font-variant-numeric: tabular-nums;
     }
 
+    /* D-16c1: settings, one box per group, each field with its range */
+    .admin-section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 16px 0 8px;
+    }
+
+    .admin-section-header .admin-section-title {
+      margin: 0;
+    }
+
+    .admin-groups {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 12px 16px;
+    }
+
+    .admin-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
+      margin: 0;
+      padding: 8px 12px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+    }
+
+    .admin-group legend {
+      padding: 0 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted-color);
+    }
+
+    .admin-field,
+    .admin-check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+    }
+
+    .admin-field span {
+      flex: 1;
+    }
+
+    .admin-field input {
+      width: 64px;
+      padding: 4px 6px;
+      font: 600 13px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      color: var(--text-color);
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      color-scheme: dark;
+    }
+
+    .admin-field input:disabled {
+      opacity: 0.4;
+    }
+
+    .admin-field small {
+      width: 60px;
+      font-size: 11px;
+      color: var(--muted-color);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .admin-check {
+      cursor: pointer;
+    }
+
+    .admin-check input {
+      width: 16px;
+      height: 16px;
+      margin: 0;
+      accent-color: var(--accent-color);
+    }
+
+    .admin-field input:focus-visible,
+    .admin-check input:focus-visible {
+      outline: 2px solid var(--accent-color);
+      outline-offset: 1px;
+    }
+
+    .admin-group .admin-button {
+      align-self: flex-start;
+    }
+
     .admin-footer {
       display: flex;
       justify-content: center;
@@ -247,6 +338,51 @@
       <div><dt>Enemies loaded</dt><dd data-admin-value="enemies">0</dd></div>
       <div><dt>Chunks loaded</dt><dd data-admin-value="chunks">0</dd></div>
     </dl>
+    <!-- D-16c1: js/admin.js fills each field and its range from js/settings.js -->
+    <div class="admin-section-header">
+      <h3 class="admin-section-title">Settings</h3>
+      <button class="admin-button" type="button" data-admin-action="reset-settings">Reset settings</button>
+    </div>
+    <div class="admin-groups">
+      <fieldset class="admin-group">
+        <legend>Game</legend>
+        <label class="admin-field">
+          <span>Player hit points</span>
+          <input type="number" inputmode="numeric" data-setting="playerHitPoints">
+          <small data-setting-range="playerHitPoints"></small>
+        </label>
+      </fieldset>
+      <fieldset class="admin-group">
+        <legend>Weapon</legend>
+        <label class="admin-field">
+          <span>Magazine size</span>
+          <input type="number" inputmode="numeric" data-setting="magazineSize">
+          <small data-setting-range="magazineSize"></small>
+        </label>
+        <label class="admin-check">
+          <input type="checkbox" data-setting="unlimitedReloads">
+          Unlimited reloads
+        </label>
+        <label class="admin-field">
+          <span>Reloads</span>
+          <input type="number" inputmode="numeric" data-setting="reloadLimit">
+          <small data-setting-range="reloadLimit"></small>
+        </label>
+        <button class="admin-button" type="button" data-admin-action="refill-ammo">Refill ammo</button>
+      </fieldset>
+      <fieldset class="admin-group">
+        <legend>Player</legend>
+        <label class="admin-field">
+          <span>Turn speed (°/s)</span>
+          <input type="number" inputmode="numeric" data-setting="turnSpeed">
+          <small data-setting-range="turnSpeed"></small>
+        </label>
+        <label class="admin-check">
+          <input type="checkbox" data-setting="godMode">
+          God mode
+        </label>
+      </fieldset>
+    </div>
     <div class="admin-footer">
       <button class="admin-button" type="button" data-admin-close>
         Close admin panel
@@ -258,6 +394,7 @@
   <!-- TDD 6.1 and 6.2: classic scripts in dependency order, main.js last -->
   <script src="lib/pixi.min.js"></script>
   <script src="js/config.js"></script>
+  <script src="js/settings.js"></script>
   <script src="js/mapgen.js"></script>
   <script src="js/world.js"></script>
   <script src="js/player.js"></script>

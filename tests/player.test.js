@@ -8,7 +8,7 @@ const getCell = getGlobal("getCell");
 const createKeyboardInput = getGlobal("createKeyboardInput");
 const updatePlayer = getGlobal("updatePlayer");
 const moveSpeed = getGlobal("moveSpeed");
-const rotationSpeed = getGlobal("rotationSpeed");
+const getRotationPerTick = getGlobal("getRotationPerTick");
 const playerRadius = getGlobal("playerRadius");
 const collisionWorld = loadScripts();
 collisionWorld("getCell = function (x, y) { return x >= 14 || y >= 2 ? 1 : 0; }");
@@ -118,7 +118,8 @@ test("W and S move along dir scaled by deltaTime", () => {
 
 test("A and D rotate dir and plane by the same angle", () => {
   const turningPlayer = createPlayer();
-  const angle = rotationSpeed;
+  // D-16c1: the default turn speed, 120 degrees per second, per ticker unit
+  const angle = getRotationPerTick(120);
 
   updatePlayer(turningPlayer, new Set(["d"]), 1);
 
@@ -175,4 +176,30 @@ test("forward movement stops with a radius of clearance from the wall", () => {
   assert.ok(movingPlayer.posY < 1.8, "the player moved past the clearance");
   assert.ok(2 - movingPlayer.posY >= playerRadius, "the camera is closer than its radius");
   assert.equal(collisionGetCell(Math.floor(movingPlayer.posX), Math.floor(movingPlayer.posY + playerRadius)), 0);
+});
+
+// D-16c1: keys typed into an admin panel field never move the player
+test("W typed into an admin panel field does not move the player", () => {
+  const listeners = new Map();
+  const target = {
+    addEventListener(type, listener) {
+      listeners.set(type, listener);
+    },
+  };
+  const pressedKeys = createKeyboardInput(target);
+
+  listeners.get("keydown")({ key: "w", target: { tagName: "INPUT" } });
+  assert.equal(pressedKeys.has("w"), false);
+});
+
+test("the turn speed setting changes how far A and D turn", () => {
+  const world = loadScripts();
+  world("getCell = function () { return 0; }");
+  world("gameSettings.turnSpeed = 90");
+  const turningPlayer = createPlayer();
+
+  // 90 degrees per second for 60 ticker units is a quarter turn: dir points down (+y)
+  world("updatePlayer")(turningPlayer, new Set(["d"]), 60);
+  assertClose(turningPlayer.dirX, 0);
+  assertClose(turningPlayer.dirY, 1);
 });
