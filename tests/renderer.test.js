@@ -273,9 +273,10 @@ test("an enemy straight ahead projects onto the screen center at its cell depth"
   assert.equal(projection.depth, 3);
 });
 
-test("an enemy ahead is drawn as one centered amber rectangle", () => {
+test("an enemy ahead is drawn as one amber rectangle standing on the floor", () => {
   // 3 cells ahead: width = 720 * 0.3 / 3 = 72 px, height = 720 * 0.6 / 3 = 144 px.
-  // So y from 288 to 432, x from 604 to 676.
+  // D-21b: the floor line is 360 + 720 / (2 * 3) = 480, so y from 336 to 480,
+  // and x from 604 to 676.
   enemyChunks.set(getEnemyChunkKey(0, 0), [{ posX: 3.5, posY: 0.5, width: 0.3, height: 0.6 }]);
   const graphics = createRecordingGraphics();
   drawEnemies(graphics, enemyCamera);
@@ -285,7 +286,7 @@ test("an enemy ahead is drawn as one centered amber rectangle", () => {
   assert.deepEqual(graphics.fillColors, [enemyColor]);
   for (const rect of graphics.rects) {
     assert.equal(rect.width, stripWidth);
-    assert.equal(rect.y, 288);
+    assert.equal(rect.y, 336);
     assert.equal(rect.height, 144);
   }
   assert.equal(graphics.rects[0].x, 604);
@@ -405,4 +406,127 @@ test("D-23: an enemy behind the camera or past maxRayDistance is skipped before 
   assert.equal(isEnemyInViewRange({ posX: 0.5, posY: 3.5 }, enemyCamera), false);
   // 25 cells ahead, past the 24 cell cap
   assert.equal(isEnemyInViewRange({ posX: 25.5, posY: 0.5 }, enemyCamera), false);
+});
+
+// D-21b: textured enemies. A fresh context with no walls, a sprite pool of plain
+// objects, and column textures replaced by their own index, so a sprite's
+// texture is the texX it was given.
+const getSpriteGlobal = loadScripts();
+getSpriteGlobal("getCell = function (x, y) { return 0; }");
+getSpriteGlobal("enemyTextureColumns = Array.from({ length: enemyTextureWidth }, (_, texX) => texX)");
+const drawSpriteEnemies = getSpriteGlobal("drawEnemies");
+const getEnemyTextureX = getSpriteGlobal("getEnemyTextureX");
+const spriteEnemyChunks = getSpriteGlobal("enemiesByChunk");
+const spriteChunkKey = getSpriteGlobal("getChunkKey");
+const spriteDepthBuffer = getSpriteGlobal("wallDepthBuffer");
+const spriteCamera = { posX: 0.5, posY: 0.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66 };
+
+function createFakeSpritePool(count) {
+  const sprites = [];
+  for (let index = 0; index < count; index += 1) {
+    sprites.push({
+      visible: false,
+      position: { set(x, y) { this.x = x; this.y = y; } },
+    });
+  }
+  return { sprites };
+}
+
+function setSpriteEnemies(enemies) {
+  spriteEnemyChunks.clear();
+  spriteEnemyChunks.set(spriteChunkKey(0, 0), enemies);
+}
+
+function resetSpriteDepthBuffer() {
+  spriteDepthBuffer.fill(getSpriteGlobal("maxRayDistance"));
+}
+
+test("D-21b: the texture column follows the strip center inside the sprite", () => {
+  // A sprite 66 px wide starting at x 600: 2 screen px per sprite px (33 / 66).
+  // Strip 600 has its center at 601: 1 px in, column 0. Strip 632: 33 px in,
+  // column 16. Strip 664: 65 px in, column 32, the last one.
+  assert.equal(getEnemyTextureX(600, 600, 66), 0);
+  assert.equal(getEnemyTextureX(632, 600, 66), 16);
+  assert.equal(getEnemyTextureX(664, 600, 66), 32);
+  // Strips that only touch the edges stay inside the 33 columns
+  assert.equal(getEnemyTextureX(598, 600, 66), 0);
+  assert.equal(getEnemyTextureX(666, 600, 66), 32);
+});
+
+test("D-21b: an enemy ahead is drawn as sprite strips standing on the floor", () => {
+  resetSpriteDepthBuffer();
+  setSpriteEnemies([{ posX: 3.5, posY: 0.5, width: 0.3, height: 0.6 }]);
+  const pool = createFakeSpritePool(100);
+  const graphics = createRecordingGraphics();
+  drawSpriteEnemies(graphics, spriteCamera, pool);
+
+  // 3 cells ahead: 144 px tall, from 336 to the floor line at 480. The sprite
+  // keeps the 33 by 57 proportions, so it is 144 * 33 / 57 = 83.37 px wide,
+  // from 598.32 to 681.68: the 42 strips from x 598 to x 680.
+  assert.deepEqual(graphics.rects, []);
+  const drawn = pool.sprites.filter((sprite) => sprite.visible);
+  assert.equal(drawn.length, 42);
+  for (const sprite of drawn) {
+    assert.equal(sprite.position.y, 336);
+    assert.equal(sprite.height, 144);
+    assert.equal(sprite.width, stripWidth);
+    assert.equal(sprite.tint, 0xffffff);
+  }
+
+  // One sprite px is 144 / 57 = 2.53 screen px. The center strip (x 640,
+  // center 641) is 42.68 px from the left edge: 42.68 / 2.53 = 16.9, column 16.
+  const byX = new Map(drawn.map((sprite) => [sprite.position.x, sprite]));
+  assert.equal(byX.get(598).texture, 0);
+  assert.equal(byX.get(640).texture, 16);
+  assert.equal(byX.get(680).texture, 32);
+});
+
+test("D-21b: the nearer enemy takes the top sprites and the pool drops the farthest", () => {
+  resetSpriteDepthBuffer();
+  // The far one, 6 cells ahead, is listed first; drawing sorts them anyway
+  setSpriteEnemies([
+    { posX: 6.5, posY: 0.5, width: 0.3, height: 0.6 },
+    { posX: 3.5, posY: 0.5, width: 0.3, height: 0.6 },
+  ]);
+  const pool = createFakeSpritePool(100);
+  drawSpriteEnemies(createRecordingGraphics(), spriteCamera, pool);
+
+  // Near: 42 strips in sprites 99 to 58, drawn last, so on top. Far: 72 px tall,
+  // 22 strips in sprites 57 to 36, in the second brightness band (0.8).
+  for (let index = 58; index <= 99; index += 1) {
+    assert.equal(pool.sprites[index].height, 144);
+  }
+  for (let index = 36; index <= 57; index += 1) {
+    assert.equal(pool.sprites[index].height, 72);
+    assert.equal(pool.sprites[index].tint, 0xcccccc);
+  }
+  for (let index = 0; index < 36; index += 1) {
+    assert.equal(pool.sprites[index].visible, false);
+  }
+
+  // A pool of 50 still draws the whole near enemy and only 8 far strips
+  const smallPool = createFakeSpritePool(50);
+  drawSpriteEnemies(createRecordingGraphics(), spriteCamera, smallPool);
+  const heights = smallPool.sprites.map((sprite) => sprite.height);
+  assert.equal(heights.filter((height) => height === 144).length, 42);
+  assert.equal(heights.filter((height) => height === 72).length, 8);
+});
+
+test("D-21b: walls nearer than the enemy hide its sprite strips", () => {
+  setSpriteEnemies([{ posX: 3.5, posY: 0.5, width: 0.3, height: 0.6 }]);
+  // A wall at depth 2 covers every strip left of x 640
+  resetSpriteDepthBuffer();
+  spriteDepthBuffer.fill(2, 0, 640 / stripWidth);
+  const pool = createFakeSpritePool(100);
+  drawSpriteEnemies(createRecordingGraphics(), spriteCamera, pool);
+  const drawn = pool.sprites.filter((sprite) => sprite.visible);
+  // Strips 640 to 680
+  assert.equal(drawn.length, 21);
+  assert.ok(drawn.every((sprite) => sprite.position.x >= 640));
+
+  // Walls in front of every strip hide it all, and last frame's sprites too
+  spriteDepthBuffer.fill(0);
+  drawSpriteEnemies(createRecordingGraphics(), spriteCamera, pool);
+  assert.equal(pool.sprites.filter((sprite) => sprite.visible).length, 0);
+  resetSpriteDepthBuffer();
 });

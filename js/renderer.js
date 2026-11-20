@@ -207,32 +207,67 @@ function initWallTextures() {
   if (wallTextureColumns) {
     return;
   }
-
-  const canvas = createWallTextureCanvas();
-  wallTextureColumns = [];
-  for (let x = 0; x < wallTextureSize; x++) {
-    const column = document.createElement("canvas");
-    column.width = 1;
-    column.height = wallTextureSize;
-    column.getContext("2d").drawImage(canvas, x, 0, 1, wallTextureSize, 0, 0, 1, wallTextureSize);
-    const texture = PIXI.Texture.from(column);
-    texture.source.scaleMode = "nearest";
-    wallTextureColumns.push(texture);
-  }
+  wallTextureColumns = sliceTextureColumns(createWallTextureCanvas(), wallTextureSize, wallTextureSize);
 }
 
-// D-09 (Lode part 2): one pre-created sprite per strip, reused every frame
-// (TDD 6.4). D-16a: created for the widest canvas, so a resize never creates one.
-function createWallStripSprites() {
+// D-09 / D-21b: cuts an image or canvas into 1 px wide textures, one per
+// column, so a strip sprite shows one column. Nearest keeps the pixels sharp.
+function sliceTextureColumns(source, width, height) {
+  const columns = [];
+  for (let x = 0; x < width; x++) {
+    const column = document.createElement("canvas");
+    column.width = 1;
+    column.height = height;
+    column.getContext("2d").drawImage(source, x, 0, 1, height, 0, 0, 1, height);
+    const texture = PIXI.Texture.from(column);
+    texture.source.scaleMode = "nearest";
+    columns.push(texture);
+  }
+  return columns;
+}
+
+// D-21b: the enemy sprite cut into column textures, like the wall. The image is
+// a data URI (js/enemy-sheet.js), so it loads under file:// and the canvas can
+// be read. Runs once, outside the ticker (TDD 6.4).
+let enemyTextureColumns = null;
+
+function loadEnemyTextureColumns() {
+  return new Promise((resolve) => {
+    const image = new Image();
+    image.onload = () => {
+      enemyTextureColumns = sliceTextureColumns(image, enemyTextureWidth, enemyTextureHeight);
+      resolve(enemyTextureColumns);
+    };
+    image.src = enemySpriteDataUri;
+  });
+}
+
+// D-09 / D-21b: a pool of strip sprites created once and reused every frame
+// (TDD 6.4); the ticker only moves them, retextures them and hides them.
+function createStripSpritePool(count) {
   const container = new PIXI.Container();
   const sprites = [];
-  for (let index = 0; index < maxWallStripCount; index++) {
+  for (let index = 0; index < count; index++) {
     const sprite = new PIXI.Sprite();
     sprite.visible = false;
     container.addChild(sprite);
     sprites.push(sprite);
   }
   return { container, sprites };
+}
+
+// D-09 (Lode part 2): one pre-created sprite per strip, reused every frame
+// (TDD 6.4). D-16a: created for the widest canvas, so a resize never creates one.
+function createWallStripSprites() {
+  return createStripSpritePool(maxWallStripCount);
+}
+
+// D-21b: room for four screens of 1 px strips (6720 sprites), so many enemies
+// up close still fit. If they ever run out, the farthest enemies are left out.
+const enemyStripPoolSize = maxWallStripCount * 4;
+
+function createEnemyStripSprites() {
+  return createStripSpritePool(enemyStripPoolSize);
 }
 
 // D-09 (Lode part 2): where along the wall face the ray landed, in [0, 1).
@@ -397,15 +432,58 @@ function isEnemyInViewRange(enemy, player) {
   return offsetX * player.dirX + offsetY * player.dirY > 0;
 }
 
-// D-04c2: draw each enemy as a thin standing rectangle centered on the horizon.
-// A strip only paints where the enemy is nearer than the wall depth (D-04c1) in
-// that column, so walls hide enemies behind them. D-23: only active enemies in
-// view range are projected.
-function drawEnemies(graphics, player) {
-  graphics.clear();
+// D-21b: screen box of something standing on the floor, worldWidth by
+// worldHeight cells, at this camera space position. One cell at this depth is
+// screenHeight / depth pixels. The eye is half a wall above the floor, so the
+// floor line is screenHeight / (2 * depth) below the horizon, where a wall strip
+// ends (Lode part 3 moves sprites down the same way, with vMove). Unclipped.
+function getStandingSpriteBox(transformX, depth, worldWidth, worldHeight) {
+  const screenX = (screenWidth / 2) * (1 + transformX / depth);
+  const width = screenHeight * worldWidth / depth;
+  const height = screenHeight * worldHeight / depth;
+  const bottom = screenHeight / 2 + screenHeight / (2 * depth);
+  return { left: screenX - width / 2, width, top: bottom - height, height };
+}
 
+// D-04c2: the strips a box covers, from the strip that holds its left edge to
+// the one that holds its right edge, inside the screen. Only strips where the
+// enemy is nearer than the wall depth (D-04c1) are kept, so walls hide it.
+function getVisibleStripXs(box, depth) {
   const stripWidth = gameSettings.stripWidth;
-  const enemyStrips = [];
+  const firstColumn = Math.max(0, box.left);
+  const lastColumn = Math.min(screenWidth - 1, box.left + box.width);
+  const stripXs = [];
+  for (
+    let x = Math.floor(firstColumn / stripWidth) * stripWidth;
+    x <= lastColumn;
+    x += stripWidth
+  ) {
+    if (depth < wallDepthBuffer[x / stripWidth]) {
+      stripXs.push(x);
+    }
+  }
+  return stripXs;
+}
+
+// D-21b (Lode part 3, texX): the sprite column a strip shows. The strip center
+// is measured from the sprite's left edge and scaled from screen pixels to
+// sprite pixels, then kept inside the sprite.
+function getEnemyTextureX(stripX, spriteLeft, spriteWidth) {
+  const stripCenter = stripX + gameSettings.stripWidth / 2;
+  const texX = Math.floor((stripCenter - spriteLeft) * enemyTextureWidth / spriteWidth);
+  return Math.min(Math.max(texX, 0), enemyTextureWidth - 1);
+}
+
+// D-21b: the sprite keeps the proportions of its image: as tall as the enemy,
+// and as wide as that height gives (0.6 * 33 / 57, about 0.35 cells)
+function getEnemySpriteWorldWidth(enemy) {
+  return enemy.height * enemyTextureWidth / enemyTextureHeight;
+}
+
+// D-04c2 / D-23: the active enemies in view range and in front of the camera,
+// with their camera space position. D-21b: sorted near to far.
+function getVisibleEnemies(player) {
+  const visible = [];
   for (const enemies of getActiveEnemyLists(player)) {
     for (const enemy of enemies) {
       if (!isEnemyInViewRange(enemy, player)) {
@@ -415,33 +493,74 @@ function drawEnemies(graphics, player) {
       if (depth <= 0 || depth > maxRayDistance) {
         continue;
       }
+      visible.push({ enemy, transformX, depth });
+    }
+  }
+  visible.sort((a, b) => a.depth - b.depth);
+  return visible;
+}
 
-      // One cell at this depth is screenHeight / depth, so the billboard is a
-      // thin standing rectangle: enemyWidth across, enemyHeight tall.
-      const width = screenHeight * enemy.width / depth;
-      const height = screenHeight * enemy.height / depth;
-      const screenX = (screenWidth / 2) * (1 + transformX / depth);
-      const top = Math.max(0, screenHeight / 2 - height / 2);
-      const bottom = Math.min(screenHeight, screenHeight / 2 + height / 2);
-      if (bottom <= top) {
-        continue;
-      }
+// D-04c2: draws every enemy in view, standing on the floor (D-21b) and hidden
+// strip by strip behind nearer walls. With useEnemySprites and the sprite pool
+// it draws the Husk Mutant sprite; otherwise an amber rectangle, the flat color
+// mode, with one fill() for all of them.
+function drawEnemies(graphics, player, enemyStrips) {
+  graphics.clear();
 
-      const firstColumn = Math.max(0, screenX - width / 2);
-      const lastColumn = Math.min(screenWidth - 1, screenX + width / 2);
-      for (
-        let x = Math.floor(firstColumn / stripWidth) * stripWidth;
-        x <= lastColumn;
-        x += stripWidth
-      ) {
-        if (depth < wallDepthBuffer[x / stripWidth]) {
-          enemyStrips.push({ x, drawStart: top, drawEnd: bottom });
-        }
-      }
+  if (useEnemySprites && enemyStrips) {
+    drawTexturedEnemies(player, enemyStrips);
+    return;
+  }
+
+  const rects = [];
+  for (const { enemy, transformX, depth } of getVisibleEnemies(player)) {
+    const box = getStandingSpriteBox(transformX, depth, enemy.width, enemy.height);
+    const drawStart = Math.max(0, box.top);
+    const drawEnd = Math.min(screenHeight, box.top + box.height);
+    if (drawEnd <= drawStart) {
+      continue;
+    }
+    for (const x of getVisibleStripXs(box, depth)) {
+      rects.push({ x, drawStart, drawEnd });
     }
   }
 
-  fillStrips(graphics, enemyStrips, enemyColor);
+  fillStrips(graphics, rects, enemyColor);
+}
+
+// D-21b (Lode part 3): each visible strip of an enemy is one pool sprite showing
+// its texture column, stretched to the enemy height and left for the canvas to
+// clip, like the textured walls. The tint darkens it by the distance bands (D-01).
+// Painter's algorithm: a nearer enemy must cover a farther one. Enemies come near
+// to far and take pool sprites from the last one down, and the last children of
+// a container are drawn on top. If the pool runs out, the farthest are left out.
+function drawTexturedEnemies(player, enemyStrips) {
+  const stripWidth = gameSettings.stripWidth;
+  const sprites = enemyStrips.sprites;
+  let nextSprite = sprites.length - 1;
+
+  for (const { enemy, transformX, depth } of getVisibleEnemies(player)) {
+    const box = getStandingSpriteBox(transformX, depth, getEnemySpriteWorldWidth(enemy), enemy.height);
+    const tint = shadeColor(0xffffff, getDistanceBrightness(depth));
+    for (const x of getVisibleStripXs(box, depth)) {
+      if (nextSprite < 0) {
+        break;
+      }
+      const sprite = sprites[nextSprite];
+      nextSprite -= 1;
+      sprite.texture = enemyTextureColumns[getEnemyTextureX(x, box.left, box.width)];
+      sprite.position.set(x, box.top);
+      sprite.width = stripWidth;
+      sprite.height = box.height;
+      sprite.tint = tint;
+      sprite.visible = true;
+    }
+  }
+
+  // Sprites not used this frame stay hidden
+  for (let index = 0; index <= nextSprite; index++) {
+    sprites[index].visible = false;
+  }
 }
 
 // D-13c: look of a projectile, a small red-orange square, like the muzzle flash

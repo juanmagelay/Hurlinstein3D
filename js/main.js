@@ -62,6 +62,15 @@ async function startGame() {
   const enemies = new PIXI.Graphics();
   app.stage.addChild(enemies);
 
+  // D-21b: the enemy sprite, cut into columns once, and its pool of strip
+  // sprites, created once, at the same layer as the flat enemies
+  let enemyStrips = null;
+  if (useEnemySprites) {
+    await loadEnemyTextureColumns();
+    enemyStrips = createEnemyStripSprites();
+    app.stage.addChild(enemyStrips.container);
+  }
+
   // D-13c: projectiles draw over the enemies, with the same wall occlusion
   const projectileGraphics = new PIXI.Graphics();
   app.stage.addChild(projectileGraphics);
@@ -157,7 +166,7 @@ async function startGame() {
     updateShotgun(shotgun, ticker.deltaTime);
     damagePlayer(player, getContactDamage(player, ticker.deltaTime));
     drawWalls(walls, player, wallStrips);
-    drawEnemies(enemies, player);
+    drawEnemies(enemies, player, enemyStrips);
     drawProjectiles(projectileGraphics, player);
     drawMinimap(minimap, player);
   });

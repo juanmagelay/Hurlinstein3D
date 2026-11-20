@@ -80,7 +80,16 @@ const lightIntensity = 0.85;
 const ambientLight = 0.22;
 const shadowRayEpsilon = 0.05;
 
-// D-04: the enemy is a thin standing rectangle (cells), not a wide square
+// D-04: the enemy is a thin standing rectangle (cells), not a wide square.
+// enemyWidth is also its footprint for collisions and projectile hits.
 const enemyWidth = 0.3;
 const enemyHeight = 0.6;
 const enemyColor = 0xffc857;
+
+// D-21b: in 3D the enemy is the Husk Mutant sprite (js/enemy-sheet.js), 33 by
+// 57 px. It is drawn enemyHeight tall and as wide as its proportions give (about
+// 0.35 cells), so the art is not squeezed. Set to false to draw the amber
+// rectangles again (flat color mode, TDD 1.3).
+const useEnemySprites = true;
+const enemyTextureWidth = 33;
+const enemyTextureHeight = 57;

@@ -33,16 +33,19 @@ The game fills the browser window on any screen between 4:3 and 21:9, and adapts
 | `js/world.js` | Cantor-keyed chunk storage, `getCell`, room lights, the game's enemies placed around the player, and the per-chunk and per-cell enemy registries | 2.3.2, 5.1, 5.2, 6.8 |
 | `js/player.js` | Camera state, keyboard input, movement, collisions, health in hit points, ammo and reloads | 2.3.1, 3.2, 6.6 |
 | `js/raycaster.js` | Camera rays and grid DDA | 3.2, 3.3, 3.4 |
-| `js/renderer.js` | Ceiling, floor, wall strips of any strip width, fisheye mode, procedural wall textures, point lights, enemies and projectiles | 2.3.1, 3.4, 6.4, 6.5 |
+| `js/renderer.js` | Ceiling, floor, wall strips of any strip width, fisheye mode, procedural wall textures, point lights, enemy sprites standing on the floor with wall occlusion, and projectiles | 2.3.1, 2.3.2, 3.4, 6.4, 6.5 |
 | `js/enemies.js` | Active area around the player, far enemies brought back near the player, enemy state machine (idle, patrol, chase), DDA line of sight, wall sliding and contact damage | 2.3.1, 2.3.2 |
 | `js/projectiles.js` | Shotgun projectiles: range from the center ray DDA, flight, and enemy hits through the per-cell registry | 2.3.1 |
 | `js/minimap.js` | 21 by 21 cell minimap, player position and direction, enemies, projectiles, and optional rays and chunk borders | 2.3.5, 6.7 |
 | `js/hud.js` | Center crosshair, LIFE and AMMO labels with their bars, reloads left when limited, defeat overlay | 2.3.3, 6.4 |
 | `js/weapon.js` | Shotgun aimed at the crosshair, idle, firing and reload animation | 2.3.1, 2.3.3, 6.4 |
+| `js/enemy-sheet.js` | Embedded enemy sprite, a copy of `assets/enemy-sprites/ZOMBA1.png` | 2.3.2, 6.2 |
 | `js/weapon-sheet.js` | Embedded shotgun strip generated from `assets/gun-sprites/Sgun.png` | 6.1 |
 | `js/admin.js` | Admin panel: top strip, pinned panel, P key, live info and settings fields | 2.3.5 |
 | `js/main.js` | PixiJS application, scene, window resize and ticker | 6.4, 6.5 |
 | `assets/icons/LICENSE` | License of the Lucide icons embedded in `index.html` | 2.3.5 |
+| `assets/enemy-sprites/` | Original enemy sprite and its source and license | 2.3.2 |
+| `assets/logo/` | Logomark (512 px) and favicon (32 px), cut from the enemy's head; the favicon is embedded in `index.html` | 6.2 |
 | `tests/` | Node tests for world generation, DDA, movement, projection, enemies, projectiles, HUD, weapon and admin settings | 8.7 |
 
 ## Verification
@@ -69,6 +72,7 @@ The game fills the browser window on any screen between 4:3 and 21:9, and adapts
 
 - [PixiJS](https://pixijs.com) 8.21.0, MIT license.
 - [Lucide](https://lucide.dev) icons 1.77.0, ISC license (chevron-down, chevron-up and x derive from Feather, MIT). See `assets/icons/LICENSE`.
+- [Husk Mutant](https://opengameart.org/content/husk-mutant) enemy sprite by HorrorMovieRei, CC0. The logomark and favicon are cropped from it. See `assets/enemy-sprites/LICENSE.md`.
 
 ## Course
 

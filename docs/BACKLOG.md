@@ -102,8 +102,9 @@ Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added i
 | D-19d | Victory when the boss dies, victory screen | P2 | 4 | D-19c, D-20a | pending |
 | D-20b | Score and local ranking storage | P2 | 4 | D-19d | pending |
 | D-20c | Ranking on the victory and defeat screens | P2 | 4 | D-20b | pending |
-| D-21a | Pick a licensed enemy sprite and embed it as a data URI | P2 | 4 | D-14b | pending |
-| D-21b | Textured enemies with z-buffer occlusion | P2 | 4 | D-21a | pending |
+| D-21a | Pick a licensed enemy sprite and embed it as a data URI | P2 | 4 | D-14b | done |
+| D-21b | Textured enemies with z-buffer occlusion | P2 | 4 | D-21a | done |
+| D-26 | Logomark and favicon from the enemy sprite's head | P2 | 4 | D-21a | done |
 | D-21c | Boss as a tinted, larger enemy sprite | P2 | 4 | D-21b, D-19c | pending |
 | D-16d | Admin render toggles: textures, lighting, flat color | P2 | 4 | D-16b2 | pending |
 | D-08d | Fix the cut reload frames, only if the team asks for it | P3 | 4 | D-08c | pending |
@@ -1272,7 +1273,13 @@ Acceptance criteria:
 - The original file and its license live in `assets/enemy-sprites/`. It is processed offline, like D-07b, and embedded as a data URI in `js/enemy-sheet.js` (TDD 6.2).
 - Its source and license are added to the README and the credits.
 
-Files: `assets/enemy-sprites/`, `js/enemy-sheet.js` (new), `index.html`, `README.md`.
+Files: `assets/enemy-sprites/`, `js/enemy-sheet.js` (new), `index.html`, `README.md`, `docs/TDD.md` (2.3.2).
+
+Decisions (2026-11-20, Juanma chose the sprite):
+- [Husk Mutant](https://opengameart.org/content/husk-mutant) by HorrorMovieRei, CC0, original art made with Blender and Photoshop. A mutated zombie, which ties in with the zombie radar of the presentation. Its front frame (`ZOMBA1.png`, 33 by 57 px) is close to the 0.3 by 0.6 shape of the old rectangle.
+- Rejected: The Guard by knekko (CC0, but a Wolfenstein 3D style guard, too close to the original game) and Vampyr by knekko (CC0, arms spread, wider than tall). Monster mutant and Monster for 3d shooter by Nmn (CC0) are big or flying monsters.
+- The frame already has a transparent background (8-bit palette with tRNS), so it is embedded unchanged, without the offline processing of D-07b. Only the front frame is used; the walk, attack and death frames of the archive are left for a future story.
+- `assets/enemy-sprites/LICENSE.md` records the author, URL, license, download date and the sha256 of the archive and of the frame. The credits screen (D-18b) takes them from there.
 
 ## D-21b: Textured enemies with z-buffer occlusion
 
@@ -1282,7 +1289,33 @@ Acceptance criteria:
 - The minimap keeps its markers.
 - Tests check the texture column chosen for a strip against a hand computed value.
 
-Files: `js/renderer.js`, `js/main.js`, `tests/renderer.test.js`.
+Files: `js/renderer.js`, `js/main.js`, `js/config.js`, `tests/renderer.test.js`, `docs/TDD.md` (2.3.2).
+
+Decisions (2026-11-20, Juanma):
+- The enemy stands on the floor. Centered on the horizon it floated 0.2 cells over the floor (from 0.2 to 0.8, with the eye at 0.5), which an amber block hid and a figure does not. At depth d the floor line is screenHeight / (2d) below the horizon, where a wall strip ends, and the enemy rises 0.6 cells from there (Lode part 3 moves sprites down with vMove). The horizon, where the projectile flies, crosses its head. The flat rectangle stands on the floor too.
+- The sprite is drawn 0.6 cells tall and 0.6 * 33 / 57 (about 0.35) wide, so the art keeps its proportions; squeezed into 0.3 it would be 14% thinner. The 0.3 cell footprint still decides collisions, projectile hits and the minimap marker; the arms stay outside it.
+- The image is cut into 33 column textures with nearest scaling, like the wall (D-09). `sliceTextureColumns` is shared by both, and `createStripSpritePool` by both pools.
+- texX uses the strip center, measured from the sprite's left edge: `floor((stripX + stripWidth / 2 - left) * 33 / width)`, kept inside 0 to 32.
+- Painter's algorithm: enemies are sorted near to far and take pool sprites from the last one down, and the last children of a container are drawn on top. Lode sorts far to near instead; this order means a full pool leaves out the farthest enemies, never the nearest. The pool holds four screens of 1 px strips (6720 sprites).
+- The tint uses the distance bands of D-01. The room lights of D-10 are not applied to enemies, so there are no shadow rays per enemy; in a dark corridor an enemy reads brighter than the walls, which helps to see it.
+- `useEnemySprites` (config) brings the amber rectangles back, the flat color mode; D-16d can wire it to the textures toggle.
+- Checked with headless Chrome on `file://`: an enemy placed two cells ahead of the spawn stands on the floor with sharp pixels, a second one behind it is hidden, and the console has no errors. 178 of 178 tests pass.
+
+## D-26: Logomark and favicon
+
+Request (2026-11-20, Juanma): a favicon cut from the enemy sprite's face, kept as the game's square logomark (the logo without the name).
+
+Acceptance criteria:
+- A square crop of the Husk Mutant head, kept in `assets/logo/` at a size that can be reused.
+- The page shows it as its favicon under `file://`, with no external file.
+
+Files: `assets/logo/logomark.png`, `assets/logo/favicon-32.png`, `index.html`, `README.md`, `assets/enemy-sprites/LICENSE.md`.
+
+Decisions:
+- A 16 by 16 crop of `ZOMBA1.png` (x 8 to 23, y -2 to 13): the head centered with 2 px above it, the red collar and the shoulders at the bottom, on the game background `#111e30`. 16 source pixels scale by whole numbers to the 16 px tab icon and the 32 px one of a retina screen, so the pixels stay sharp.
+- `logomark.png` is 512 by 512 (32 times, nearest neighbor) and `favicon-32.png` is 32 by 32 (2 times). The favicon goes into `index.html` as a data URI, like the other images (TDD 6.2).
+- Made with a small Node script (zlib PNG decode and encode) outside the repo; the crop and the scale are recorded in `assets/enemy-sprites/LICENSE.md` so it can be made again.
+- In branding the symbol without the name is usually called an isotype (an isologo fuses symbol and name); in the repo it is the logomark.
 
 ## D-21c: Boss sprite
 
