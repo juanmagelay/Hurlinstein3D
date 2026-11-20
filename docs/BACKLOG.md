@@ -4,6 +4,8 @@ Source of truth: `docs/TDD.md` (TDD v1.1). Work follows the story cycle in `CLAU
 
 Branches: every story is committed on `develop`, and once validated `develop` is merged into `main` (fast forward). `main` never gets direct commits. Details in `CLAUDE.md` section 10.3.
 
+Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added in the 2026-11-20 review use P0 (unblocks the rest) to P3 (only if time allows) and are listed in execution order. D-21 (enemy sprite) does not depend on the game flow stories and can be pulled forward.
+
 | ID | Story | Priority | TDD phase | Depends on | Status |
 |---|---|---|---|---|---|
 | H-01a | Repo layout: project docs to the root, old demo to `legacy/`, untrack `references/` | Required | 0 | | done |
@@ -65,7 +67,75 @@ Branches: every story is committed on `develop`, and once validated `develop` is
 | D-13b | Projectile logic: travel, wall range from the center ray DDA, enemy hit | Desirable | 4 | D-13a | done |
 | D-13c | Draw projectiles in 3D and fire them instead of the instant hit | Desirable | 4 | D-13b | done |
 | D-13d | Projectiles on the minimap and retire the instant center ray hit | Desirable | 4 | D-13c | done |
-| D-12 | Strafing and mouse look, only if the team asks for it | Desirable | 4 | H-09o | pending |
+| D-14a | Sync the docs with the code: enemy size in TDD 2.3.2, README controls and project map | P0 | 4 | D-13d | done |
+| D-14b | Specify the new scope in the TDD: victory with a boss, HUD layout, screens, score and ranking, admin panel | P0 | 4 | D-14a | pending |
+| D-15a | Move the minimap to the top-right corner | P1 | 4 | D-14a | pending |
+| D-15b | Life and ammo bars in the top-left corner with LIFE and AMMO labels | P1 | 4 | D-15a | pending |
+| D-16a | Scale the game to the window keeping 16:9, inside a game frame | P1 | 4 | D-14b | pending |
+| D-16b | Collapsible admin panel with live info | P1 | 4 | D-16a | pending |
+| D-17a | Reset a game: new world, enemies, projectiles and player | P1 | 4 | D-14b | pending |
+| D-17b | Game state machine: menu, playing, victory, defeat | P1 | 4 | D-17a | pending |
+| D-18a | Main menu: title, start game, controls, credits | P1 | 4 | D-16a, D-17b | pending |
+| D-18b | Controls and credits screens | P1 | 4 | D-18a | pending |
+| D-20a | Defeat screen with play again and main menu | P1 | 4 | D-18a | pending |
+| D-19a | Kill counter and KILLS label on the HUD | P2 | 4 | D-15b, D-17a | pending |
+| D-16c | Admin gameplay controls: god mode, refill ammo, kill target | P2 | 4 | D-16b, D-19a | pending |
+| D-19b | Enemy hit points, one for regular enemies | P2 | 4 | D-19a | pending |
+| D-19c | Boss appears after the kill target | P2 | 4 | D-19b | pending |
+| D-19d | Victory when the boss dies, victory screen | P2 | 4 | D-19c, D-20a | pending |
+| D-20b | Score and local ranking storage | P2 | 4 | D-19d | pending |
+| D-20c | Ranking on the victory and defeat screens | P2 | 4 | D-20b | pending |
+| D-21a | Pick a licensed enemy sprite and embed it as a data URI | P2 | 4 | D-14b | pending |
+| D-21b | Textured enemies with z-buffer occlusion | P2 | 4 | D-21a | pending |
+| D-21c | Boss as a tinted, larger enemy sprite | P2 | 4 | D-21b, D-19c | pending |
+| D-16d | Admin render toggles: textures, lighting, flat color | P2 | 4 | D-16b | pending |
+| D-08d | Fix the cut reload frames, only if the team asks for it | P3 | 4 | D-08c | pending |
+| D-22 | Player initials in the ranking, optional | P3 | 4 | D-20c | pending |
+| D-12 | Strafing and mouse look, only if the team asks for it | P3 | 4 | H-09o | pending |
+
+## Backlog review (2026-11-20)
+
+Checked against the code, with `node --test "tests/*.test.js"` (102 of 102 pass) and `node --check` on every `js/` file. `main` and `develop` point to the same commit.
+
+Already in the game (every story up to D-13d is done):
+- Infinite procedural dungeon in 16 by 16 chunks, one or two rooms per chunk, fixed doors, chunks kept for the session.
+- DDA raycaster with procedural brick textures, wall color per chunk, distance bands and one light per room.
+- W, S, A, D movement with wall sliding.
+- 21 by 21 minimap in the top-left corner, with enemies and projectiles.
+- Center crosshair, health bar bottom-left, six-round ammo bar bottom-right.
+- Amber enemy rectangles with idle, patrol and chase (DDA line of sight), and contact damage.
+- Shotgun aimed at the crosshair, fire and reload animation, visible projectile with its range from the center ray DDA.
+- Defeat: the game freezes under a dark overlay with a red frame. It has no text, and the only way to play again is reloading the page.
+
+Not in the game yet: victory, kill count, boss, text on screen, main menu, end screens, score, ranking, restart, admin panel, enemy sprites.
+
+Gaps found:
+- Since a52ec0c (a fix outside the story flow) the enemy is a 0.3 by 0.6 cell rectangle with a 0.3 cell square footprint, but TDD 2.3.2 and D-04a still say a 0.5 cell square. Fixed in D-14a.
+- The README controls lack Space and R, and the project map has no row for `js/enemies.js` (found in D-07d). Fixed in D-14a.
+- TDD 2.1 says there is no victory condition. The new request contradicts it, so the TDD changes first (D-14b).
+- The source and license of `assets/gun-sprites/` and `assets/ui-bars/` are not recorded. The credits screen needs them (D-18b).
+- The open questions at the end of this file about the victory condition (D-06) and the reload key (D-08) were already settled.
+
+Security check (same date): no active git hooks, no package manifests or install scripts, no tracked executables, no secrets in the history, no network requests from the game (the CDN URLs inside PixiJS are only for compressed texture transcoders, which the game never loads), and `lib/pixi.min.js` still matches the sha256 recorded in H-01b. The tests only read files inside the repo. Ignored leftovers on disk (`legacy/dist`, `legacy/node_modules/.vite`) can be deleted.
+
+New scope requested by Juanma:
+1. Collapsible admin panel; when collapsed, the game fills the window (D-16).
+2. Textured enemies instead of the amber rectangles (D-21).
+3. HUD: LIFE and AMMO top-left with labels, minimap top-right (D-15).
+4. Victory: after enemy number 20 is killed, number 21 is a boss, in another color for now; killing it wins (D-19).
+5. Main menu with the game name, start game, controls and credits (D-18).
+6. Victory and defeat screens with play again and a ranking of past scores (D-20).
+
+Added to support them: docs sync and TDD spec (D-14), game reset and state machine (D-17).
+
+Open questions, settled in D-14b before any code (proposed default in parentheses):
+- Boss hit points, size, contact damage and spawn point (5 hits, 1.5 times the regular size, 20 damage per second, the room center of a generated chunk next to the player's chunk; regular enemies keep spawning).
+- Boss color until D-21c (crimson `0xe63946`).
+- Score formula (100 per enemy, 1000 for the boss; a shorter game time breaks ties).
+- Player name in the ranking (none, only the date; initials are the optional D-22).
+- Admin panel contents and toggle key (live info, god mode, refill ammo, kill target, spawn boss, render toggles; the P key and a button; starts collapsed).
+- Menus and end screens as HTML over the canvas or drawn with Pixi (HTML: real buttons, easier to style, scaled with the game frame of D-16a).
+- Kill counter on the HUD (yes, "KILLS 3 / 20" under AMMO).
 
 ## H-01a: Repo layout
 
@@ -679,11 +749,230 @@ Decisions:
 - `isInsideMinimapWindow` keeps dots of projectiles outside the window from being drawn over the rest of the screen.
 - The dots are accumulated and painted with a single `fill()`, like the walls and the enemy markers.
 
+## D-14a: Sync the docs with the code
+
+Acceptance criteria:
+- TDD 2.3.2 describes the enemy as it is in the code: a 0.3 cell wide, 0.6 cell tall amber rectangle with a 0.3 cell square footprint.
+- The README controls table lists Space (fire) and R (reload), and the project map has a row for `js/enemies.js`.
+- No code changes.
+
+Files: `docs/TDD.md`, `README.md`, `docs/BACKLOG.md`.
+
+Decisions:
+- Keep the thin rectangle and make the TDD follow the code (Juanma approved every proposal of the 2026-11-20 review). The sizes come from `enemyWidth` and `enemyHeight` in `js/config.js`, set in a52ec0c.
+- TDD 2.3.2 now says the enemy is a flat color rectangle, 0.3 cells wide and 0.6 tall in the first person view, with a 0.3 cell square footprint on the map that slides by axis against walls like the player.
+- The D-04a0 and D-04a sections keep their original 0.5 cell square text, as a record of what was decided then; a52ec0c replaced it.
+- The README rows for `js/world.js` (enemy population and registry), `js/minimap.js` (enemies and projectiles) and `tests/` were outdated too, so they were updated in the same pass.
+- Found while checking a52ec0c: it also gave the player a 0.2 cell radius (a 0.4 cell square footprint, `canStandAt` in `js/player.js`). TDD 6.6 talks about "la celda de destino" and H-05a records a point collider. Left for Juanma to decide whether TDD 6.6 gets one sentence about it.
+
+## D-14b: Specify the new scope in the TDD
+
+Acceptance criteria:
+- TDD 2.1: the victory condition. After `bossKillTarget` kills (20) a boss appears, and killing it wins. Defeat is unchanged.
+- TDD 2.3.2: the boss (hit points, size, color, contact damage, spawn point) and enemy hit points.
+- TDD 2.3.3: the HUD layout. LIFE and AMMO top-left with their labels, the kill counter under them, the minimap top-right.
+- A new TDD section for the screens: main menu, controls, credits, victory and defeat with play again, score formula and a ranking kept in `localStorage` (works on `file://`, stays in that browser).
+- The admin panel: collapsible, the game scales to the window when it is collapsed.
+- TDD 6.3 lists the new files.
+- Every open question of the 2026-11-20 review is answered, and Juanma approves the text before it is written.
+
+Files: `docs/TDD.md`, `docs/BACKLOG.md`.
+
+## D-15a: Move the minimap to the top-right corner
+
+Acceptance criteria:
+- The 210 by 210 minimap sits 10 px from the top and right edges (`minimapX` is `screenWidth - 10 - 210`).
+- Walls, enemy markers, projectile dots and the player keep matching the first person view (TDD 6.7).
+- A test checks the right edge of the window at `screenWidth - 10`.
+
+Files: `js/minimap.js`, `tests/minimap.test.js`, `README.md`.
+
+## D-15b: Life and ammo bars in the top-left corner
+
+Acceptance criteria:
+- From the top-left corner, with a 16 px margin: the LIFE label and the health bar, then the AMMO label and the ammo bar below it.
+- The labels are PixiJS `Text` objects (v8 API checked in the docs first), with a system monospace font, created once outside the ticker (TDD 6.4).
+- The bars keep their mask fill and clamping (D-06c, D-08b).
+- Tests check the bar and label positions against hand computed values.
+
+Files: `js/hud.js`, `js/main.js`, `tests/hud.test.js`, `README.md`.
+
+## D-16a: Scale the game to the window keeping 16:9
+
+Acceptance criteria:
+- The canvas keeps its 1280 by 720 internal resolution and is scaled with CSS to the largest 16:9 box that fits the window, with the page color around it.
+- A `#game-frame` element holds the canvas, so later overlays (menus, end screens) sit on top of it and scale with it.
+- Resizing the window rescales the game with no distortion; the keyboard still works.
+
+Files: `index.html`, `js/main.js`.
+
+## D-16b: Collapsible admin panel with live info
+
+Acceptance criteria:
+- An HTML panel on the right side opens and closes with a button and a key. Closed, the game frame fills the window; open, the game scales into the space left.
+- It shows FPS, `posX` and `posY`, the current chunk, health, ammo and the number of enemies in the loaded chunks, refreshed about four times per second, not every frame.
+- Values are written with `textContent`, never `innerHTML`.
+- Game keys ignore key events that come from a panel form field, so typing in the panel never moves the player.
+
+Files: `index.html`, `js/admin.js` (new), `js/main.js`, `tests/admin.test.js` (pure formatting helpers).
+
+## D-17a: Reset a game
+
+Acceptance criteria:
+- `resetGame()` clears the chunk, light and enemy Maps, the per-cell registry and the projectiles, and puts the player at the room center of a newly generated chunk (0, 0) with full health, a full magazine and no reload.
+- Within a game, chunks still persist (TDD 4.4). A new game is a new session with a new map.
+- Tests: after a reset the old chunk is gone, no enemies or projectiles are left, and the player stands on an air cell with 100 health and 6 rounds.
+
+Files: `js/world.js`, `js/player.js`, `js/projectiles.js`, `tests/reset.test.js` (new).
+
+## D-17b: Game state machine
+
+Acceptance criteria:
+- States: `menu`, `playing`, `victory` and `defeat`. Only `playing` updates the player, enemies, projectiles, reload and weapon; the scene still renders behind the other states.
+- Zero health switches to `defeat` instead of returning early from the ticker.
+- Until D-18a the game starts in `playing`, so every build stays playable.
+- Tests cover the allowed transitions.
+
+Files: `js/game-state.js` (new), `js/main.js`, `index.html`, `tests/game-state.test.js` (new).
+
+## D-18a: Main menu
+
+Acceptance criteria:
+- On load the game shows the main menu over the scene: the title Hurlinstein3D and the buttons Start game, Controls and Credits.
+- Start game calls `resetGame()` and switches to `playing`.
+- The menu lives inside `#game-frame` and scales with it.
+
+Files: `index.html`, `js/screens.js` (new), `js/main.js`.
+
+## D-18b: Controls and credits screens
+
+Acceptance criteria:
+- Controls lists W, S, A, D, Space, R and the admin panel key.
+- Credits lists the team, course, university and professor, PixiJS 8.21.0 (MIT license) and the source and license of every sprite.
+- Both screens have a Back button to the main menu.
+
+Files: `index.html`, `js/screens.js`.
+
+Open question: where `Sgun.png` and the UI bar sheet come from, and under which license.
+
+## D-20a: Defeat screen with play again
+
+Acceptance criteria:
+- At zero health the defeat screen replaces the D-06c overlay, with a title and the buttons Play again and Main menu.
+- Play again starts a new game with `resetGame()`, without reloading the page.
+- `createDefeatOverlay` is removed.
+
+Files: `index.html`, `js/screens.js`, `js/main.js`, `js/hud.js`.
+
+## D-19a: Kill counter
+
+Acceptance criteria:
+- Each enemy a projectile kills adds one to the kill count; `resetGame()` sets it back to 0.
+- `bossKillTarget` (20) is a constant.
+- The HUD shows "KILLS 3 / 20" under AMMO. The `Text` object is created once and its text changes only when the count changes.
+- Tests: a kill adds one, a miss adds nothing, a reset clears the count.
+
+Files: `js/game-state.js`, `js/projectiles.js`, `js/hud.js`, `tests/projectiles.test.js`. `js/main.js` adds the label to the stage; split the story if it goes over four files.
+
+## D-16c: Admin gameplay controls
+
+Acceptance criteria:
+- God mode (no damage), refill ammo, and a kill target field that changes `bossKillTarget` for the current game and updates the HUD.
+- Controls are disabled outside `playing`.
+
+Files: `index.html`, `js/admin.js`, `js/player.js`, `js/main.js`.
+
+## D-19b: Enemy hit points
+
+Acceptance criteria:
+- Every enemy has `health`. Regular enemies have 1, so one projectile still kills them and nothing visible changes.
+- A projectile that reaches an enemy takes one point; at zero the enemy is removed and counted.
+- Tests: an enemy with 2 points survives one hit and dies on the second, and the projectile always disappears on contact.
+
+Files: `js/world.js`, `js/projectiles.js`, `tests/projectiles.test.js`.
+
+## D-19c: Boss appears after the kill target
+
+Acceptance criteria:
+- When the kill count reaches `bossKillTarget`, one boss spawns, with the hit points, size, color, contact damage and spawn point set in D-14b.
+- There is only one boss per game, and regular enemies keep spawning.
+- The boss is drawn in its color in the first person view and on the minimap, and is registered per cell like any enemy.
+- The admin panel gets a Spawn boss button for quick validation.
+- Tests: no boss before the target, exactly one at the target, on an air cell, with its hit points.
+
+Files: `js/enemies.js`, `js/renderer.js`, `js/minimap.js`, `tests/boss.test.js` (new).
+
+## D-19d: Victory when the boss dies
+
+Acceptance criteria:
+- Killing the boss switches the state to `victory`.
+- The victory screen shows a title, the kills and the game time, with the buttons Play again and Main menu. It is the defeat screen with another title.
+- Tests: killing the boss sets `victory`; killing a regular enemy does not.
+
+Files: `js/game-state.js`, `js/screens.js`, `index.html`, `tests/game-state.test.js`.
+
+## D-20b: Score and local ranking storage
+
+Acceptance criteria:
+- The score follows the formula set in D-14b. The game time is kept to break ties.
+- When a game ends, with victory or defeat, a record with score, kills, result, seconds and date is stored in `localStorage`. The ranking keeps the best 10, sorted by score and then by shorter time.
+- If `localStorage` is blocked or holds invalid data, the ranking lives only for the session and nothing breaks.
+- Tests on the pure functions: score, insertion and order, cut at 10, invalid stored data.
+
+Files: `js/ranking.js` (new), `index.html`, `tests/ranking.test.js` (new).
+
+## D-20c: Ranking on the end screens
+
+Acceptance criteria:
+- The victory and defeat screens show the top 10 with position, score, kills, result and date, and highlight the game that just ended.
+- Rows are built with DOM elements and `textContent`.
+
+Files: `js/screens.js`, `index.html`, `js/main.js`.
+
+## D-21a: Pick a licensed enemy sprite and embed it
+
+Acceptance criteria:
+- A free sprite with a clear license (CC0 preferred, or CC-BY with credit), front facing, with a transparent background, not taken from a commercial game.
+- The original file and its license live in `assets/enemy-sprites/`. It is processed offline, like D-07b, and embedded as a data URI in `js/enemy-sheet.js` (TDD 6.2).
+- Its source and license are added to the README and the credits.
+
+Files: `assets/enemy-sprites/`, `js/enemy-sheet.js` (new), `index.html`, `README.md`.
+
+## D-21b: Textured enemies with z-buffer occlusion
+
+Acceptance criteria:
+- Enemies show the sprite instead of the amber rectangle, projected as now (Lode part 3), with a texture column per strip and only where the enemy is closer than the wall depth.
+- Sprites come from a pool created once outside the ticker; nothing is created inside it (TDD 6.4).
+- The minimap keeps its markers.
+- Tests check the texture column chosen for a strip against a hand computed value.
+
+Files: `js/renderer.js`, `js/main.js`, `tests/renderer.test.js`.
+
+## D-21c: Boss sprite
+
+Acceptance criteria:
+- The boss uses the enemy sprite tinted with the boss color and drawn at its larger size.
+
+Files: `js/renderer.js`.
+
+## D-16d: Admin render toggles
+
+Acceptance criteria:
+- Toggles for wall textures, lighting and flat color mode, applied without reloading. Useful to show each algorithm on its own during the defense.
+- `useWallTextures` and `useLighting` become runtime settings; the wall strip sprites are created once and hidden when textures are off.
+
+Files: `js/config.js`, `js/renderer.js`, `js/main.js`, `js/admin.js`.
+
+## D-22: Player initials in the ranking (optional)
+
+Acceptance criteria:
+- At the end of a game the player can type three initials, stored with the record and shown in the ranking.
+
 ## Desirables
 
 Open questions to settle before each story:
 - D-08d (possible): some reload frames are also cut (frames 10, 11, 13, 15 and 16 lose part of the hand) and frames 6 and 7 are one drawing split in two. Ask before fixing.
 - D-05: optional vision cone with the dot product, like the zombie radar from the presentation. To confirm.
-- D-06: the TDD does not define a victory condition. Ask.
-- D-08: the TDD does not define the reload key. Ask.
+- D-06: settled in the 2026-11-20 review. The victory is killing the boss (D-14b, D-19).
+- D-08: settled in D-08a. The reload key is R.
 - D-12: only if the team asks for it.

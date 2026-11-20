@@ -14,6 +14,8 @@ Open `index.html` directly in Chrome. No installation, network access or develop
 | S | Move backward |
 | A | Turn left |
 | D | Turn right |
+| Space | Fire the shotgun |
+| R | Reload the shotgun |
 
 The player collides with walls and slides along them. The minimap is overlaid in the upper-left corner.
 
@@ -24,17 +26,18 @@ The player collides with walls and slides along them. The minimap is overlaid in
 | `lib/pixi.min.js` | Local PixiJS 8.21.0 browser bundle | 6.1, 6.2 |
 | `js/config.js` | 1280 by 720 canvas, movement and rendering constants, texture and lighting toggles | 6.3 |
 | `js/mapgen.js` | Generates a connected room (and often a second one) plus four corridors in each chunk | 4.2, 4.3 |
-| `js/world.js` | Cantor-keyed chunk storage, `getCell` and room lights | 5.1, 5.2, 6.8 |
+| `js/world.js` | Cantor-keyed chunk storage, `getCell`, room lights, enemy population and the per-cell enemy registry | 2.3.2, 5.1, 5.2, 6.8 |
 | `js/player.js` | Camera state, keyboard input, movement, collisions, health and ammo | 3.2, 6.6 |
 | `js/raycaster.js` | Camera rays and grid DDA | 3.2, 3.3, 3.4 |
 | `js/renderer.js` | Ceiling, floor, wall strips, procedural wall textures, point lights, enemies and projectiles | 2.3.1, 6.4, 6.5 |
+| `js/enemies.js` | Enemy state machine (idle, patrol, chase), DDA line of sight, wall sliding and contact damage | 2.3.1, 2.3.2 |
 | `js/projectiles.js` | Shotgun projectiles: range from the center ray DDA, flight, and enemy hits through the per-cell registry | 2.3.1 |
-| `js/minimap.js` | 21 by 21 cell minimap, player position and direction | 6.7 |
+| `js/minimap.js` | 21 by 21 cell minimap, player position and direction, enemies and projectiles | 6.7 |
 | `js/hud.js` | Center crosshair, health bar, ammo bar and defeat overlay | 2.3.3, 6.4 |
 | `js/weapon.js` | Shotgun aimed at the crosshair, idle, firing and reload animation | 2.3.1, 2.3.3, 6.4 |
 | `js/weapon-sheet.js` | Embedded shotgun strip generated from `assets/gun-sprites/Sgun.png` | 6.1 |
 | `js/main.js` | PixiJS application, scene and ticker | 6.4 |
-| `tests/` | Node tests for world generation, DDA, movement and projection | 8.7 |
+| `tests/` | Node tests for world generation, DDA, movement, projection, enemies, projectiles, HUD and weapon | 8.7 |
 
 ## Verification
 
