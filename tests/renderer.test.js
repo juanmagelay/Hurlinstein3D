@@ -8,7 +8,9 @@ const getWallStrip = getGlobal("getWallStrip");
 const drawWalls = getGlobal("drawWalls");
 const screenWidth = getGlobal("screenWidth");
 const screenHeight = getGlobal("screenHeight");
-const stripWidth = getGlobal("stripWidth");
+// D-16e1: the strip width is a setting, 2 px by default
+const gameSettings = getGlobal("gameSettings");
+const stripWidth = gameSettings.stripWidth;
 const maxRayDistance = getGlobal("maxRayDistance");
 const backgroundColor = getGlobal("backgroundColor");
 const wallPalette = getGlobal("wallPalette");
@@ -126,6 +128,44 @@ test("the canvas is 16:9 and casts 640 rays", () => {
   assert.equal(screenWidth / stripWidth, 640);
 });
 
+test("D-16e1: the strip width sets the rays per frame", () => {
+  const getWallStripCount = getGlobal("getWallStripCount");
+  const expected = { 1: 1280, 2: 640, 4: 320, 8: 160 };
+  try {
+    for (const width of [1, 2, 4, 8]) {
+      gameSettings.stripWidth = width;
+      assert.equal(getWallStripCount(), expected[width]);
+    }
+    // The widest canvas, 1680 px, casts from 1680 rays down to 210
+    getGlobal("screenWidth = 1680");
+    gameSettings.stripWidth = 1;
+    assert.equal(getWallStripCount(), 1680);
+    gameSettings.stripWidth = 8;
+    assert.equal(getWallStripCount(), 210);
+  } finally {
+    getGlobal("screenWidth = 1280");
+    gameSettings.stripWidth = 2;
+  }
+});
+
+test("D-16e1: each strip starts at index times the width and has that width", () => {
+  const camera = { posX: 7.5, posY: 1.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66 };
+  try {
+    for (const width of [1, 2, 4, 8]) {
+      gameSettings.stripWidth = width;
+      const graphics = createRecordingGraphics();
+      drawWalls(graphics, camera);
+      const xs = graphics.rects.map((rect) => rect.x).sort((a, b) => a - b);
+      assert.equal(xs.length, screenWidth / width);
+      assert.equal(xs[1], width);
+      assert.equal(xs[xs.length - 1], screenWidth - width);
+      assert.ok(graphics.rects.every((rect) => rect.width === width));
+    }
+  } finally {
+    gameSettings.stripWidth = 2;
+  }
+});
+
 test("from the spawn, wall strips share color fills and stay on screen", () => {
   // Spawn view: the center hits a side 0 face, the edges hit side 1 faces
   const camera = { posX: 7.5, posY: 1.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66 };
@@ -195,8 +235,9 @@ test("the wall depth buffer stores the DDA perpendicular distance per strip", ()
   const camera = { posX: 7.5, posY: 1.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66 };
   drawWalls(createRecordingGraphics(), camera);
 
-  // D-16a: sized for the widest canvas (21:9, 1680 px), so a resize never reallocates it
-  assert.equal(wallDepthBuffer.length, 1680 / stripWidth);
+  // D-16a / D-16e1: sized for the widest canvas (21:9, 1680 px) with 1 px
+  // strips, so neither a resize nor a new strip width reallocates it
+  assert.equal(wallDepthBuffer.length, 1680);
   assert.equal(wallDepthBuffer[screenWidth / 2 / stripWidth], 6.5);
   assert.equal(getWallDepthAtColumn(screenWidth / 2), 6.5);
   // Columns inside the same strip share one depth
@@ -311,4 +352,57 @@ const shadowAmbientLight = getShadowGlobal("ambientLight");
 test("a wall between the hit point and the light casts a shadow", () => {
   const lights = [{ x: 4.5, y: 2.5, radius: lightRadius, intensity: lightIntensity }];
   assert.equal(getShadowedWallLight(5.5, 2.5, -1, 0, lights), shadowAmbientLight);
+});
+
+// D-16e2: a straight wall across the view at x = 5, so every ray meets it at the
+// same perpWallDist (4.5 from posX 0.5) and only |rayDir| changes per column
+const getFisheyeGlobal = loadScripts();
+getFisheyeGlobal("getCell = function (x, y) { return x >= 5 ? 1 : 0; }");
+const fisheyeSettings = getFisheyeGlobal("gameSettings");
+const drawFisheyeWalls = getFisheyeGlobal("drawWalls");
+const fisheyeCamera = { posX: 0.5, posY: 0.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66 };
+
+function getStripHeights() {
+  const graphics = createRecordingGraphics();
+  drawFisheyeWalls(graphics, fisheyeCamera);
+  const heights = new Map();
+  for (const rect of graphics.rects) {
+    heights.set(rect.x, rect.height);
+  }
+  return heights;
+}
+
+test("D-16e2: with distPerp a straight wall has the same height in every column", () => {
+  const heights = getStripHeights();
+  // 720 / 4.5 = 160 px everywhere
+  assert.equal(heights.get(screenWidth / 2), 160);
+  assert.equal(heights.get(0), 160);
+});
+
+test("D-16e2: fisheye keeps the center height and shortens the wall toward the edges", () => {
+  fisheyeSettings.fisheye = true;
+  try {
+    const heights = getStripHeights();
+    // Center column: cameraX 0, |rayDir| = 1, still 160 px
+    assert.equal(heights.get(screenWidth / 2), 160);
+    // Left edge: rayDir = (1, -0.66), Euclidean distance 4.5 * 1.198 = 5.39
+    const edgeDistance = 4.5 * Math.sqrt(1 + 0.66 * 0.66);
+    assert.ok(Math.abs(heights.get(0) - 720 / edgeDistance) < 1e-9);
+    assert.ok(heights.get(0) < heights.get(screenWidth / 4));
+    assert.ok(heights.get(screenWidth / 4) < heights.get(screenWidth / 2));
+    // The depth buffer keeps distPerp for the enemies
+    assert.equal(getFisheyeGlobal("wallDepthBuffer")[0], 4.5);
+  } finally {
+    fisheyeSettings.fisheye = false;
+  }
+});
+
+test("D-23: an enemy behind the camera or past maxRayDistance is skipped before projecting", () => {
+  const isEnemyInViewRange = getEnemyGlobal("isEnemyInViewRange");
+  assert.equal(isEnemyInViewRange({ posX: 3.5, posY: 0.5 }, enemyCamera), true);
+  // Dot product with dir: -2 behind, 0 beside the camera
+  assert.equal(isEnemyInViewRange({ posX: -1.5, posY: 0.5 }, enemyCamera), false);
+  assert.equal(isEnemyInViewRange({ posX: 0.5, posY: 3.5 }, enemyCamera), false);
+  // 25 cells ahead, past the 24 cell cap
+  assert.equal(isEnemyInViewRange({ posX: 25.5, posY: 0.5 }, enemyCamera), false);
 });

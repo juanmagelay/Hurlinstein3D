@@ -38,10 +38,26 @@ test("enemies are counted across every loaded chunk", () => {
   assert.equal(world("countLoadedEnemies()"), 3);
 });
 
+test("D-16c1e: enemies created read against the game total", () => {
+  const formatAdminEnemiesCreated = getGlobal("formatAdminEnemiesCreated");
+  assert.equal(formatAdminEnemiesCreated(7, 20), "7 / 20");
+  assert.equal(formatAdminEnemiesCreated(12345, 100000), "12,345 / 100,000");
+});
+
+test("D-23: the active enemies are the ones near the player, or all with the toggle off", () => {
+  const world = loadScripts();
+  world("enemiesByChunk.clear()");
+  world("enemiesByChunk.set(getChunkKey(0, 0), [{}, {}]); enemiesByChunk.set(getChunkKey(3, 0), [{}])");
+  const player = { posX: 5.5, posY: 5.5 };
+  assert.equal(world("countActiveEnemies")(player), 2);
+  world("gameSettings.activeAreaOnly = false");
+  assert.equal(world("countActiveEnemies")(player), 3);
+});
+
 test("every live value is text, ready for textContent", () => {
   const info = getGlobal("getAdminInfo")(getGlobal("player"), 59.6);
   assert.equal(info.fps, "60");
-  for (const name of ["fps", "position", "chunk", "health", "ammo", "enemies", "chunks"]) {
+  for (const name of ["fps", "position", "chunk", "health", "ammo", "created", "enemies", "active", "chunks"]) {
     assert.equal(typeof info[name], "string", name);
   }
 });

@@ -6,6 +6,9 @@ const enemiesByChunk = new Map();
 const enemiesByCell = new Map();
 let spawnRoomCenter = null;
 let nextEnemyId = 1;
+// D-16c1e / TDD 2.3.2: regular enemies created so far in the game, against the
+// enemiesPerGame total of the admin settings
+let enemiesCreated = 0;
 
 // TDD 6.8: map signed chunk coordinates to non-negative integers, then pair them.
 function getChunkKey(cx, cy) {
@@ -52,6 +55,12 @@ function getLightsAtCell(cellX, cellY) {
   return lightsByChunk.get(getChunkKey(cx, cy)) || [];
 }
 
+// D-16c1e: what is left of the game total. Read when each chunk is generated,
+// so a new total from the admin panel applies to the next chunks.
+function getEnemiesLeftToCreate() {
+  return Math.max(0, gameSettings.enemiesPerGame - enemiesCreated);
+}
+
 // D-04: zero enemies in the spawn chunk, weighted population in other chunks.
 function getEnemyCountForRoll(roll) {
   if (roll < enemyCountThresholds[0]) {
@@ -66,12 +75,14 @@ function getEnemyCountForRoll(roll) {
   return 3;
 }
 
+// D-16c1e: the roll never goes over the enemies left in the game total, and
+// once the total is reached new chunks are empty
 function generateEnemiesForChunk(cx, cy, cells) {
   if (cx === 0 && cy === 0) {
     return [];
   }
 
-  const enemyCount = getEnemyCountForRoll(Math.random());
+  const enemyCount = Math.min(getEnemyCountForRoll(Math.random()), getEnemiesLeftToCreate());
   const openCells = [];
   for (let index = 0; index < cells.length; index += 1) {
     if (cells[index] === 0) {
@@ -103,6 +114,7 @@ function generateEnemiesForChunk(cx, cy, cells) {
     });
     nextEnemyId += 1;
   }
+  enemiesCreated += enemies.length;
   return enemies;
 }
 

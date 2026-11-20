@@ -82,12 +82,12 @@ Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added i
 | D-16c1b | Settings store and panel fields: ranges, localStorage, Reset, turn speed in degrees per second, game keys ignored while typing | P1 | 4 | D-16c1a | done |
 | D-16c1c | Player hit points, god mode, magazine size and refill ammo | P1 | 4 | D-16c1b | done |
 | D-16c1d | Reload limit with the x3 counter next to the ammo bar | P1 | 4 | D-16c1c | done |
-| D-16c1e | Enemies per game: chunks stop rolling enemies once the total is reached | P1 | 4 | D-16c1b | pending |
-| D-23 | Update and draw only the enemies near the player, with an admin toggle to compare | P1 | 4 | D-16c1e | pending |
-| D-16e1 | Strip width setting: 1, 2, 4 or 8 px per ray | P1 | 4 | D-16c1b | pending |
-| D-16e2 | Fisheye toggle: walls drawn with the Euclidean distance | P1 | 4 | D-16c1b | pending |
-| D-16e3 | Rays on the minimap | P1 | 4 | D-16c1b | pending |
-| D-16f | Chunk borders on the minimap | P1 | 4 | D-16c1b | pending |
+| D-16c1e | Enemies per game: chunks stop rolling enemies once the total is reached | P1 | 4 | D-16c1b | done |
+| D-23 | Update and draw only the enemies near the player, with an admin toggle to compare | P1 | 4 | D-16c1e | done |
+| D-16e1 | Strip width setting: 1, 2, 4 or 8 px per ray | P1 | 4 | D-16c1b | done |
+| D-16e2 | Fisheye toggle: walls drawn with the Euclidean distance | P1 | 4 | D-16c1b | done |
+| D-16e3 | Rays on the minimap | P1 | 4 | D-16c1b | done |
+| D-16f | Chunk borders on the minimap | P1 | 4 | D-16c1b | done |
 | D-17a | Reset a game: new world, enemies, projectiles and player | P1 | 4 | D-14b | pending |
 | D-17b | Game state machine: menu, playing, victory, defeat | P1 | 4 | D-17a | pending |
 | D-18a | Main menu: title, start game, controls, credits | P1 | 4 | D-16a3, D-17b | pending |
@@ -1022,16 +1022,27 @@ Acceptance criteria:
 
 Files: `js/settings.js`, `js/world.js`, `js/admin.js`, `index.html`, tests.
 
+Decisions:
+- The total counts created enemies, so a killed enemy does not give its place back: the boss comes after the last of them dies (TDD 2.1).
+- The panel shows "Enemies created 7 / 20" and the range "1 to 100,000" with a thousands separator; the number fields and range labels are 76 px wide so 100000 fits.
+- Done in the same batch as D-23, D-16e1 to D-16e3 and D-16f (2026-11-20).
+
 ## D-16e1: Strip width setting
 
 Acceptance criteria:
-- Strip width of 1, 2, 4 or 8 px in a Raycasting box, applied live: 1680 to 105 rays on the widest canvas. The FPS in the panel shows the cost (TDD 3.6, 6.5).
+- Strip width of 1, 2, 4 or 8 px in a Raycasting box, applied live: 1680 to 210 rays on the widest canvas. The FPS in the panel shows the cost (TDD 3.6, 6.5).
 - Nothing is created on change (TDD 6.4): the depth buffer and the wall strip sprites are sized once for 1 px strips on the widest canvas, and the unused ones stay hidden.
 - Tests: rays per width, the depth buffer size, a strip x for each width.
 
 Files: `js/config.js`, `js/settings.js`, `js/renderer.js`, `js/main.js`, `index.html`, tests. Split if it goes over four files.
 
-Open point: the canvas width is rounded to whole 2 px strips today (D-16a2). Rounding it to multiples of 8 keeps every width exact; 1512 by 860 would give 1264 instead of 1266, and `tests/screen.test.js` changes with it.
+Open point (settled): the canvas width was rounded to whole 2 px strips (D-16a2). It is now rounded to multiples of 8, so every width is exact; 1512 by 860 gives 1264 instead of 1266.
+
+Decisions:
+- `screenWidthStep` (8 px, the widest strip) replaces the `stripWidth` constant in `js/config.js`. `getGameFrameSize` now stretches a gap under one step (8 canvas pixels times the scale) instead of under 2 px, so the frame still fills a 1512 by 860 window (at most 0.4% wider or taller). TDD 6.5 says it.
+- The acceptance criteria said 105 rays for 8 px strips on the widest canvas; 1680 / 8 is 210.
+- The strip width is a setting with a list of options, shown as a select; a stored value outside the list falls back to 2. Selects and checkboxes give the focus back after a change, so Space still fires.
+- The depth buffer and the strip sprites are sized for 1 px strips on the widest canvas (1680), created once; the renderer reads the width every frame and hides the sprites it does not use (TDD 6.4 updated).
 
 ## D-16e2: Fisheye toggle
 
@@ -1044,6 +1055,10 @@ Files: `js/settings.js`, `js/renderer.js`, `index.html`, tests.
 
 Note: enemies keep the perpendicular projection and the wall depth stays perpendicular, so in fisheye mode enemies and walls disagree a little at the edges. It is a teaching mode.
 
+Decisions:
+- `getProjectionDistance` returns perpWallDist, or perpWallDist * |rayDir| in fisheye mode, and only the strip height uses it. The brightness bands and the lighting keep perpWallDist.
+- The background strip of a missed ray uses the same distance, so the dark band at the cap bends with the walls.
+
 ## D-16e3: Rays on the minimap
 
 Acceptance criteria:
@@ -1053,6 +1068,11 @@ Acceptance criteria:
 
 Files: `js/settings.js`, `js/renderer.js`, `js/minimap.js`, `index.html`, tests.
 
+Decisions:
+- The minimap reads t = perpWallDist from the depth buffer of the same frame and ends each ray at pos + t * rayDir, cut where the ray first leaves the window (`getWindowExitParameter`, the ray parameter where one coordinate reaches the window edge).
+- Every eighth ray at the current strip width, so 8 px strips draw fewer rays than 1 px strips and the minimap shows the setting too.
+- Teal like the player at 35% opacity, over the walls and under the enemies.
+
 ## D-16f: Chunk borders on the minimap
 
 Acceptance criteria:
@@ -1060,6 +1080,10 @@ Acceptance criteria:
 - Tests: the border lines inside a window that crosses x = 0 and y = -16.
 
 Files: `js/settings.js`, `js/minimap.js`, `index.html`, tests.
+
+Decisions:
+- Magenta lines (0xff4fd8), a color nothing else on the minimap uses, in one stroke. A border that falls on the window edge is skipped, since the minimap frame already draws it.
+- Checked with headless Chrome on `file://` for the whole batch: the canvas is 1264 wide in a 1512 by 860 window and the frame fills it, 8 px and 1 px strips, fisheye, rays and borders on the minimap, the panel with its new boxes, and no console errors.
 
 ## D-17a: Reset a game
 
@@ -1130,6 +1154,14 @@ Acceptance criteria:
 - Tests: an enemy three chunks away is not updated; one in a neighbor chunk is; the toggle restores the old behavior.
 
 Files: `js/enemies.js`, `js/renderer.js`, `js/admin.js`, tests. Split if it goes over four files.
+
+Decisions:
+- An enemy is listed in the chunk it stands in and changes lists when it crosses a chunk border. Without that, an enemy that chased the player far from the chunk where it was created would freeze next to the player. The change happens after the update loop, so no list changes while it is being walked.
+- The toggle ("Active area only", on by default, in the Game box) only changes which lists are walked: off, `getActiveEnemyLists` returns every loaded chunk, so before and after run the same code.
+- The draw pre-check (`isEnemyInViewRange`) uses the squared distance and the sign of the dot product with dir, like the zombie radar of the presentation. The exact depth check after the projection stays.
+- Projectiles and the minimap read the per-cell registry, so they needed no change.
+- Measured in headless Chrome with 86,482 enemies over 115,600 chunks: updating, contact damage and drawing take 9.6 ms per frame for every enemy and 0.015 ms for the 23 active ones.
+- TDD 2.3.2 and 2.3.5 now describe the active area, its toggle and the new live values.
 
 Other ideas to measure with the FPS before doing them: group enemy strips into one `fill()` per frame (already the case), and skip the minimap enemy loop outside its 21 by 21 window (already the case, it reads cells).
 

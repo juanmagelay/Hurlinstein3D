@@ -3,13 +3,20 @@
 // D-04c1: perpendicular wall depth per screen strip, kept after each draw so
 // enemies (D-04c2) can be hidden behind walls. Missed strips use the max
 // distance, the same depth their background strip is drawn at.
-// D-16a: sized once for the widest canvas; only the first
-// screenWidth / stripWidth entries are used at the current width.
-const maxWallStripCount = maxScreenWidth / stripWidth;
+// D-16a / D-16e1: sized once for the widest canvas with the narrowest strips
+// (1680 entries); only the first screenWidth / stripWidth are used each frame.
+const narrowestStripWidth = settingDefinitions.stripWidth.options[0];
+const maxWallStripCount = maxScreenWidth / narrowestStripWidth;
 const wallDepthBuffer = new Array(maxWallStripCount).fill(maxRayDistance);
 
 function getWallDepthAtColumn(columnX) {
-  return wallDepthBuffer[Math.floor(columnX / stripWidth)];
+  return wallDepthBuffer[Math.floor(columnX / gameSettings.stripWidth)];
+}
+
+// TDD 6.5 / D-16e1: one ray per strip, so the strip width sets the rays per
+// frame: 640 with 2 px strips on a 1280 px canvas, 1280 with 1 px, 160 with 8 px
+function getWallStripCount() {
+  return screenWidth / gameSettings.stripWidth;
 }
 
 // TDD 3.4: a strip is the rect drawn for one ray, x is its left edge in pixels.
@@ -21,6 +28,22 @@ function getWallStrip(x, perpWallDist) {
   const drawStart = Math.max(0, -lineHeight / 2 + screenHeight / 2);
   const drawEnd = Math.min(screenHeight, lineHeight / 2 + screenHeight / 2);
   return { x, lineHeight, drawStart, drawEnd };
+}
+
+// D-16e2 / TDD 3.4: the distance the wall height is drawn with. Normally it is
+// perpWallDist (distPerp), which keeps a straight wall straight. The fisheye
+// setting uses the Euclidean distance to the hit instead: the ray is
+// P(t) = pos + t * rayDir and the hit is at t = perpWallDist, so the distance
+// is perpWallDist * |rayDir|. |rayDir| is 1 at the center column and grows
+// toward the edges, so the walls bend. The DDA is the same in both modes.
+function getProjectionDistance(player, x, perpWallDist) {
+  if (!gameSettings.fisheye) {
+    return perpWallDist;
+  }
+  const cameraX = 2 * x / screenWidth - 1;
+  const rayDirX = player.dirX + player.planeX * cameraX;
+  const rayDirY = player.dirY + player.planeY * cameraX;
+  return perpWallDist * Math.sqrt(rayDirX * rayDirX + rayDirY * rayDirY);
 }
 
 // TDD 6.5: quantize perpendicular distance into four brightness bands
@@ -249,7 +272,8 @@ function getWallTextureX(player, stripX, ray) {
 // column (so column screenWidth / 2 is still cameraX 0), and sorts the strips
 // into side 0 walls, side 1 walls and rays that hit nothing. Each group is
 // painted with a single fill(). With useWallTextures the sprites replace this
-// path, but missed strips still use the background fill.
+// path, but missed strips still use the background fill. The depth buffer
+// keeps perpWallDist even in fisheye mode, for the enemies (D-16e2).
 function drawWalls(graphics, player, wallStrips) {
   graphics.clear();
 
@@ -258,20 +282,24 @@ function drawWalls(graphics, player, wallStrips) {
     return;
   }
 
+  const stripWidth = gameSettings.stripWidth;
+  const stripCount = getWallStripCount();
   const stripsByColor = new Map();
   const missedStrips = [];
 
-  for (let x = 0; x < screenWidth; x += stripWidth) {
+  for (let index = 0; index < stripCount; index++) {
+    const x = index * stripWidth;
     const ray = castRayForColumn(player, x);
     if (!ray.hit) {
       // TDD 5.2: nothing within maxRayDistance. The background color takes the
       // place a wall at maxRayDistance would have, so it reads as darkness.
-      wallDepthBuffer[x / stripWidth] = maxRayDistance;
-      missedStrips.push(getWallStrip(x, maxRayDistance));
+      wallDepthBuffer[index] = maxRayDistance;
+      missedStrips.push(getWallStrip(x, getProjectionDistance(player, x, maxRayDistance)));
     } else {
-      wallDepthBuffer[x / stripWidth] = ray.perpWallDist;
+      wallDepthBuffer[index] = ray.perpWallDist;
       const color = getWallStripColor(player, x, ray);
-      addStripToColorGroup(stripsByColor, color, getWallStrip(x, ray.perpWallDist));
+      const distance = getProjectionDistance(player, x, ray.perpWallDist);
+      addStripToColorGroup(stripsByColor, color, getWallStrip(x, distance));
     }
   }
 
@@ -285,13 +313,15 @@ function drawWalls(graphics, player, wallStrips) {
 // height and lets the canvas edge do the clipping, which keeps the texture
 // aligned when a wall is bigger than the screen.
 function drawTexturedWalls(graphics, player, wallStrips) {
+  const stripWidth = gameSettings.stripWidth;
+  const stripCount = getWallStripCount();
   const missedStrips = [];
 
   for (let index = 0; index < maxWallStripCount; index++) {
     const x = index * stripWidth;
     const sprite = wallStrips.sprites[index];
-    // D-16a: strips past the current canvas width stay hidden
-    if (x >= screenWidth) {
+    // D-16a / D-16e1: sprites past the strips in use stay hidden
+    if (index >= stripCount) {
       sprite.visible = false;
       continue;
     }
@@ -299,12 +329,13 @@ function drawTexturedWalls(graphics, player, wallStrips) {
     if (!ray.hit) {
       wallDepthBuffer[index] = maxRayDistance;
       sprite.visible = false;
-      missedStrips.push(getWallStrip(x, maxRayDistance));
+      missedStrips.push(getWallStrip(x, getProjectionDistance(player, x, maxRayDistance)));
       continue;
     }
 
     wallDepthBuffer[index] = ray.perpWallDist;
-    const lineHeight = Math.min(screenHeight / ray.perpWallDist, wallSpriteMaxHeight);
+    const distance = getProjectionDistance(player, x, ray.perpWallDist);
+    const lineHeight = Math.min(screenHeight / distance, wallSpriteMaxHeight);
     sprite.texture = wallTextureColumns[getWallTextureX(player, x, ray)];
     sprite.position.set(x, screenHeight / 2 - lineHeight / 2);
     sprite.width = stripWidth;
@@ -336,7 +367,7 @@ function fillStrips(graphics, strips, color) {
     return;
   }
   for (const strip of strips) {
-    graphics.rect(strip.x, strip.drawStart, stripWidth, strip.drawEnd - strip.drawStart);
+    graphics.rect(strip.x, strip.drawStart, gameSettings.stripWidth, strip.drawEnd - strip.drawStart);
   }
   graphics.fill(color);
 }
@@ -353,15 +384,33 @@ function getEnemyProjection(enemy, player) {
   return { transformX, depth };
 }
 
+// D-23: a cheap test before the projection. The squared distance is compared
+// with maxRayDistance squared, so there is no square root. The dot product of
+// the offset with dir tells front from back by its sign alone, like the zombie
+// radar of the presentation: 0 or less is beside or behind the camera.
+function isEnemyInViewRange(enemy, player) {
+  const offsetX = enemy.posX - player.posX;
+  const offsetY = enemy.posY - player.posY;
+  if (offsetX * offsetX + offsetY * offsetY > maxRayDistance * maxRayDistance) {
+    return false;
+  }
+  return offsetX * player.dirX + offsetY * player.dirY > 0;
+}
+
 // D-04c2: draw each enemy as a thin standing rectangle centered on the horizon.
 // A strip only paints where the enemy is nearer than the wall depth (D-04c1) in
-// that column, so walls hide enemies behind them.
+// that column, so walls hide enemies behind them. D-23: only active enemies in
+// view range are projected.
 function drawEnemies(graphics, player) {
   graphics.clear();
 
+  const stripWidth = gameSettings.stripWidth;
   const enemyStrips = [];
-  for (const enemies of enemiesByChunk.values()) {
+  for (const enemies of getActiveEnemyLists(player)) {
     for (const enemy of enemies) {
+      if (!isEnemyInViewRange(enemy, player)) {
+        continue;
+      }
       const { transformX, depth } = getEnemyProjection(enemy, player);
       if (depth <= 0 || depth > maxRayDistance) {
         continue;
@@ -409,6 +458,7 @@ const projectileMinDepth = 0.75;
 function drawProjectiles(graphics, player) {
   graphics.clear();
 
+  const stripWidth = gameSettings.stripWidth;
   const projectileStrips = [];
   for (const projectile of projectiles) {
     const { transformX, depth } = getEnemyProjection(projectile, player);

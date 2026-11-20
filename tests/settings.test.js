@@ -20,12 +20,18 @@ function plain(object) {
 }
 
 const defaults = {
+  enemiesPerGame: 20,
+  activeAreaOnly: true,
   playerHitPoints: 10,
   magazineSize: 6,
   unlimitedReloads: true,
   reloadLimit: 5,
   turnSpeed: 120,
   godMode: false,
+  stripWidth: 2,
+  fisheye: false,
+  minimapRays: false,
+  chunkBorders: false,
 };
 
 function createMemoryStorage(initialText) {
@@ -83,6 +89,21 @@ test("flags only take true or false", () => {
 test("the range text is the one shown next to each field", () => {
   assert.equal(formatSettingRange("magazineSize"), "2 to 20");
   assert.equal(formatSettingRange("turnSpeed"), "30 to 360");
+  assert.equal(formatSettingRange("enemiesPerGame"), "1 to 100,000");
+});
+
+test("D-16c1e: the enemies per game go from 1 to 100,000", () => {
+  assert.equal(normalizeSetting("enemiesPerGame", 0), 1);
+  assert.equal(normalizeSetting("enemiesPerGame", "250000"), 100000);
+  assert.equal(normalizeSetting("enemiesPerGame", "500"), 500);
+});
+
+test("D-16e1: the strip width only takes 1, 2, 4 or 8 px", () => {
+  assert.equal(normalizeSetting("stripWidth", "4"), 4);
+  assert.equal(normalizeSetting("stripWidth", 8), 8);
+  assert.equal(normalizeSetting("stripWidth", 3), 2);
+  assert.equal(normalizeSetting("stripWidth", 16), 2);
+  assert.equal(normalizeSetting("stripWidth", ""), 2);
 });
 
 test("stored settings are normalized, and unknown or missing names are ignored", () => {

@@ -4,7 +4,8 @@ const { loadScripts } = require("./load-scripts.js");
 
 // An all-air world so any neighbour is a valid patrol step. Math.random always
 // picks the first neighbour (+X) to keep the patrol deterministic. The player
-// stays far away so patrol tests never trigger the chase state.
+// stays 32 cells away, past the 24 cell sight distance, so patrol tests never
+// trigger the chase state, but inside the active area of D-23 (chunk (0, 2)).
 const getGlobal = loadScripts();
 getGlobal("getCell = function (x, y) { return 0; }");
 getGlobal("Math.random = function () { return 0; }");
@@ -19,7 +20,8 @@ const registerEnemyAtCell = getGlobal("registerEnemyAtCell");
 const enemyIdleTicks = getGlobal("enemyIdleTicks");
 const enemyLoseSightTicks = getGlobal("enemyLoseSightTicks");
 const ticksPerSecond = getGlobal("ticksPerSecond");
-const farPlayer = { posX: 100.5, posY: 100.5 };
+const gameSettings = getGlobal("gameSettings");
+const farPlayer = { posX: 5.5, posY: 37.5 };
 
 function resetWorld() {
   enemiesByChunk.clear();
@@ -33,6 +35,8 @@ function addEnemy() {
     posY: 5.5,
     cellX: 5,
     cellY: 5,
+    chunkX: 0,
+    chunkY: 0,
     width: 0.3,
     height: 0.6,
     state: "idle",
@@ -99,6 +103,8 @@ test("an enemy with no open neighbour stays idle", () => {
     posY: 5.5,
     cellX: 5,
     cellY: 5,
+    chunkX: 0,
+    chunkY: 0,
     width: 0.3,
     height: 0.6,
     state: "idle",
@@ -131,6 +137,8 @@ function addLosEnemy() {
     posY: 5.5,
     cellX: 5,
     cellY: 5,
+    chunkX: 0,
+    chunkY: 0,
     width: 0.3,
     height: 0.6,
     state: "idle",
@@ -199,4 +207,73 @@ test("an enemy stops at a wall instead of walking through it", () => {
   assert.ok(enemy.posX < 7, "the enemy entered the wall cell");
   assert.equal(wallCanEnemyStandAt(enemy.posX, enemy.posY), true);
   assert.equal(wallCanEnemyStandAt(enemy.posX + 0.2, enemy.posY), false);
+});
+
+// D-23: only the enemies in the 5 by 5 chunks around the player move
+function addIdleEnemyAt(cellX, cellY) {
+  const enemy = {
+    id: cellX,
+    posX: cellX + 0.5,
+    posY: cellY + 0.5,
+    cellX,
+    cellY,
+    chunkX: Math.floor(cellX / 16),
+    chunkY: Math.floor(cellY / 16),
+    width: 0.3,
+    height: 0.6,
+    state: "idle",
+    stateTime: 0,
+  };
+  const chunkKey = getChunkKey(enemy.chunkX, enemy.chunkY);
+  if (!enemiesByChunk.has(chunkKey)) {
+    enemiesByChunk.set(chunkKey, []);
+  }
+  enemiesByChunk.get(chunkKey).push(enemy);
+  registerEnemyAtCell(enemy);
+  return enemy;
+}
+
+test("the active area reaches two chunks each way, enough for maxRayDistance", () => {
+  assert.equal(getGlobal("activeChunkRadius"), 2);
+});
+
+test("an enemy three chunks away stays frozen, one in a neighbor chunk is updated", () => {
+  resetWorld();
+  const player = { posX: 5.5, posY: 5.5 };
+  const neighbor = addIdleEnemyAt(21, 5);
+  const far = addIdleEnemyAt(53, 5);
+
+  updateEnemies(player, enemyIdleTicks);
+
+  assert.equal(neighbor.state, "patrol");
+  assert.equal(far.state, "idle");
+  assert.equal(far.stateTime, 0);
+});
+
+test("with the active area off, every loaded enemy is updated, as before D-23", () => {
+  resetWorld();
+  const player = { posX: 5.5, posY: 5.5 };
+  const far = addIdleEnemyAt(53, 5);
+
+  gameSettings.activeAreaOnly = false;
+  try {
+    updateEnemies(player, enemyIdleTicks);
+  } finally {
+    gameSettings.activeAreaOnly = true;
+  }
+
+  assert.equal(far.state, "patrol");
+});
+
+test("an enemy that walks into the next chunk moves to that chunk's list", () => {
+  resetWorld();
+  const enemy = addIdleEnemyAt(15, 5);
+  startPatrol(enemy);
+
+  updateEnemies(farPlayer, ticksPerSecond);
+
+  assert.equal(enemy.posX, 16.5);
+  assert.equal(enemy.chunkX, 1);
+  assert.equal(enemiesByChunk.get(getChunkKey(0, 0)).includes(enemy), false);
+  assert.ok(enemiesByChunk.get(getChunkKey(1, 0)).includes(enemy));
 });

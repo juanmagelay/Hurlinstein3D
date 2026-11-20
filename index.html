@@ -240,8 +240,9 @@
       flex: 1;
     }
 
-    .admin-field input {
-      width: 64px;
+    .admin-field input,
+    .admin-field select {
+      width: 76px;
       padding: 4px 6px;
       font: 600 13px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       color: var(--text-color);
@@ -256,7 +257,8 @@
     }
 
     .admin-field small {
-      width: 60px;
+      width: 76px;
+      white-space: nowrap;
       font-size: 11px;
       color: var(--muted-color);
       font-variant-numeric: tabular-nums;
@@ -274,6 +276,7 @@
     }
 
     .admin-field input:focus-visible,
+    .admin-field select:focus-visible,
     .admin-check input:focus-visible {
       outline: 2px solid var(--accent-color);
       outline-offset: 1px;
@@ -335,7 +338,9 @@
       <div><dt>Chunk</dt><dd data-admin-value="chunk">0, 0</dd></div>
       <div><dt>Health</dt><dd data-admin-value="health">0</dd></div>
       <div><dt>Ammo</dt><dd data-admin-value="ammo">0</dd></div>
+      <div><dt>Enemies created</dt><dd data-admin-value="created">0</dd></div>
       <div><dt>Enemies loaded</dt><dd data-admin-value="enemies">0</dd></div>
+      <div><dt>Enemies active</dt><dd data-admin-value="active">0</dd></div>
       <div><dt>Chunks loaded</dt><dd data-admin-value="chunks">0</dd></div>
     </dl>
     <!-- D-16c1: js/admin.js fills each field and its range from js/settings.js -->
@@ -346,6 +351,15 @@
     <div class="admin-groups">
       <fieldset class="admin-group">
         <legend>Game</legend>
+        <label class="admin-field">
+          <span>Enemies per game</span>
+          <input type="number" inputmode="numeric" data-setting="enemiesPerGame">
+          <small data-setting-range="enemiesPerGame"></small>
+        </label>
+        <label class="admin-check">
+          <input type="checkbox" data-setting="activeAreaOnly">
+          Active area only
+        </label>
         <label class="admin-field">
           <span>Player hit points</span>
           <input type="number" inputmode="numeric" data-setting="playerHitPoints">
@@ -380,6 +394,34 @@
         <label class="admin-check">
           <input type="checkbox" data-setting="godMode">
           God mode
+        </label>
+      </fieldset>
+      <fieldset class="admin-group">
+        <legend>Raycasting</legend>
+        <label class="admin-field">
+          <span>Strip width</span>
+          <select data-setting="stripWidth">
+            <option value="1">1 px</option>
+            <option value="2">2 px</option>
+            <option value="4">4 px</option>
+            <option value="8">8 px</option>
+          </select>
+          <small>px per ray</small>
+        </label>
+        <label class="admin-check">
+          <input type="checkbox" data-setting="fisheye">
+          Fisheye
+        </label>
+        <label class="admin-check">
+          <input type="checkbox" data-setting="minimapRays">
+          Rays on the minimap
+        </label>
+      </fieldset>
+      <fieldset class="admin-group">
+        <legend>Procedural generation</legend>
+        <label class="admin-check">
+          <input type="checkbox" data-setting="chunkBorders">
+          Chunk borders on the minimap
         </label>
       </fieldset>
     </div>

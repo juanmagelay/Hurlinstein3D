@@ -19,9 +19,36 @@ const enemyCollisionRadius = enemyWidth / 2;
 const contactDistance = 0.6;
 const contactDamagePerSecond = 1;
 
+// D-23 / TDD 3.6: only the chunks this close to the player's chunk are active.
+// Two chunks (32 cells) cover maxRayDistance (24 cells) from anywhere in the
+// player's chunk, so every enemy the player can see or touch is inside the
+// 5 by 5 block. The rest stay frozen in place until the player comes back.
+const activeChunkRadius = Math.ceil(maxRayDistance / chunkSize);
+
+// D-23: the enemy lists to update and draw this frame, at most 25 lists read
+// from the Map, so the cost does not grow with the explored world. With the
+// admin toggle off it is every loaded chunk, as before D-23, to compare FPS.
+function getActiveEnemyLists(player) {
+  if (!gameSettings.activeAreaOnly) {
+    return enemiesByChunk.values();
+  }
+  const playerChunkX = Math.floor(player.posX / chunkSize);
+  const playerChunkY = Math.floor(player.posY / chunkSize);
+  const lists = [];
+  for (let cy = playerChunkY - activeChunkRadius; cy <= playerChunkY + activeChunkRadius; cy += 1) {
+    for (let cx = playerChunkX - activeChunkRadius; cx <= playerChunkX + activeChunkRadius; cx += 1) {
+      const enemies = enemiesByChunk.get(getChunkKey(cx, cy));
+      if (enemies !== undefined) {
+        lists.push(enemies);
+      }
+    }
+  }
+  return lists;
+}
+
 function getContactDamage(player, deltaTime) {
   let damage = 0;
-  for (const enemies of enemiesByChunk.values()) {
+  for (const enemies of getActiveEnemyLists(player)) {
     for (const enemy of enemies) {
       if (Math.hypot(enemy.posX - player.posX, enemy.posY - player.posY) < contactDistance) {
         damage += contactDamagePerSecond * deltaTime / ticksPerSecond;
@@ -31,22 +58,35 @@ function getContactDamage(player, deltaTime) {
   return damage;
 }
 
-// D-05a and D-05b: idle waits, patrol walks a route and scans for the player,
-// chase follows the player until it loses sight for a full second.
+// D-23: only the active enemies move. An enemy that crossed into another chunk
+// changes lists after the loop, so no list changes while it is being walked.
 function updateEnemies(player, deltaTime) {
-  for (const enemies of enemiesByChunk.values()) {
+  const changedChunk = [];
+  for (const enemies of getActiveEnemyLists(player)) {
     for (const enemy of enemies) {
-      if (enemy.state === "idle") {
-        enemy.stateTime += deltaTime;
-        if (enemy.stateTime >= enemyIdleTicks) {
-          startPatrol(enemy);
-        }
-      } else if (enemy.state === "patrol") {
-        updatePatrol(enemy, player, deltaTime);
-      } else if (enemy.state === "chase") {
-        updateChase(enemy, player, deltaTime);
+      updateEnemyState(enemy, player, deltaTime);
+      if (hasLeftItsChunk(enemy)) {
+        changedChunk.push(enemy);
       }
     }
+  }
+  for (const enemy of changedChunk) {
+    moveEnemyToItsChunk(enemy);
+  }
+}
+
+// D-05a and D-05b: idle waits, patrol walks a route and scans for the player,
+// chase follows the player until it loses sight for a full second.
+function updateEnemyState(enemy, player, deltaTime) {
+  if (enemy.state === "idle") {
+    enemy.stateTime += deltaTime;
+    if (enemy.stateTime >= enemyIdleTicks) {
+      startPatrol(enemy);
+    }
+  } else if (enemy.state === "patrol") {
+    updatePatrol(enemy, player, deltaTime);
+  } else if (enemy.state === "chase") {
+    updateChase(enemy, player, deltaTime);
   }
 }
 
@@ -187,10 +227,27 @@ function removeEnemyFromCell(enemy) {
   }
 }
 
-// D-13b: a projectile that reaches an enemy removes it from its cell and its
-// chunk. D-13d retired the instant center ray shot of D-07a that used to live here.
-function removeEnemy(enemy) {
-  removeEnemyFromCell(enemy);
+// D-23: an enemy is listed in the chunk it stands in, so the active area finds
+// an enemy that chased the player far from the chunk where it was created.
+// Math.floor keeps negative chunks correct.
+function hasLeftItsChunk(enemy) {
+  const chunkX = Math.floor(enemy.cellX / chunkSize);
+  const chunkY = Math.floor(enemy.cellY / chunkSize);
+  return chunkX !== enemy.chunkX || chunkY !== enemy.chunkY;
+}
+
+function moveEnemyToItsChunk(enemy) {
+  removeEnemyFromChunk(enemy);
+  enemy.chunkX = Math.floor(enemy.cellX / chunkSize);
+  enemy.chunkY = Math.floor(enemy.cellY / chunkSize);
+  const chunkKey = getChunkKey(enemy.chunkX, enemy.chunkY);
+  if (!enemiesByChunk.has(chunkKey)) {
+    enemiesByChunk.set(chunkKey, []);
+  }
+  enemiesByChunk.get(chunkKey).push(enemy);
+}
+
+function removeEnemyFromChunk(enemy) {
   const chunkKey = getChunkKey(enemy.chunkX, enemy.chunkY);
   const list = enemiesByChunk.get(chunkKey);
   if (list === undefined) {
@@ -200,4 +257,11 @@ function removeEnemy(enemy) {
   if (index !== -1) {
     list.splice(index, 1);
   }
+}
+
+// D-13b: a projectile that reaches an enemy removes it from its cell and its
+// chunk. D-13d retired the instant center ray shot of D-07a that used to live here.
+function removeEnemy(enemy) {
+  removeEnemyFromCell(enemy);
+  removeEnemyFromChunk(enemy);
 }

@@ -17,9 +17,10 @@ const maxRayDistance = 24;
 // is an admin setting (js/settings.js).
 const moveSpeed = 200 / 64 / 60;
 
-// TDD 6.5: width of each wall strip in pixels. One ray per strip, so 2 px on a
-// 1280 px canvas casts 640 rays. The main performance lever.
-const stripWidth = 2;
+// TDD 6.5: the strip width is an admin setting of 1, 2, 4 or 8 px
+// (js/settings.js). The canvas width is rounded to a multiple of the widest
+// one, so every strip width fits a whole number of times and all strips match.
+const screenWidthStep = 8;
 
 // D-16a / TDD 6.5: the canvas width follows the window between 4:3 and 21:9.
 // Outside that range the game keeps the nearest limit and the page color shows
@@ -28,9 +29,8 @@ const minScreenAspect = 4 / 3;
 const maxScreenAspect = 21 / 9;
 const maxScreenWidth = getScreenWidthForAspect(maxScreenAspect);
 
-// Rounded to a whole number of strips, so every strip is the same width
 function getScreenWidthForAspect(aspect) {
-  return Math.round(screenHeight * aspect / stripWidth) * stripWidth;
+  return Math.round(screenHeight * aspect / screenWidthStep) * screenWidthStep;
 }
 
 function getScreenWidthForWindow(windowWidth, windowHeight) {
@@ -40,16 +40,18 @@ function getScreenWidthForWindow(windowWidth, windowHeight) {
 }
 
 // D-16a: CSS size of the game frame, the largest box with the canvas shape that
-// fits the window. A gap under 2 px comes from rounding the width to whole
-// strips, so that side is stretched to the window edge instead of leaving a line.
+// fits the window. Rounding the width to whole 8 px steps leaves a gap of a few
+// canvas pixels; a gap under one step is stretched to the window edge instead
+// of leaving a line (under half a percent wider or taller).
 function getGameFrameSize(windowWidth, windowHeight, canvasWidth) {
   const scale = Math.min(windowWidth / canvasWidth, windowHeight / screenHeight);
   let width = canvasWidth * scale;
   let height = screenHeight * scale;
-  if (windowWidth - width < 2) {
+  const stretchLimit = screenWidthStep * scale;
+  if (windowWidth - width < stretchLimit) {
     width = windowWidth;
   }
-  if (windowHeight - height < 2) {
+  if (windowHeight - height < stretchLimit) {
     height = windowHeight;
   }
   return { width, height };

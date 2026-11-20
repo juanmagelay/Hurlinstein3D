@@ -11,9 +11,13 @@ test("a 16:9 window keeps the 1280 by 720 canvas", () => {
   assert.equal(getScreenWidthForWindow(1920, 1080), 1280);
 });
 
-test("the width follows the window shape and stays a whole number of strips", () => {
-  // 1512 by 860: 720 * 1512 / 860 = 1265.86, rounded to the nearest even number
-  assert.equal(getScreenWidthForWindow(1512, 860), 1266);
+test("the width follows the window shape and stays a multiple of 8 px", () => {
+  // 1512 by 860: 720 * 1512 / 860 = 1265.86, rounded to the nearest multiple
+  // of 8 (D-16e1), so 1, 2, 4 and 8 px strips all fit a whole number of times
+  assert.equal(getScreenWidthForWindow(1512, 860), 1264);
+  for (const width of [1, 2, 4, 8]) {
+    assert.equal(1264 % width, 0);
+  }
   // 16:10: 720 * 1.6 = 1152
   assert.equal(getScreenWidthForWindow(1440, 900), 1152);
 });
@@ -26,6 +30,8 @@ test("the shape is clamped between 4:3 and 21:9", () => {
 });
 
 test("inside the range the frame covers the whole window", () => {
+  // The 1264 px canvas scaled to 860 px tall is 1509.8 px wide, 2.2 px short
+  // of the window: under one 8 px step, so it is stretched to the edge
   const width = getScreenWidthForWindow(1512, 860);
   const frame = getGameFrameSize(1512, 860, width);
   assert.equal(frame.width, 1512);

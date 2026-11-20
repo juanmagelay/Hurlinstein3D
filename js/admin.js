@@ -50,6 +50,20 @@ function countLoadedEnemies() {
   return total;
 }
 
+// D-23: the enemies updated and drawn this frame; all of them with the toggle off
+function countActiveEnemies(player) {
+  let total = 0;
+  for (const enemies of getActiveEnemyLists(player)) {
+    total += enemies.length;
+  }
+  return total;
+}
+
+// D-16c1e: enemies created so far against the game total, "7 / 20"
+function formatAdminEnemiesCreated(created, total) {
+  return `${created.toLocaleString("en-US")} / ${total.toLocaleString("en-US")}`;
+}
+
 // Every live value as text, ready for textContent
 function getAdminInfo(player, framesPerSecond) {
   return {
@@ -58,13 +72,15 @@ function getAdminInfo(player, framesPerSecond) {
     chunk: formatAdminChunk(player.posX, player.posY),
     health: formatAdminHealth(player.health, player.maxHealth),
     ammo: formatAdminAmmo(player.ammo, gameSettings.magazineSize, player.reloading, player.reloadsLeft),
+    created: formatAdminEnemiesCreated(enemiesCreated, gameSettings.enemiesPerGame),
     enemies: String(countLoadedEnemies()),
+    active: String(countActiveEnemies(player)),
     chunks: String(generatedChunks.size),
   };
 }
 
-// D-16c1: what a changed setting does to the game right away. Turn speed and
-// god mode need nothing here: the game reads them every frame.
+// D-16c1: what a changed setting does to the game right away. The rest need
+// nothing here: the game reads them every frame or when a chunk is generated.
 function applySetting(player, name) {
   if (name === "playerHitPoints") {
     applyPlayerHitPoints(player, gameSettings.playerHitPoints);
@@ -130,7 +146,7 @@ function createAdminSettings(page, player, onApplied) {
 
   for (const name in fields) {
     const field = fields[name];
-    if (!isFlagSetting(name)) {
+    if (field.type === "number") {
       field.min = String(settingDefinitions[name].min);
       field.max = String(settingDefinitions[name].max);
       field.step = "1";
@@ -142,8 +158,8 @@ function createAdminSettings(page, player, onApplied) {
       changeSetting(player, storage, name, fieldValue);
       writeFields();
       onApplied();
-      // A focused checkbox would take Space; give the keys back to the game
-      if (isFlagSetting(name)) {
+      // A focused checkbox or list would take Space; give the keys back to the game
+      if (field.type !== "number") {
         field.blur();
       }
     });

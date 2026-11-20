@@ -84,3 +84,74 @@ test("D-16a: after a resize the minimap still ends 10 px from the right edge", (
     getGlobal("screenWidth = 1280");
   }
 });
+
+// D-16e3: the ray of a screen column ends at pos + perpWallDist * rayDir
+test("D-16e3: a ray ends at the hit point computed by hand", () => {
+  const getMinimapRayEnd = getGlobal("getMinimapRayEnd");
+  const player = { posX: 10.5, posY: 10.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66 };
+  // The window covers cells 0 to 20. Column 0: cameraX -1, rayDir = (1, -0.66).
+  // A wall at perpWallDist 3 is hit at (10.5 + 3, 10.5 - 3 * 0.66) = (13.5, 8.52).
+  const end = getMinimapRayEnd(player, 0, 3, 0, 0);
+  assert.ok(Math.abs(end.x - 13.5) < 1e-9);
+  assert.ok(Math.abs(end.y - 8.52) < 1e-9);
+});
+
+test("D-16e3: a ray longer than the window is cut at the window edge", () => {
+  const getMinimapRayEnd = getGlobal("getMinimapRayEnd");
+  const player = { posX: 10.5, posY: 10.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66 };
+  // Center column: rayDir = (1, 0). A miss at 24 cells stops at x = 21.
+  const end = getMinimapRayEnd(player, screenWidth / 2, 24, 0, 0);
+  assert.equal(end.x, 21);
+  assert.equal(end.y, 10.5);
+});
+
+test("D-16e3: the rays come from the depth buffer, every eighth one, in one stroke", () => {
+  const raysWorld = loadScripts();
+  raysWorld("getCell = function () { return 0; }");
+  raysWorld("gameSettings.minimapRays = true");
+  const graphics = createRecordingGraphics();
+  const lines = [];
+  const strokes = [];
+  graphics.lineTo = (x, y) => {
+    lines.push({ x, y });
+    return graphics;
+  };
+  graphics.stroke = (style) => {
+    strokes.push(style);
+    return graphics;
+  };
+  raysWorld("drawMinimap")(graphics, { posX: 10.5, posY: 10.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66 });
+  // 640 strips at 2 px, every eighth: 80 rays, plus the direction line
+  assert.equal(lines.length, 80 + 1);
+  // One stroke for the rays and one for the direction line
+  assert.equal(strokes.length, 2);
+});
+
+// D-16f: chunk borders every 16 cells, found with Math.floor
+test("D-16f: chunk borders inside a window that crosses x = 0 and y = -16", () => {
+  const getChunkBordersInWindow = getGlobal("getChunkBordersInWindow");
+  // Window x from -10 to 10: the border between chunk -1 and chunk 0
+  assert.deepEqual([...getChunkBordersInWindow(-10)], [0]);
+  // Window y from -26 to -6: the border between chunk -2 and chunk -1
+  assert.deepEqual([...getChunkBordersInWindow(-26)], [-16]);
+  // A border on the window edge is skipped: cells 16 to 36 only cross 32
+  assert.deepEqual([...getChunkBordersInWindow(16)], [32]);
+});
+
+test("D-16f: the borders are drawn as lines across the minimap window", () => {
+  const bordersWorld = loadScripts();
+  bordersWorld("getCell = function () { return 0; }");
+  bordersWorld("gameSettings.chunkBorders = true");
+  const borderMinimapX = bordersWorld("getMinimapX()");
+  const graphics = createRecordingGraphics();
+  const moves = [];
+  graphics.moveTo = (x, y) => {
+    moves.push({ x, y });
+    return graphics;
+  };
+  // Player at (0.5, -15.5): the window starts at cell (-10, -26)
+  bordersWorld("drawMinimap")(graphics, { posX: 0.5, posY: -15.5, dirX: 1, dirY: 0 });
+  // x = 0 is 10 cells into the window, y = -16 also 10 cells in: 100 px
+  assert.ok(moves.some((move) => move.x === borderMinimapX + 100 && move.y === 10));
+  assert.ok(moves.some((move) => move.x === borderMinimapX && move.y === 10 + 100));
+});
