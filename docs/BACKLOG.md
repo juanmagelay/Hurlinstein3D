@@ -79,6 +79,7 @@ Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added i
 | D-16b1 | Admin panel shell: top hover strip, pinned full-width panel, close buttons, P key, Lucide icons | P1 | 4 | D-16a2 | done |
 | D-16b2 | Live info in the admin panel, four times per second | P1 | 4 | D-16b1 | done |
 | D-16c1 | Admin settings: enemies per chunk, player health and contact damage, magazine 2 to 20, turn speed, god mode, refill ammo | P1 | 4 | D-16b2 | pending |
+| D-23 | Update and draw only the enemies near the player, with an admin toggle to compare | P1 | 4 | D-16c1 | pending |
 | D-17a | Reset a game: new world, enemies, projectiles and player | P1 | 4 | D-14b | pending |
 | D-17b | Game state machine: menu, playing, victory, defeat | P1 | 4 | D-17a | pending |
 | D-18a | Main menu: title, start game, controls, credits | P1 | 4 | D-16a3, D-17b | pending |
@@ -947,9 +948,9 @@ Acceptance criteria:
 
 Files: `index.html`, `js/admin.js`, `js/config.js`, `js/player.js`, `js/world.js`, `js/hud.js`, tests. Split before implementing if it goes over four files per story.
 
-Open questions:
-- Do settings persist in `localStorage` with a button to restore the defaults, or reset on every page load?
-- Enemies per chunk: the cap for the stress test (proposed 50).
+Decisions (2026-11-20, Juanma):
+- Settings persist in `localStorage` and the panel has a Reset button that restores the defaults. If `localStorage` is blocked or holds invalid data, the defaults are used and nothing breaks.
+- Enemies per chunk goes up to 1000, because the professor wants exaggerated numbers to push the machine and judge whether the game is efficient. Today each enemy takes a distinct air cell; past the chunk's air cells, enemies share cells (the per-cell registry already holds a list).
 
 ## D-17a: Reset a game
 
@@ -1008,6 +1009,20 @@ Acceptance criteria:
 - Tests: a kill adds one, a miss adds nothing, a reset clears the count.
 
 Files: `js/game-state.js`, `js/projectiles.js`, `js/hud.js`, `tests/projectiles.test.js`. `js/main.js` adds the label to the stage; split the story if it goes over four files.
+
+## D-23: Update and draw only the enemies near the player
+
+Problem found while planning the D-16c1 stress test: `updateEnemies`, `getContactDamage` (`js/enemies.js`) and `drawEnemies` (`js/renderer.js`) walk every enemy of every generated chunk on every frame. Chunks persist for the session (TDD 4.4), so the cost grows with how much of the world was explored, against the TDD 3.6 idea that world size stays out of the per-frame cost. With 1000 enemies per chunk it shows quickly.
+
+Acceptance criteria:
+- Only the chunks around the player's chunk are active: the radius covers `maxRayDistance` (24 cells, so 2 chunks each way, a 5 by 5 block). Enemies there are updated, drawn and can do contact damage; the rest stay frozen in place and keep their registry.
+- Drawing skips an enemy before projecting it when it is farther than `maxRayDistance` (squared distance, no sqrt) or behind the camera.
+- An admin toggle "Active area only" turns the optimization off and on, so the defense can show the FPS before and after with the same enemy count. The panel shows the active enemy count next to the loaded one.
+- Tests: an enemy three chunks away is not updated; one in a neighbor chunk is; the toggle restores the old behavior.
+
+Files: `js/enemies.js`, `js/renderer.js`, `js/admin.js`, tests. Split if it goes over four files.
+
+Other ideas to measure with the FPS before doing them: group enemy strips into one `fill()` per frame (already the case), and skip the minimap enemy loop outside its 21 by 21 window (already the case, it reads cells).
 
 ## D-16c2: Admin settings for the boss flow
 
