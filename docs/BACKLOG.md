@@ -114,7 +114,7 @@ Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added i
 | D-17b | Game state machine: menu, playing, victory, defeat | P1 | 4 | D-17a | done |
 | D-18a | Main menu: title, start game, controls, credits | P1 | 4 | D-16a3, D-17b | done |
 | D-18b | Controls and credits screens | P1 | 4 | D-18a | pending |
-| D-20a | Defeat screen with play again and main menu | P1 | 4 | D-18a | pending |
+| D-20a | Defeat screen with play again and main menu | P1 | 4 | D-18a | done |
 | D-19a | Kill counter and KILLS label on the HUD | P2 | 4 | D-15b, D-17a | pending |
 | D-19b | Enemy hit points, one for regular enemies | P2 | 4 | D-19a | pending |
 | D-19c | Boss appears after the kill target | P2 | 4 | D-19b | pending |
@@ -1532,6 +1532,11 @@ Acceptance criteria:
 - `createDefeatOverlay` is removed.
 
 Files: `index.html`, `js/screens.js`, `js/main.js`, `js/hud.js`.
+
+Decisions:
+- The defeat screen is an HTML overlay (like the menu), shown by `syncScreenToState()` in the ticker, which maps menu/defeat to their screens and hides everything while playing.
+- Play again reuses `startNewGame()`; Main menu goes back to menu through the `defeat -> menu` edge.
+- `createDefeatOverlay` and `drawDefeatOverlay` are removed from `js/hud.js`; the HTML screen replaces them.
 
 ## D-19a: Kill counter
 

@@ -15,7 +15,6 @@ function applyScreenWidth(app, scene, width) {
   setCameraPlaneLength(player, getCameraPlaneLength());
   drawCeilingAndFloor(scene.ceilingAndFloor);
   drawHud(scene.hud);
-  drawDefeatOverlay(scene.defeatOverlay);
   resizeDamageFlash(scene.damageFlash);
   scene.shotgun.sprite.x = getAimedShotgunX();
 }
@@ -106,10 +105,6 @@ async function startGame() {
   const reloadCounter = createReloadCounter();
   app.stage.addChild(reloadCounter);
 
-  // D-06c: defeat overlay sits on top and stays hidden until health reaches zero
-  const defeatOverlay = createDefeatOverlay();
-  app.stage.addChild(defeatOverlay);
-
   // TDD 6.4: keyboard and mouse listeners are registered once, outside the
   // ticker. D-12: the mouse listens on the game frame only, so clicks on the
   // admin panel never fire or reload.
@@ -121,20 +116,34 @@ async function startGame() {
   // D-16b: the admin panel is HTML over the game, wired once
   const adminPanel = createAdminPanel(document, player);
 
-  // D-18a: the main menu starts the game. Start game resets the world, places
-  // the enemies around the new spawn and switches to playing. Controls and
-  // Credits are wired in D-18b.
-  document.getElementById("start-game").addEventListener("click", () => {
+  // D-18a / D-20a: the buttons change the state; the ticker syncs the visible
+  // screen to it. A new game resets the world, places the enemies and plays.
+  function startNewGame() {
     resetGame();
     placeGameEnemies(player, gameSettings.enemiesPerGame);
     setGameState(gameStatePlaying);
-    hideScreens();
+  }
+  document.getElementById("start-game").addEventListener("click", startNewGame);
+  document.getElementById("play-again").addEventListener("click", startNewGame);
+  document.getElementById("main-menu").addEventListener("click", () => {
+    setGameState(gameStateMenu);
   });
+
+  // D-20a: the visible screen follows the state; playing shows none.
+  function syncScreenToState() {
+    if (gameState === gameStateMenu) {
+      showScreen("menu-screen");
+    } else if (gameState === gameStateDefeat) {
+      showScreen("defeat-screen");
+    } else {
+      hideScreens();
+    }
+  }
 
   // D-16a: resizing the window, or entering full screen, refits the game.
   // Registered once; a drag fires many events, so the canvas only changes when
   // the rounded width does. Called once now in case the window changed during init.
-  const scene = { ceilingAndFloor, hud, defeatOverlay, damageFlash, shotgun };
+  const scene = { ceilingAndFloor, hud, damageFlash, shotgun };
   function onWindowResize() {
     const width = getScreenWidthForWindow(window.innerWidth, window.innerHeight);
     if (width !== screenWidth) {
@@ -169,7 +178,8 @@ async function startGame() {
     } else if (gameState === gameStateDefeat && !isPlayerDefeated(player)) {
       setGameState(gameStatePlaying);
     }
-    defeatOverlay.visible = gameState === gameStateDefeat;
+    // D-20a: the visible screen follows the state
+    syncScreenToState();
     // D-17b: only playing updates the simulation; the scene stays on its last frame
     if (gameState !== gameStatePlaying) {
       updateHudBars();
