@@ -28,7 +28,7 @@ function reset() {
 }
 
 // Registers an enemy in its own chunk list and cell, like the world does
-function addEnemy(posX, posY) {
+function addEnemy(posX, posY, health = 1) {
   const enemy = {
     posX,
     posY,
@@ -40,6 +40,7 @@ function addEnemy(posX, posY) {
     height: 0.6,
     state: "idle",
     stateTime: 0,
+    health,
   };
   const chunkKey = getChunkKey(enemy.chunkX, enemy.chunkY);
   if (!enemiesByChunk.has(chunkKey)) {
@@ -146,4 +147,24 @@ test("a miss adds nothing to the kill count (D-19a)", () => {
   shootCenterRay(makePlayer(3.5, 5.5, 1, 0));
 
   assert.equal(getKillCount(), 0);
+});
+
+test("an enemy with two points survives one hit and dies on the second (D-19b)", () => {
+  reset();
+  setWall(12);
+  const enemy = addEnemy(6.5, 5.5, 2);
+
+  const first = shootCenterRay(makePlayer(3.5, 5.5, 1, 0));
+
+  assert.equal(first, enemy);
+  assert.equal(enemy.health, 1);
+  assert.equal(getEnemiesAtCell(6, 5).length, 1);
+  assert.equal(getKillCount(), 0);
+
+  const second = shootCenterRay(makePlayer(3.5, 5.5, 1, 0));
+
+  assert.equal(second, enemy);
+  assert.equal(enemy.health, 0);
+  assert.equal(getEnemiesAtCell(6, 5).length, 0);
+  assert.equal(getKillCount(), 1);
 });

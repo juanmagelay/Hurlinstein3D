@@ -116,7 +116,7 @@ Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added i
 | D-18b | Controls and credits screens | P1 | 4 | D-18a | done |
 | D-20a | Defeat screen with play again and main menu | P1 | 4 | D-18a | done |
 | D-19a | Kill counter and KILLS label on the HUD | P2 | 4 | D-15b, D-17a | done |
-| D-19b | Enemy hit points, one for regular enemies | P2 | 4 | D-19a | pending |
+| D-19b | Enemy hit points, one for regular enemies | P2 | 4 | D-19a | done |
 | D-19c | Boss appears after the kill target | P2 | 4 | D-19b | pending |
 | D-16c2 | Admin settings for the boss flow: enemy and boss hit points, spawn boss | P2 | 4 | D-16c1e, D-19c | pending |
 | D-19d | Victory when the boss dies, victory screen | P2 | 4 | D-19c, D-20a | pending |
@@ -1633,11 +1633,15 @@ Files: `index.html`, `js/admin.js`, `js/enemies.js`, `js/main.js`.
 ## D-19b: Enemy hit points
 
 Acceptance criteria:
-- Every enemy has `health`. Regular enemies have 1, so one projectile still kills them and nothing visible changes.
-- A projectile that reaches an enemy takes one point; at zero the enemy is removed and counted.
-- Tests: an enemy with 2 points survives one hit and dies on the second, and the projectile always disappears on contact.
+- Every enemy has `health`. Regular enemies have 1, so one shot still kills them and nothing visible changes.
+- A shot that hits an enemy takes one point; at zero the enemy is removed and counted.
+- Tests: an enemy with 2 points survives one hit and dies on the second.
 
-Files: `js/world.js`, `js/projectiles.js`, `tests/projectiles.test.js`.
+Files: `js/config.js`, `js/world.js`, `js/enemies.js`, `tests/shoot.test.js`.
+
+Decisions:
+- `enemyHealth = 1` lives in `js/config.js` next to the other enemy constants; D-16c2 will turn it into an admin setting.
+- The kill counter only increments when the enemy reaches zero health, so a shot that wounds (2 -> 1) does not count.
 
 ## D-19c: Boss appears after the kill target
 

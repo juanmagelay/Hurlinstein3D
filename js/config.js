@@ -85,6 +85,8 @@ const shadowRayEpsilon = 0.05;
 const enemyWidth = 0.3;
 const enemyHeight = 0.6;
 const enemyColor = 0xffc857;
+// D-19b: a regular enemy dies with one shot; D-16c2 turns this into a setting.
+const enemyHealth = 1;
 
 // D-27b / TDD 2.3.2 and 6.6: an enemy and the player never get closer than this,
 // center to center. Their bodies measure 0.35 together (0.15 + 0.2), so some

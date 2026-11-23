@@ -148,6 +148,7 @@ function addEnemyAtCell(cellX, cellY) {
     width: enemyWidth,
     height: enemyHeight,
     color: enemyColor,
+    health: enemyHealth,
     state: "idle",
     stateTime: 0,
     // D-27c: ticker units until the next contact hit; 0 hits on first contact
