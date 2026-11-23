@@ -4,7 +4,7 @@ Source of truth: `docs/TDD.md` (TDD v1.1). Work follows the story cycle in `CLAU
 
 Branches: every story is committed on `develop`, and once validated `develop` is merged into `main` (fast forward). `main` never gets direct commits. Details in `CLAUDE.md` section 10.3.
 
-Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added in the 2026-11-20 review use P0 (unblocks the rest) to P3 (only if time allows) and are listed in execution order. D-21 (enemy sprite) does not depend on the game flow stories and can be pulled forward.
+Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added in the 2026-11-20 review use P0 (unblocks the rest) to P3 (only if time allows) and are listed in execution order. D-21 (enemy sprite) does not depend on the game flow stories and can be pulled forward. Rows added on 2026-11-22 (team and professor feedback) use the same scale and go before the pending game flow stories: D-08d first, D-27 second, then D-12, D-28, D-29 and D-30 in the order the team listed them.
 
 | ID | Story | Priority | TDD phase | Depends on | Status |
 |---|---|---|---|---|---|
@@ -90,7 +90,26 @@ Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added i
 | D-16e2 | Fisheye toggle: walls drawn with the Euclidean distance | P1 | 4 | D-16c1b | done |
 | D-16e3 | Rays on the minimap | P1 | 4 | D-16c1b | done |
 | D-16f | Chunk borders on the minimap | P1 | 4 | D-16c1b | done |
+| D-08d | Re-cut the reload frames so no drawing is cut or split | P0 | 4 | D-08c | pending |
+| D-27a | Specify in the TDD: the enemy keeps a body distance, contact damage in whole hits, the red damage flash | P0 | 4 | D-21b | pending |
+| D-27b | The enemy stops in front of the player at body distance, and the player cannot walk through enemies | P0 | 4 | D-27a | pending |
+| D-27c | Contact damage in whole hit points: one on contact, then one per second | P0 | 4 | D-27b | pending |
+| D-27d | Red damage flash from the screen edges, one pulse per hit | P0 | 4 | D-27c | pending |
+| D-12a | Specify the arrow keys and the mouse in TDD 2.2 and the README | P1 | 4 | D-27d | pending |
+| D-12b | Arrow keys: up and down move, left and right turn | P1 | 4 | D-12a | pending |
+| D-12c | Mouse turn with pointer lock and a sensitivity setting | P1 | 4 | D-12b, D-16c1b | pending |
+| D-12d | Left click fires, right click reloads | P1 | 4 | D-12c | pending |
+| D-28a | Specify the UNAHUR at night look and the textured floor and ceiling in the TDD | P1 | 4 | D-09, D-10 | pending |
+| D-28b | UNAHUR wall textures: white plaster, louvered windows, glass, green accents | P1 | 4 | D-28a | pending |
+| D-28c | Floor and ceiling casting with floor tile and ceiling panel textures | P1 | 4 | D-28a | pending |
+| D-28d | Night atmosphere: cold low light, darkness at distance, ceiling lamps at the room lights | P1 | 4 | D-28b, D-28c | pending |
+| D-29a | Pick the CRT filter source and specify it in the TDD | P1 | 4 | D-16b2 | pending |
+| D-29b | CRT post processing filter over the game, with an admin toggle | P1 | 4 | D-29a | pending |
+| D-30a | Specify the seeded random in TDD 4.4 | P1 | 4 | D-11 | pending |
+| D-30b | Seeded random for the map: one seed per world, one derived seed per chunk | P1 | 4 | D-30a | pending |
+| D-30c | Enemy placement and patrol from the world seed | P1 | 4 | D-30b | pending |
 | D-17a | Reset a game: new world, enemies, projectiles and player | P1 | 4 | D-14b | pending |
+| D-30d | World seed in the admin panel: see it, type one, start a new world | P1 | 4 | D-30c, D-17a | pending |
 | D-17b | Game state machine: menu, playing, victory, defeat | P1 | 4 | D-17a | pending |
 | D-18a | Main menu: title, start game, controls, credits | P1 | 4 | D-16a3, D-17b | pending |
 | D-18b | Controls and credits screens | P1 | 4 | D-18a | pending |
@@ -107,9 +126,9 @@ Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added i
 | D-26 | Logomark and favicon from the enemy sprite's head | P2 | 4 | D-21a | done |
 | D-21c | Boss as a tinted, larger enemy sprite | P2 | 4 | D-21b, D-19c | pending |
 | D-16d | Admin render toggles: textures, lighting, flat color | P2 | 4 | D-16b2 | pending |
-| D-08d | Fix the cut reload frames, only if the team asks for it | P3 | 4 | D-08c | pending |
+| D-27e | Enemies keep body distance from each other, optional | P2 | 4 | D-27b | pending |
 | D-22 | Player initials in the ranking, optional | P3 | 4 | D-20c | pending |
-| D-12 | Strafing and mouse look, only if the team asks for it | P3 | 4 | H-09o | pending |
+| D-12e | Strafing, only if the team asks for it | P3 | 4 | D-12b | pending |
 
 ## Backlog review (2026-11-20)
 
@@ -154,6 +173,32 @@ Open questions, settled in D-14b before any code (proposed default in parenthese
 - Admin panel contents and toggle key (live info, god mode, refill ammo, kill target, spawn boss, render toggles; the P key and a button; starts collapsed).
 - Menus and end screens as HTML over the canvas or drawn with Pixi (HTML: real buttons, easier to style, scaled with the game frame of D-16a).
 - Kill counter on the HUD (yes, "KILLS 3 / 20" under AMMO).
+
+## Team and professor feedback (2026-11-22)
+
+Requested by Juanma, in priority order:
+1. The reload animation looks cut (D-08d, P0).
+2. The professor said the enemy got too close and he walked through it: "it should leave at least the distance of their own bodies, not occupying the same space". The team wants the enemy to stop in front of the player, facing it, and hit once per second, each hit with a red flash from the screen edges that fades toward the center, in the same frame the health drops (D-27, P0).
+3. Mouse: move it left and right to turn, left click fires, right click reloads. The arrow keys work too (D-12a to D-12d).
+4. Walls, ceiling and floor that look like the UNAHUR buildings at night, dark and creepy, with textured ceiling and floor (D-28).
+5. A CRT post processing filter, since the game emulates a 90s game (D-29).
+6. The professor's idea: a seeded random instead of `Math.random`, so the same seed gives the same world, as in Minecraft. It organizes all the procedural generation and helps the tests (D-30).
+
+Checked against the code and the TDD before writing the stories:
+- Reload (D-08d): the strip frames are 142 px tall and were cut on a 4 by 5 grid of `Sgun.png`, but rows 2 to 5 of the sheet do not sit on that grid. Strip frames 6 and 7 are one drawing split in two; frames 9, 10, 11, 14, 15 and 16 lose the hand or the gun at their side edges; the raised hands of row 4 are taller than 142 px and lose the fingertips. The screenshot of the team shows strip frame 10 or 11.
+- Enemy (D-27): `updateChase` moves the enemy toward the player's exact position, so it walks into the player, and nothing stops the player from walking into the enemy. `getContactDamage` drains `1 / 60` of a hit point per ticker unit within 0.6 cells, so the bar drops continuously. TDD 2.3.1 says exactly that ("de forma continua, así la barra baja de a poco"), so the TDD changes first (D-27a).
+- Controls (D-12): TDD 2.2 leaves out the mouse on purpose and binds only W, A, S and D. It also says adding the mouse only changes the input and leaves the raycaster as it is, which still holds: a mouse turn is the same rotation matrix with an angle taken from the mouse movement.
+- Look (D-28): TDD 6.5 draws ceiling and floor once, as two flat rectangles. Textured floor and ceiling need floor casting (Lode, "Floor and ceiling casting"), a per frame cost set by the pixels below and above the horizon, whatever the size of the world (TDD 3.6 still holds).
+- CRT (D-29): `lib/pixi.min.js` (8.21.0) ships `NoiseFilter`, `ColorMatrixFilter`, `BlurFilter`, `DisplacementFilter` and `AlphaFilter`, but no CRT filter. `CRTFilter` lives in the separate `pixi-filters` package (6.1.5 today, MIT, peer dependency pixi.js 8). Using it is a new dependency, which needs the team's approval (`CLAUDE.md` 8.6).
+- Seed (D-30): TDD 4.4 says the generator uses `Math.random` directly. `Math.random` appears in `js/mapgen.js` (room sizes and positions, second room), `js/world.js` (enemy placement) and `js/enemies.js` (patrol neighbour); `tests/enemies.test.js` replaces it with a function that returns 0.
+
+Open questions, to settle before each story (proposed default in parentheses):
+- D-08d: reload length once the drawings are re-cut, about 10 instead of 12 frames (keep 0.96 s, so each reload frame lasts about 0.096 s and the gameplay does not change).
+- D-27: stop distance, center to center (0.5 cells: the two bodies measure 0.35 together, so 0.15 cells stay between them, and the enemy's head and chest fill the view without crossing the camera). First hit (on the frame contact starts, then one per second per enemy, so two enemies hit twice). Player against enemies (blocked at the same distance, but moving away is always allowed so the player never gets stuck). Enemies against each other (left for the optional D-27e).
+- D-12: sensitivity unit and default (degrees per 100 px of mouse movement, 5 to 100, 20 by default, in the Player box of the admin panel). Whether a mouse click also fires before the mouse is captured (no: the first click only captures it).
+- D-28: wall color per chunk (D-02) with the new white walls (the chunk color tints only the accent stripe, the plaster stays white). Floor casting technique (Lode's loop in JavaScript into a hidden canvas at strip resolution, uploaded as one texture per frame; a GPU shader only if the FPS in the admin panel drops). Flickering lamps (a few, decided per light from its position).
+- D-29: filter source (the official `pixi-filters` browser bundle copied to `lib/` with a fixed version and its sha256, like PixiJS; the other option is our own GLSL filter). On by default (yes, with an admin toggle to compare).
+- D-30: seed at the start of a game (a random one, shown in the admin panel, so every game differs and any game can be repeated by typing its seed). Seeded enemy placement and patrol too (yes, so no `Math.random` is left in `js/` except the one that picks the starting seed).
 
 ## H-01a: Repo layout
 
@@ -1089,6 +1134,224 @@ Decisions:
 - Magenta lines (0xff4fd8), a color nothing else on the minimap uses, in one stroke. A border that falls on the window edge is skipped, since the minimap frame already draws it.
 - Checked with headless Chrome on `file://` for the whole batch: the canvas is 1264 wide in a 1512 by 860 window and the frame fills it, 8 px and 1 px strips, fisheye, rays and borders on the minimap, the panel with its new boxes, and no console errors.
 
+## D-08d: Re-cut the reload frames
+
+Request (2026-11-22, Juanma): the reload animation looks cut. Cause in the feedback section above.
+
+Acceptance criteria:
+- Every reload drawing of rows 2 to 5 of `Sgun.png` appears whole and once, in the order of the sheet: the gun opens and throws the shells, the hand brings new shells, puts them in, flicks up (two drawings) and closes the loaded gun. No drawing is split across two frames.
+- Each drawing is cut by its own connected pixels on the keyed violet background (D-07b), with small gaps bridged so a flying shell stays with its drawing.
+- The frame grows to fit the tallest drawing (the raised hands, about 160 px). Idle and firing frames get transparent rows on top and stay unchanged pixel for pixel, so the gun keeps its size on screen (the same 260 / 142 screen pixels per sheet pixel), its bottom anchor and its aim at the crosshair (sprite x about 791 px).
+- Each drawing sits on the frame bottom, where the arm and the stock leave the screen, and consecutive frames do not jump sideways.
+- `reloadDuration` still equals the reload frames times their frame time.
+- Tests: the PNG header width is the frame count times the frame width, the frame lists, the reload timing and the aim (`tests/gun.test.js`, `tests/ammo.test.js`).
+
+Files: `js/weapon-sheet.js`, `js/weapon.js`, `js/player.js`, `tests/gun.test.js`.
+
+## D-27: The enemy stops in front of the player and hits once per second (split in four)
+
+Request (2026-11-22): the professor walked through the enemy. The enemy has to leave at least the distance of the two bodies, stop in front of the player, facing it, and hit once per second, each hit with a red flash from the screen edges.
+
+## D-27a: Specify the body distance, the hits and the flash in the TDD
+
+Acceptance criteria:
+- TDD 2.3.1: contact damage comes in whole hit points. An enemy in contact hits once when contact starts and then once per second, and the health bar drops one step in the same frame. It replaces "de forma continua, así la barra baja de a poco".
+- TDD 2.3.2: when chasing, the enemy stops at the stop distance from the player's center, in front of the player.
+- TDD 2.3.3: the damage flash as a sixth HUD element, non diegetic: red at the screen edges, transparent toward the center, one pulse per hit.
+- TDD 6.6: the player cannot get closer than the stop distance to an enemy, axis by axis like the walls, and moving away is always allowed.
+- Juanma approves the text before it is written.
+
+Files: `docs/TDD.md`, `docs/BACKLOG.md`.
+
+## D-27b: The enemy stops at body distance
+
+Acceptance criteria:
+- A chasing enemy moves toward the player but never closer than `enemyStopDistance`, center to center. The step is cut to what is left until that distance; at that distance or closer it stays still and keeps facing the player (the sprite has a single front frame, so it always faces the camera).
+- The player's move on each axis is refused when it ends closer than `enemyStopDistance` to an enemy and closer than before, so the player slides along an enemy like along a wall and can always walk away. Only the enemies registered in the cells around the player are checked (per cell registry, TDD 2.3.1).
+- Contact damage still reaches an enemy that stopped: `contactDistance` stays larger than `enemyStopDistance`.
+- Tests: a chasing enemy stops at the distance and does not cross it in one long tick; a player walking into an enemy stops at the distance and slides on the other axis; a player inside the distance can walk away; an enemy two cells away does not block.
+
+Files: `js/enemies.js`, `js/player.js`, `tests/enemies.test.js`, `tests/player.test.js`.
+
+## D-27c: Contact damage in whole hit points
+
+Acceptance criteria:
+- Each enemy in contact has its own cooldown: it hits one hit point when contact starts and its cooldown is over, then waits one second (60 ticker units) before the next. Stepping in and out of contact never gives more than one hit per second per enemy.
+- `getContactDamage` returns whole hits; the health stays a whole number and the bar drops one step per hit.
+- The function that applies a hit reports it, so D-27d can start the flash in the same frame. God mode takes no hits and reports none.
+- Tests: the first hit on contact, the second after one second and not before, two enemies hit twice, leaving and coming back inside the second gives no extra hit, god mode.
+
+Files: `js/enemies.js`, `js/player.js`, `js/main.js`, `tests/health.test.js`.
+
+Decisions to record: replaces the D-06b decision "contact damage accumulates per enemy per tick".
+
+## D-27d: Red damage flash
+
+Acceptance criteria:
+- A full screen overlay, red at the edges and transparent toward the center (a radial gradient), drawn once on a hidden canvas and shown as one sprite, created outside the ticker (TDD 6.4). A window resize stretches it, creating nothing.
+- Each hit sets its opacity to the maximum and it fades to zero in `damageFlashDuration` (about 0.4 s), so one hit is one pulse. Several hits in one frame give one pulse.
+- It sits above the 3D view and the shotgun and below the HUD bars and the minimap, so LIFE stays readable.
+- Tests: the opacity right after a hit, halfway and at the end; no hit, no flash.
+
+Files: `js/hud.js`, `js/main.js`, `tests/hud.test.js`.
+
+## D-27e: Enemies keep body distance from each other (optional)
+
+Acceptance criteria:
+- Two enemies never get closer than their bodies: an enemy's move on each axis is refused when it would overlap another enemy, checked through the per cell registry.
+- Several chasing enemies stand around the player instead of on top of each other.
+
+## D-12: Arrow keys and mouse (split from D-12)
+
+Request (2026-11-22, Juanma): turn with the mouse left and right, fire with the left click, reload with the right click, and let the arrow keys work too. Strafing was not requested and stays optional as D-12e.
+
+## D-12a: Specify the arrow keys and the mouse
+
+Acceptance criteria:
+- TDD 2.2: up and down arrows move like W and S, left and right arrows turn like A and D. The horizontal mouse movement turns the camera, the left click fires and the right click reloads, while the mouse is captured with pointer lock. Strafing stays out, for the reason TDD 2.2 already gives.
+- The text says the mouse turn is the same rotation matrix applied to dir and plane, with the angle taken from the mouse movement of that frame. That angle is not multiplied by `deltaTime`: the mouse movement of a frame is already a distance.
+- README controls table updated.
+- Juanma approves the text before it is written.
+
+Files: `docs/TDD.md`, `README.md`, `docs/BACKLOG.md`.
+
+## D-12b: Arrow keys
+
+Acceptance criteria:
+- `createKeyboardInput` maps ArrowUp, ArrowDown, ArrowLeft and ArrowRight to w, s, a and d, so `updatePlayer` does not change.
+- The arrows do not scroll the page, and they are ignored while typing in a panel field (`isTypingInField`).
+- Tests: each arrow moves or turns like its letter; typing an arrow in a field does nothing.
+
+Files: `js/player.js`, `tests/player.test.js`.
+
+## D-12c: Mouse turn with pointer lock
+
+Acceptance criteria:
+- A click on the game captures the mouse with the Pointer Lock API (checked in Chrome on `file://` first). Esc releases it, and so does opening the admin panel (strip or P).
+- While captured, the `movementX` of every mouse event is added up, and the ticker turns dir and plane once per frame by that amount times the sensitivity, then clears it. Nothing is created in the ticker.
+- Mouse sensitivity in the Player box of the admin panel, in degrees per 100 px of mouse movement.
+- Tests: 100 px at sensitivity 20 turns 20 degrees, dir stays unit length and plane perpendicular, the sum is cleared after use.
+
+Files: `js/player.js`, `js/settings.js`, `js/main.js`, `index.html`, `tests/player.test.js`. Split if it goes over four code files.
+
+## D-12d: Mouse buttons
+
+Acceptance criteria:
+- While the mouse is captured, the left click fires one shot per click, like Space, and the right click starts a reload, like R. The context menu does not open over the game.
+- The click that captures the mouse does not fire. Clicks on the admin panel never fire or reload.
+- Tests: one click, one shot; a held button does not repeat; the right click reloads; a click without capture does nothing.
+
+Files: `js/player.js`, `js/main.js`, `tests/weapon.test.js`, `tests/ammo.test.js`.
+
+## D-12e: Strafing (optional)
+
+Only if the team asks for it.
+
+## D-28: UNAHUR at night (split in four)
+
+Request (2026-11-22, Juanma): walls and ceiling like the UNAHUR buildings in the photos the team shared, imagined at night and creepy, and textures on the ceiling and the floor too.
+
+What the photos show: white plaster walls; window bands covered by black horizontal louvers (Edificio 3); tall glass panes with dark frames along an interior corridor; green and light blue accent stripes, green columns and green trim; large light floor tiles; a white ceiling with recessed lights. At night: cold and dark, the light coming from a few fluorescent lamps, darkness at the end of the corridors.
+
+The photos are only a reference. Every texture is drawn by code on a hidden canvas, like D-09 (TDD 6.2), so no photo goes into the repo.
+
+## D-28a: Specify the look and the textured floor and ceiling
+
+Acceptance criteria:
+- TDD 1.3 and 2.3: the art direction above, as a desirable extension.
+- TDD 6.5: ceiling and floor drawn every frame with floor casting (Lode): for each screen row, rowDistance = posZ / (y - screenHeight / 2), and the floor point of each column follows linearly from the leftmost to the rightmost ray. The cost depends only on the pixels (TDD 3.6). Flat color mode keeps the two rectangles drawn once.
+- TDD 6.2: the floor casting texture is a hidden canvas updated every frame, created once.
+- The open questions of D-28 are settled (chunk color, floor casting technique, flickering lamps).
+- Juanma approves the text before it is written.
+
+Files: `docs/TDD.md`, `docs/BACKLOG.md`.
+
+## D-28b: UNAHUR wall textures
+
+Acceptance criteria:
+- The brick texture is replaced by three procedural variants on the hidden canvas: white plaster with an accent stripe near the floor, a window band with black horizontal louvers, and glass panes with dark frames.
+- Each wall cell gets a variant chosen deterministically from its coordinates, so the same wall always looks the same.
+- wallX and texX keep aligning the pattern to the face (D-09). Side shading, distance bands and the room lights still apply through the tint.
+- Flat color mode is unchanged.
+- Tests: the variant of a cell is stable and covers all three, including negative coordinates.
+
+Files: `js/renderer.js`, `js/config.js`, `tests/renderer.test.js`.
+
+## D-28c: Floor and ceiling casting
+
+Acceptance criteria:
+- The floor shows large light tiles with dark joints, the ceiling white panels on a grid, both procedural and aligned to the world grid, so they slide under the player as it walks and turn with the camera.
+- Each frame computes the rows below and above the horizon with Lode's floor casting, with the same pos, dir and plane as the walls, and darkens them with distance like the walls (D-01 bands).
+- The canvas, its texture and its sprite are created once; the ticker only writes pixels and updates the texture (TDD 6.4).
+- The FPS in the admin panel stays near 60 on both team machines at the default strip width; the strip width setting also lowers the floor resolution.
+- Tests on the pure part: rowDistance for a row against a hand computed value, and the floor point of the center column equals pos + rowDistance * dir.
+
+Files: `js/renderer.js`, `js/main.js`, `js/config.js`, `tests/renderer.test.js`.
+
+## D-28d: Night atmosphere
+
+Acceptance criteria:
+- A colder, darker palette: lower ambient light (D-10), a cold tint and walls, floor and ceiling fading to near black at the distance cap, with the background color matched.
+- The ceiling shows a fluorescent lamp in the cell of each room light (D-10), so the light on the walls has a visible source.
+- Optional: a few lamps flicker, chosen from their position, so the same lamp always flickers.
+- The minimap, the HUD and the enemy sprite stay readable.
+
+Files: `js/config.js`, `js/renderer.js`, `tests/renderer.test.js`.
+
+## D-29a: Pick the CRT filter source
+
+Acceptance criteria:
+- The team picks the source. Proposal: the official `pixi-filters` browser bundle (6.1.5, MIT, made for PixiJS 8), copied byte for byte into `lib/pixi-filters.js` with its version and sha256 recorded, loaded with a classic script tag after `lib/pixi.min.js`. Before use, check that it defines its global (`PIXI.filters`) under `file://` and read the `CRTFilter` options in its documentation. The other option is our own `PIXI.Filter` with a short GLSL fragment shader.
+- TDD 6.2 and 6.3 list the new file, TDD 2.3.5 the admin toggle, and the README credits the library and its license.
+
+Files: `lib/pixi-filters.js` (new), `index.html`, `docs/TDD.md`, `README.md`.
+
+## D-29b: CRT filter over the game
+
+Acceptance criteria:
+- One CRT filter on the stage, created once: scanlines, a slight curvature, vignette and a little noise. The ticker only updates its time value, so the noise and the lines move (TDD 6.4).
+- A CRT toggle in the Render box of the admin panel, on by default, saved with the other settings. The HTML admin panel is outside the canvas and is never filtered.
+- The crosshair stays at the screen center and the HUD stays readable.
+- The FPS in the admin panel shows the cost with the toggle on and off.
+
+Files: `js/main.js`, `js/settings.js`, `index.html`, `tests/settings.test.js`.
+
+## D-30: Seeded random (split in four)
+
+Request (2026-11-22, the professor): use a seeded random instead of `Math.random` for the procedural generation, so the same seed gives the same world, as in Minecraft. The chunks weigh very little, so memory is not the reason; the seed organizes the generation and makes tests repeatable.
+
+Key point: the chunks are generated in the order the player explores. With one random sequence for the whole world, chunk (1, 0) would come out different depending on whether the player went east or west first. So each chunk gets its own seed, mixed from the world seed and its coordinates, and the chunk is the same whatever the order.
+
+## D-30a: Specify the seeded random in TDD 4.4
+
+Acceptance criteria:
+- TDD 4.4: a world seed, a small seeded generator (for example mulberry32, a few lines of integer math), and a chunk seed mixed from the world seed and the Cantor key of the chunk (TDD 6.8). The same seed gives the same world in any order of exploration. The Map still keeps every chunk, now as a cache: a chunk generated again would come out the same.
+- TDD 5.2 adds the invariant "same seed, same world".
+- TDD 2.3.2: enemy placement and patrol also come from the world seed.
+- Juanma approves the text before it is written.
+
+Files: `docs/TDD.md`, `docs/BACKLOG.md`.
+
+## D-30b: Seeded random for the map
+
+Acceptance criteria:
+- `js/random.js` (new, loaded before `mapgen.js`): `createRandom(seed)` returns a function with the same contract as `Math.random` (a number from 0 up to 1), and `getChunkSeed(worldSeed, cx, cy)` mixes the world seed and the chunk coordinates.
+- `generateChunk` takes that function as a parameter and never calls `Math.random`. `world.js` builds it from the chunk seed.
+- The world seed is picked once at load (random) and shown in the admin panel.
+- Tests: the same seed gives the same chunk, generating (1, 0) before or after (0, 0) gives the same cells, two seeds give different worlds, negative chunks, and the generator stays inside 0 to 1.
+
+Files: `js/random.js` (new), `js/mapgen.js`, `js/world.js`, `index.html`, `tests/mapgen.test.js`. `js/admin.js` shows the seed; split if it goes over four code files.
+
+## D-30c: Enemy placement and patrol from the world seed
+
+Acceptance criteria:
+- The enemy placement (D-24, D-25) and the patrol neighbour (D-05a) use a game random created from the world seed instead of `Math.random`.
+- `grep "Math.random" js/` finds only the line that picks the starting seed.
+- The tests pass a seed instead of replacing `Math.random`.
+- Tests: the same seed places the same enemies in the same cells.
+
+Files: `js/world.js`, `js/enemies.js`, `tests/enemies.test.js`, `tests/world.test.js`.
+
 ## D-17a: Reset a game
 
 Acceptance criteria:
@@ -1097,6 +1360,17 @@ Acceptance criteria:
 - Tests: after a reset the old chunk is gone, no enemies or projectiles are left, and the player stands on an air cell with 100 health and 6 rounds.
 
 Files: `js/world.js`, `js/player.js`, `js/projectiles.js`, `tests/reset.test.js` (new).
+
+## D-30d: World seed in the admin panel
+
+Acceptance criteria:
+- The admin panel shows the seed of the current world in a field. Typing a seed and pressing New world calls `resetGame()` with that seed; New world with the field empty picks a random one.
+- The same seed typed on both team machines gives the same map from the spawn.
+- Tests: `resetGame` with a seed rebuilds the same chunk (0, 0) and the same enemy cells.
+
+Files: `index.html`, `js/admin.js`, `js/world.js`, `tests/reset.test.js`.
+
+Note: placed after D-17a because it needs `resetGame()`.
 
 ## D-17b: Game state machine
 
@@ -1340,8 +1614,8 @@ Acceptance criteria:
 ## Desirables
 
 Open questions to settle before each story:
-- D-08d (possible): some reload frames are also cut (frames 10, 11, 13, 15 and 16 lose part of the hand) and frames 6 and 7 are one drawing split in two. Ask before fixing.
+- D-08d: requested by the team on 2026-11-22, now P0. The full diagnosis is in the 2026-11-22 feedback section.
 - D-05: optional vision cone with the dot product, like the zombie radar from the presentation. To confirm.
 - D-06: settled in the 2026-11-20 review. The victory is killing the boss (D-14b, D-19).
 - D-08: settled in D-08a. The reload key is R.
-- D-12: only if the team asks for it.
+- D-12: split on 2026-11-22. The arrow keys and the mouse were requested (D-12a to D-12d); strafing stays optional (D-12e).
