@@ -90,7 +90,7 @@ Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added i
 | D-16e2 | Fisheye toggle: walls drawn with the Euclidean distance | P1 | 4 | D-16c1b | done |
 | D-16e3 | Rays on the minimap | P1 | 4 | D-16c1b | done |
 | D-16f | Chunk borders on the minimap | P1 | 4 | D-16c1b | done |
-| D-08d | Re-cut the reload frames so no drawing is cut or split | P0 | 4 | D-08c | pending |
+| D-08d | Re-cut the reload frames so no drawing is cut or split | P0 | 4 | D-08c | done |
 | D-27a | Specify in the TDD: the enemy keeps a body distance, contact damage in whole hits, the red damage flash | P0 | 4 | D-21b | pending |
 | D-27b | The enemy stops in front of the player at body distance, and the player cannot walk through enemies | P0 | 4 | D-27a | pending |
 | D-27c | Contact damage in whole hit points: one on contact, then one per second | P0 | 4 | D-27b | pending |
@@ -1147,6 +1147,17 @@ Acceptance criteria:
 - Tests: the PNG header width is the frame count times the frame width, the frame lists, the reload timing and the aim (`tests/gun.test.js`, `tests/ammo.test.js`).
 
 Files: `js/weapon-sheet.js`, `js/weapon.js`, `js/player.js`, `tests/gun.test.js`.
+
+Decisions (Juanma asked to implement it without a plan or a validation stop):
+- The sheet has ten reload drawings, found as connected pixel groups in rows 2 to 5: the open gun with two flying shells, the hand bringing two shells, three of the hand loading, two raised hands, and three of the loaded chambers. The two that have loose shells (the first two) are grouped by hand. The loose pixels of the sheet all belong to the flame of the fourth firing frame, already handled in D-07e.
+- Alignment anchor: in all ten drawings the left edge of the stock, on the bottom row, sits exactly 24 px right of the drawing's leftmost pixel (23 px in the idle frame), so the barrels and the stock move as one piece. Every reload drawing puts that stock edge where the idle stock edge is (old frame x 69), so the gun does not jump between idle and reload.
+- Found while measuring: every D-07e frame ended 3 rows above its bottom, so the gun floated about 5 screen px above the screen edge (8 px on a 1080p window). The flat bottom rows of the sheet (52 px of stock) show it is meant to touch the edge. All frames now sit on the frame bottom.
+- Frame size 269 by 156: 156 rows for the tallest drawing (the raised hand) and 45 px more on each side for the widest (the hand with shells), symmetric so the bottom center anchor stays on the same gun pixel. Idle and firing frames were copied from the old strip moved 45 px right and 17 px down; checked pixel by pixel (44,423 pixels, no difference).
+- `shotgunDisplayHeight` is 286, so 286 / 156 = 1.833 screen px per sheet px against the old 260 / 142 = 1.831 (0.13% larger, under half a pixel on the idle gun). Breech and sight moved to (131, 91) and (107, 52). The aimed sprite x went from 791.3 to 794.6, because the gun sits 3 rows lower; the barrel axis still crosses the crosshair (test).
+- `reloadDuration` stays 0.96 s, the proposed default. `startReloadAnimation` gives each reload frame `reloadDuration / frames`, about 0.096 s, so the animation and the reload logic end together with any number of frames. Firing frames keep 0.08 s. The sequence player now stores its frame duration.
+- Left as is: the forearm of the fifth drawing leaves `Sgun.png` through the sheet's right edge, so its last 14 rows end in a short vertical edge at the bottom right of the arm. The sheet has no more pixels there.
+- The strip went from about 157 KB to about 228 KB (bigger frames and fuller reload drawings). It was made with a small Node script (zlib only) outside the repo, like D-07e.
+- Checked with headless Chrome on `file://`: Space, then R, captured every 130 ms: each reload drawing whole, the stock on the screen bottom, back to idle with 6 rounds, no console messages. 180 of 180 tests pass.
 
 ## D-27: The enemy stops in front of the player and hits once per second (split in four)
 

@@ -4,7 +4,8 @@
 // TDD 6.6: the camera keeps a small radius, so it never sits flush against a
 // wall face and does not clip a corner. Under 0.5, so a one-cell door still fits.
 const playerRadius = 0.2;
-const reloadDuration = 0.96; // seconds: the 12 reload frames at 0.08 s each (D-08c)
+// Seconds (D-08c). D-08d: the ten reload frames share it, about 0.096 s each.
+const reloadDuration = 0.96;
 
 // TDD 5.2: spawn at the center of the generated room in chunk (0, 0).
 // y grows downward on the map, so facing east (+x) the right hand side is +y:
