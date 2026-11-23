@@ -2,7 +2,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const { loadScripts } = require("./load-scripts.js");
 
-// D-07a: the fire input. The hit itself is tested in projectiles.test.js (D-13b).
+// D-07a: the fire input. The hit itself is tested in shoot.test.js.
 const getGlobal = loadScripts();
 const createFireInput = getGlobal("createFireInput");
 const createMouseTurnInput = getGlobal("createMouseTurnInput");

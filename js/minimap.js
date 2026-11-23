@@ -13,7 +13,6 @@ function getMinimapX() {
 const minimapBackgroundColor = 0x0d1117;
 const minimapWallColor = 0x2c4a7c;
 const minimapPlayerColor = 0x4de1bd;
-const minimapProjectileRadius = 2;
 // D-16e3: every eighth ray of the wall pass, faint, so the fan reads clearly
 const minimapRayStep = 8;
 const minimapRayAlpha = 0.35;
@@ -163,23 +162,6 @@ function drawMinimap(graphics, player) {
   }
   if (enemyMarkers.length > 0) {
     graphics.fill(enemyColor);
-  }
-
-  // D-13d: each projectile in flight is a small dot, only inside the window
-  let projectileDots = 0;
-  for (const projectile of projectiles) {
-    if (!isInsideMinimapWindow(projectile.posX, projectile.posY, firstMapX, firstMapY)) {
-      continue;
-    }
-    graphics.circle(
-      minimapX + (projectile.posX - firstMapX) * minimapCellSize,
-      minimapY + (projectile.posY - firstMapY) * minimapCellSize,
-      minimapProjectileRadius,
-    );
-    projectileDots += 1;
-  }
-  if (projectileDots > 0) {
-    graphics.fill(projectileColor);
   }
 
   const playerX = minimapX + (player.posX - firstMapX) * minimapCellSize;

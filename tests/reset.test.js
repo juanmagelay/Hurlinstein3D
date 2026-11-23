@@ -2,14 +2,13 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const { loadScripts } = require("./load-scripts.js");
 
-// Loads a fresh world and dirties it: a far chunk, enemies, a projectile in
-// flight and a hurt, mid-reload player. Returns the world accessor.
+// Loads a fresh world and dirties it: a far chunk, enemies and a hurt,
+// mid-reload player. Returns the world accessor.
 function makeDirtyWorld() {
   const world = loadScripts();
   const player = world("player");
   world("getChunkCells")(5, 5);
   world("placeGameEnemies")(player, 10);
-  world("fireProjectile")(player);
   player.health = 2;
   player.ammo = 1;
   player.reloadsLeft = 0;
@@ -18,7 +17,7 @@ function makeDirtyWorld() {
   return world;
 }
 
-test("resetGame clears the old chunks, enemies and projectiles (D-17a)", () => {
+test("resetGame clears the old chunks and enemies (D-17a)", () => {
   const world = makeDirtyWorld();
   const getChunkKey = world("getChunkKey");
 
@@ -28,10 +27,9 @@ test("resetGame clears the old chunks, enemies and projectiles (D-17a)", () => {
   assert.equal(world("generatedChunks").has(getChunkKey(5, 5)), false);
   assert.equal(world("generatedChunks").size, 1);
   assert.equal(world("generatedChunks").has(getChunkKey(0, 0)), true);
-  // No enemies or projectiles are left
+  // No enemies are left
   assert.equal(world("enemiesByChunk").size, 0);
   assert.equal(world("enemiesByCell").size, 0);
-  assert.equal(world("projectiles").length, 0);
 });
 
 test("resetGame respawns the player with full health and a full magazine (D-17a)", () => {

@@ -82,16 +82,15 @@ function removeAllEnemies() {
 }
 
 // D-17a / TDD 2.3.4: a new game discards the whole world (chunks, lights,
-// enemies and their per-cell registry) and the projectiles, then puts the
-// player back at a fresh spawn. A new game is a new session, so the next
-// chunk (0, 0) is generated again with a brand new map.
+// enemies and their per-cell registry), then puts the player back at a fresh
+// spawn. A new game is a new session, so the next chunk (0, 0) is generated
+// again with a brand new map.
 function resetGame() {
   generatedChunks.clear();
   lightsByChunk.clear();
   removeAllEnemies();
   spawnRoomCenter = null;
   nextEnemyId = 1;
-  clearProjectiles();
   resetPlayer();
 }
 

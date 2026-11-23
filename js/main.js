@@ -72,10 +72,6 @@ async function startGame() {
     app.stage.addChild(enemyStrips.container);
   }
 
-  // D-13c: projectiles draw over the enemies, with the same wall occlusion
-  const projectileGraphics = new PIXI.Graphics();
-  app.stage.addChild(projectileGraphics);
-
   // D-07b / D-07c: the shotgun view model sits at the bottom, aimed at the crosshair,
   // under the HUD and overlay
   const shotgun = await createShotgun();
@@ -176,13 +172,12 @@ async function startGame() {
       startReloadAnimation(shotgun);
     }
     updateReload(player, ticker.deltaTime);
-    // D-13c / TDD 2.3.1: a shot launches a projectile along the center ray;
-    // the hit happens later, when the projectile reaches an enemy
+    // D-07a / TDD 2.3.1: a shot is the center ray DDA; the nearest enemy on it
+    // dies instantly. The muzzle flash plays regardless of a hit.
     if (fireInput.consumeShot() && tryFire(player)) {
-      fireProjectile(player);
+      shootCenterRay(player);
       triggerShotgun(shotgun);
     }
-    updateProjectiles(ticker.deltaTime);
     updateShotgun(shotgun, ticker.deltaTime);
     // D-27c: whole hits. The flash starts and the bar drops in this same frame.
     if (damagePlayer(player, getContactDamage(player, ticker.deltaTime))) {
@@ -191,7 +186,6 @@ async function startGame() {
     updateHudBars();
     drawWalls(walls, player, wallStrips);
     drawEnemies(enemies, player, enemyStrips);
-    drawProjectiles(projectileGraphics, player);
     drawMinimap(minimap, player);
   });
 }

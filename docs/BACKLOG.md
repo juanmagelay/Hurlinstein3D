@@ -129,6 +129,7 @@ Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added i
 | D-16d | Admin render toggles: textures, lighting, flat color | P2 | 4 | D-16b2 | pending |
 | D-27e | Enemies keep body distance from each other, optional | P2 | 4 | D-27b | pending |
 | D-22 | Player initials in the ranking, optional | P3 | 4 | D-20c | pending |
+| D-31 | Instant center ray shot instead of the projectile (reverts D-13a to D-13d) | P0 | 4 | D-13d | done |
 
 ## Backlog review (2026-11-20)
 
@@ -803,6 +804,8 @@ Decisions:
 
 ## D-13d: Projectiles on the minimap, retire the instant hit
 
+Note: reverted by D-31 (2026-11-23); the instant center ray shot is back and the projectile is gone.
+
 Acceptance criteria:
 - Each projectile inside the 21 by 21 window shows as a small dot with the projectile color.
 - `shootCenterRay` is gone; `removeEnemy` stays, used by the projectiles.
@@ -811,6 +814,21 @@ Acceptance criteria:
 Decisions:
 - `isInsideMinimapWindow` keeps dots of projectiles outside the window from being drawn over the rest of the screen.
 - The dots are accumulated and painted with a single `fill()`, like the walls and the enemy markers.
+
+## D-31: Instant center ray shot instead of the projectile
+
+Request (2026-11-23, Juanma): the shot should be a raycast, not a visible projectile. D-13a to D-13d replaced the D-07a instant hit with a traveling projectile; this story brings the instant hit back and removes the projectile.
+
+Acceptance criteria:
+- `shootCenterRay(player)` in `js/enemies.js` casts the center ray DDA once and removes the nearest enemy whose body crosses the ray, closer than the first wall (or `maxRayDistance` with no wall).
+- The projectile is gone: `js/projectiles.js`, `drawProjectiles` (`js/renderer.js`), the minimap dots (`js/minimap.js`) and `clearProjectiles` are removed; `resetGame()` no longer clears projectiles.
+- TDD 2.3.1 describes the instant hit, and 2.3.4 no longer mentions projectiles.
+- `tests/shoot.test.js` covers a direct hit, a blocked shot, a lateral miss, an enemy behind, the nearest of two, no wall up to the max distance, and negative coordinates. `tests/projectiles.test.js` is removed.
+
+Decisions:
+- The hit keeps the current rectangle: lateral within `enemy.width / 2` (half the 0.3 cell width), as the projectile did, not the old `enemy.size / 2` circle of D-07a.
+- `shootCenterRay` walks every enemy of `enemiesByChunk`, like D-07a; a shot is rare, so the per-frame cost stays in the D-23 active area.
+- The muzzle flash and the shotgun animation play on every shot, hit or miss.
 
 ## D-14a: Sync the docs with the code
 
@@ -1439,6 +1457,8 @@ Acceptance criteria:
 Files: `js/world.js`, `js/enemies.js`, `tests/enemies.test.js`, `tests/world.test.js`.
 
 ## D-17a: Reset a game
+
+Note: D-31 removed the projectiles, so `resetGame()` no longer clears them.
 
 Acceptance criteria:
 - `resetGame()` clears the chunk, light and enemy Maps, the per-cell registry and the projectiles, and puts the player at the room center of a newly generated chunk (0, 0) with full health, a full magazine and no reload.

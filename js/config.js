@@ -81,7 +81,7 @@ const ambientLight = 0.22;
 const shadowRayEpsilon = 0.05;
 
 // D-04: the enemy is a thin standing rectangle (cells), not a wide square.
-// enemyWidth is also its footprint for collisions and projectile hits.
+// enemyWidth is also its footprint for collisions and shot hits.
 const enemyWidth = 0.3;
 const enemyHeight = 0.6;
 const enemyColor = 0xffc857;
