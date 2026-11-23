@@ -81,21 +81,25 @@ test("updateReload is a no-op when not reloading", () => {
   assert.equal(player.ammo, 2);
 });
 
+// A fake window or game frame: keeps every listener and calls them on dispatch
 function createFakeTarget() {
-  const handlers = {};
+  const listeners = {};
   return {
-    addEventListener(type, handler) {
-      handlers[type] = handler;
+    addEventListener(type, listener) {
+      listeners[type] = listeners[type] || [];
+      listeners[type].push(listener);
     },
     dispatch(type, event) {
-      handlers[type](event);
+      for (const listener of listeners[type] || []) {
+        listener(event);
+      }
     },
   };
 }
 
 test("R reloads once per press and ignores key repeat", () => {
   const target = createFakeTarget();
-  const reloadInput = createReloadInput(target);
+  const reloadInput = createReloadInput(target, createFakeTarget());
   const press = { key: "r", repeat: false };
   const repeat = { key: "r", repeat: true };
 
@@ -105,6 +109,30 @@ test("R reloads once per press and ignores key repeat", () => {
   assert.equal(reloadInput.consumeReload(), false);
 
   target.dispatch("keydown", repeat);
+  assert.equal(reloadInput.consumeReload(), false);
+});
+
+// D-12d: a right click on the game reloads, like R
+test("a right click reloads once and keeps the browser menu closed", () => {
+  const gameTarget = createFakeTarget();
+  const reloadInput = createReloadInput(createFakeTarget(), gameTarget);
+  let menuPrevented = false;
+
+  gameTarget.dispatch("mousedown", { button: 2 });
+  assert.equal(reloadInput.consumeReload(), true);
+  assert.equal(reloadInput.consumeReload(), false);
+
+  gameTarget.dispatch("contextmenu", { preventDefault: () => { menuPrevented = true; } });
+  assert.equal(menuPrevented, true);
+});
+
+test("a left click does not reload, and a right click on the admin panel does not either", () => {
+  const windowTarget = createFakeTarget();
+  const gameTarget = createFakeTarget();
+  const reloadInput = createReloadInput(windowTarget, gameTarget);
+
+  gameTarget.dispatch("mousedown", { button: 0 });
+  windowTarget.dispatch("mousedown", { button: 2 });
   assert.equal(reloadInput.consumeReload(), false);
 });
 
@@ -161,7 +189,7 @@ test("refill ammo fills the magazine and the reload allowance", () => {
 
 test("R typed into an admin panel field does not reload", () => {
   const target = createFakeTarget();
-  const reloadInput = createReloadInput(target);
+  const reloadInput = createReloadInput(target, createFakeTarget());
 
   target.dispatch("keydown", { key: "r", repeat: false, target: { tagName: "INPUT" } });
   assert.equal(reloadInput.consumeReload(), false);
@@ -169,7 +197,7 @@ test("R typed into an admin panel field does not reload", () => {
 
 test("Space typed into an admin panel field does not fire", () => {
   const target = createFakeTarget();
-  const fireInput = getGlobal("createFireInput")(target);
+  const fireInput = getGlobal("createFireInput")(target, createFakeTarget());
   let prevented = false;
 
   target.dispatch("keydown", {

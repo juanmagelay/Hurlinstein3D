@@ -239,6 +239,10 @@ function createAdminPanel(page, player) {
   function open() {
     cancelHide();
     setState("open");
+    // D-12c / TDD 2.2: the panel needs the cursor, so opening it releases the mouse
+    if (page.pointerLockElement) {
+      page.exitPointerLock();
+    }
     writeInfo();
   }
 

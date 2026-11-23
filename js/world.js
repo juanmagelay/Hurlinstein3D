@@ -150,6 +150,8 @@ function addEnemyAtCell(cellX, cellY) {
     color: enemyColor,
     state: "idle",
     stateTime: 0,
+    // D-27c: ticker units until the next contact hit; 0 hits on first contact
+    hitWait: 0,
   };
   nextEnemyId += 1;
   addEnemyToChunk(enemy);

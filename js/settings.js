@@ -17,8 +17,10 @@ const settingDefinitions = {
   magazineSize: { defaultValue: 6, min: 2, max: 20 },
   unlimitedReloads: { defaultValue: true },
   reloadLimit: { defaultValue: 5, min: 0, max: 99 },
-  // Player: A and D turn speed in degrees per second, and no damage
+  // Player: arrow turn speed in degrees per second, mouse sensitivity in
+  // degrees per 100 px of mouse movement (D-12c, TDD 2.2), and no damage
   turnSpeed: { defaultValue: 120, min: 30, max: 360 },
+  mouseSensitivity: { defaultValue: 20, min: 5, max: 100 },
   godMode: { defaultValue: false },
   // Raycasting (D-16e): pixels per ray (TDD 6.5), walls drawn with the
   // Euclidean distance (TDD 3.4) and the rays drawn on the minimap. The first
