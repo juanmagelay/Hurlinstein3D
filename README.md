@@ -78,6 +78,8 @@ The game fills the browser window on any screen between 4:3 and 21:9, and adapts
 - [PixiJS](https://pixijs.com) 8.21.0, MIT license.
 - [Lucide](https://lucide.dev) icons 1.77.0, ISC license (chevron-down, chevron-up and x derive from Feather, MIT). See `assets/icons/LICENSE`.
 - [Husk Mutant](https://opengameart.org/content/husk-mutant) enemy sprite by HorrorMovieRei, CC0. The logomark and favicon are cropped from it. See `assets/enemy-sprites/LICENSE.md`.
+- [FPS Gun Sprites](https://rekkimaru.itch.io/fps-gun-sprites) by Rekkimaru, free for any use (no attribution required).
+- [UI BARS](https://guilemus.itch.io/ui-bars) by guilemus, free for commercial use (no redistribution).
 
 ## Course
 

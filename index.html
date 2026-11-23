@@ -93,6 +93,34 @@
       outline-offset: 2px;
     }
 
+    /* D-18b: key/action rows for Controls, plain centered lines for Credits */
+    .screen-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      font-size: 14px;
+      color: var(--text-color);
+    }
+
+    .screen-list li {
+      display: flex;
+      gap: 16px;
+    }
+
+    .screen-list .key {
+      min-width: 150px;
+      color: var(--accent-color);
+      font: 600 14px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .credits-list li {
+      justify-content: center;
+      text-align: center;
+    }
+
     /* Lucide icons: 24 px grid, 2 px stroke, color from the text */
     .icon {
       width: 18px;
@@ -374,6 +402,36 @@
       <h1 class="menu-title">You died</h1>
       <button id="play-again" class="menu-button" type="button">Play again</button>
       <button id="main-menu" class="menu-button" type="button">Main menu</button>
+    </div>
+    <div id="controls-screen" class="screen" hidden>
+      <h1 class="menu-title">Controls</h1>
+      <ul class="screen-list">
+        <li><span class="key">W / Up</span>Move forward</li>
+        <li><span class="key">S / Down</span>Move backward</li>
+        <li><span class="key">A / D</span>Strafe left / right</li>
+        <li><span class="key">Left / Right</span>Turn</li>
+        <li><span class="key">Mouse</span>Turn</li>
+        <li><span class="key">Space / Click</span>Fire</li>
+        <li><span class="key">R / Right click</span>Reload</li>
+        <li><span class="key">Esc</span>Release the mouse</li>
+        <li><span class="key">P</span>Admin panel</li>
+      </ul>
+      <button id="controls-back" class="menu-button" type="button">Back</button>
+    </div>
+    <div id="credits-screen" class="screen" hidden>
+      <h1 class="menu-title">Credits</h1>
+      <ul class="screen-list credits-list">
+        <li>Juan Manuel Gelay and Alejo Hutmacher</li>
+        <li>Simulación I · Licenciatura en Desarrollo de Videojuegos y Simulación</li>
+        <li>Universidad Nacional de Hurlingham (UNAHUR)</li>
+        <li>Professor: Facundo Toufick Saiegh</li>
+        <li>PixiJS 8.21.0, MIT license</li>
+        <li>Lucide icons 1.77.0, ISC license</li>
+        <li>Husk Mutant by HorrorMovieRei, CC0</li>
+        <li>FPS Gun Sprites by Rekkimaru, free for any use</li>
+        <li>UI BARS by guilemus, free for commercial use</li>
+      </ul>
+      <button id="credits-back" class="menu-button" type="button">Back</button>
     </div>
   </div>
 

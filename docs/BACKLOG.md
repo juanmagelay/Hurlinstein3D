@@ -113,7 +113,7 @@ Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added i
 | D-30d | World seed in the admin panel: see it, type one, start a new world | P1 | 4 | D-30c, D-17a | pending |
 | D-17b | Game state machine: menu, playing, victory, defeat | P1 | 4 | D-17a | done |
 | D-18a | Main menu: title, start game, controls, credits | P1 | 4 | D-16a3, D-17b | done |
-| D-18b | Controls and credits screens | P1 | 4 | D-18a | pending |
+| D-18b | Controls and credits screens | P1 | 4 | D-18a | done |
 | D-20a | Defeat screen with play again and main menu | P1 | 4 | D-18a | done |
 | D-19a | Kill counter and KILLS label on the HUD | P2 | 4 | D-15b, D-17a | pending |
 | D-19b | Enemy hit points, one for regular enemies | P2 | 4 | D-19a | pending |
@@ -1523,6 +1523,11 @@ Acceptance criteria:
 Files: `index.html`, `js/screens.js`.
 
 Open question: where `Sgun.png` and the UI bar sheet come from, and under which license.
+
+Decisions:
+- Controls lists the full current scheme (D-12): W/S, A/D strafe, arrows, mouse, Space/click fire, R/right click reload, Esc and P. The criteria's shorter list predates D-12.
+- The sub-screens are wired in `js/main.js` (not `js/screens.js`), and `syncScreenToState` gained a `syncedState` guard so it only forces the screen on a state change, leaving Controls and Credits open while in menu.
+- Sprite licenses settled: FPS Gun Sprites by Rekkimaru (free for any use, no attribution required) and UI BARS by guilemus (free for commercial use, no redistribution). Both are credited in `index.html` and `README.md`.
 
 ## D-20a: Defeat screen with play again
 

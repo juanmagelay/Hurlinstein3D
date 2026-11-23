@@ -129,8 +129,28 @@ async function startGame() {
     setGameState(gameStateMenu);
   });
 
-  // D-20a: the visible screen follows the state; playing shows none.
+  // D-18b: Controls and Credits are sub-screens of the menu; Back returns to it.
+  document.getElementById("show-controls").addEventListener("click", () => {
+    showScreen("controls-screen");
+  });
+  document.getElementById("show-credits").addEventListener("click", () => {
+    showScreen("credits-screen");
+  });
+  document.getElementById("controls-back").addEventListener("click", () => {
+    showScreen("menu-screen");
+  });
+  document.getElementById("credits-back").addEventListener("click", () => {
+    showScreen("menu-screen");
+  });
+
+  // D-20a / D-18b: the visible screen follows the state, synced only when the
+  // state changes, so the menu's Controls and Credits stay open while in menu.
+  let syncedState = null;
   function syncScreenToState() {
+    if (gameState === syncedState) {
+      return;
+    }
+    syncedState = gameState;
     if (gameState === gameStateMenu) {
       showScreen("menu-screen");
     } else if (gameState === gameStateDefeat) {
