@@ -162,20 +162,75 @@ async function startGame() {
     if (gameState === gameStateMenu) {
       showScreen("menu-screen");
     } else if (gameState === gameStateDefeat) {
+      updateEndStats("defeat");
+      resetScoreSubmit("defeat");
       showScreen("defeat-screen");
     } else if (gameState === gameStateVictory) {
-      updateVictoryStats();
+      updateEndStats("victory");
+      resetScoreSubmit("victory");
       showScreen("victory-screen");
     } else {
       hideScreens();
     }
   }
 
-  // D-19d: the victory screen shows the kills and the game time
-  function updateVictoryStats() {
-    document.getElementById("victory-kills").textContent = getKillCount();
-    document.getElementById("victory-time").textContent = formatGameTime(getGameTime());
+  // D-19d / D-32: the end screens show the kills and the game time
+  function updateEndStats(prefix) {
+    document.getElementById(`${prefix}-kills`).textContent = getKillCount();
+    document.getElementById(`${prefix}-time`).textContent = formatGameTime(getGameTime());
   }
+
+  // D-32: the score submit and the top 5, shared by victory and defeat
+  function wireScoreSubmit(prefix, isVictory) {
+    const input = document.getElementById(`${prefix}-initials`);
+    const button = document.getElementById(`${prefix}-submit-button`);
+    const submitBlock = document.getElementById(`${prefix}-submit`);
+    const ranking = document.getElementById(`${prefix}-ranking`);
+    const list = document.getElementById(`${prefix}-ranking-list`);
+    const errorElement = document.getElementById(`${prefix}-error`);
+
+    button.addEventListener("click", async () => {
+      const nombre = normalizeInitials(input.value);
+      if (nombre === "") {
+        errorElement.textContent = "Enter your initials";
+        errorElement.hidden = false;
+        return;
+      }
+      button.disabled = true;
+      try {
+        await submitScore(nombre, getScore(getKillCount(), isVictory));
+        const top = await fetchTopScores();
+        renderRanking(list, top);
+        submitBlock.hidden = true;
+        errorElement.hidden = true;
+        ranking.hidden = false;
+      } catch (error) {
+        errorElement.textContent = error.message;
+        errorElement.hidden = false;
+        button.disabled = false;
+      }
+    });
+  }
+
+  function resetScoreSubmit(prefix) {
+    document.getElementById(`${prefix}-submit`).hidden = false;
+    document.getElementById(`${prefix}-ranking`).hidden = true;
+    document.getElementById(`${prefix}-error`).hidden = true;
+    document.getElementById(`${prefix}-initials`).value = "";
+    document.getElementById(`${prefix}-submit-button`).disabled = false;
+  }
+
+  function renderRanking(list, entries) {
+    list.textContent = "";
+    for (const entry of entries) {
+      const item = document.createElement("li");
+      item.textContent = `${entry.nombre} — ${entry.puntuacion} — ${formatScoreDate(entry.createdAt)}`;
+      list.appendChild(item);
+    }
+  }
+
+  wireScoreSubmit("victory", true);
+  wireScoreSubmit("defeat", false);
 
   // D-16a: resizing the window, or entering full screen, refits the game.
   // Registered once; a drag fires many events, so the canvas only changes when

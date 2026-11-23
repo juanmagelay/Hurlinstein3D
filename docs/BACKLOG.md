@@ -120,17 +120,17 @@ Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added i
 | D-19c | Boss appears after the kill target | P2 | 4 | D-19b | done |
 | D-16c2 | Admin settings for the boss flow: enemy and boss hit points, spawn boss | P2 | 4 | D-16c1e, D-19c | pending |
 | D-19d | Victory when the boss dies, victory screen | P2 | 4 | D-19c, D-20a | done |
-| D-20b | Score and remote ranking via the API | P2 | 4 | D-19d | pending |
-| D-20c | Ranking on the victory and defeat screens | P2 | 4 | D-20b | pending |
+| D-20b | Score and remote ranking via the API | P2 | 4 | D-19d | done |
+| D-20c | Ranking on the victory and defeat screens | P2 | 4 | D-20b | done |
 | D-21a | Pick a licensed enemy sprite and embed it as a data URI | P2 | 4 | D-14b | done |
 | D-21b | Textured enemies with z-buffer occlusion | P2 | 4 | D-21a | done |
 | D-26 | Logomark and favicon from the enemy sprite's head | P2 | 4 | D-21a | done |
 | D-21c | Boss as a tinted, larger enemy sprite | P2 | 4 | D-21b, D-19c | pending |
 | D-16d | Admin render toggles: textures, lighting, flat color | P2 | 4 | D-16b2 | pending |
 | D-27e | Enemies keep body distance from each other, optional | P2 | 4 | D-27b | pending |
-| D-22 | Player initials for the ranking | P3 | 4 | D-20c | pending |
+| D-22 | Player initials for the ranking | P3 | 4 | D-20c | done |
 | D-31 | Instant center ray shot instead of the projectile (reverts D-13a to D-13d) | P0 | 4 | D-13d | done |
-| D-32 | Remote ranking via the API (TDD, CLAUDE.md and code) | P0 | 4 | D-19d | in progress |
+| D-32 | Remote ranking via the API (TDD, CLAUDE.md and code) | P0 | 4 | D-19d | done |
 
 ## Backlog review (2026-11-20)
 
@@ -845,6 +845,13 @@ Decisions (backend answers, 2026-11-23):
 - CORS is open (`Access-Control-Allow-Origin: *`) and the preflight is handled; `top-puntuaciones` already comes sorted descending, so the frontend does not re-sort.
 - `nombre` is normalized in the frontend (trim, uppercase, remove spaces, cut to 3) because the backend returns 400 on spaces.
 - One optional retry at ~500 ms for the POST covers Vercel cold starts; an unreachable API shows its error body or a generic message.
+
+Implementation (done):
+- `js/ranking.js`: `getScore`, `normalizeInitials`, `formatScoreDate`, `requestRanking`, `fetchTopScores`, `submitScore`.
+- `index.html`: the initials input and the top 5 on both end screens, plus the score styles.
+- `js/main.js`: `wireScoreSubmit` and `renderRanking`, and the defeat screen now shows kills and time too.
+- `tests/ranking.test.js`: the pure functions.
+- Folds in D-20b (submit + read), D-20c (top 5 on the end screens) and D-22 (initials).
 
 ## D-14a: Sync the docs with the code
 
