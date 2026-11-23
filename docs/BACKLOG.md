@@ -90,7 +90,7 @@ Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added i
 | D-16e2 | Fisheye toggle: walls drawn with the Euclidean distance | P1 | 4 | D-16c1b | done |
 | D-16e3 | Rays on the minimap | P1 | 4 | D-16c1b | done |
 | D-16f | Chunk borders on the minimap | P1 | 4 | D-16c1b | done |
-| D-17a | Reset a game: new world, enemies, projectiles and player | P1 | 4 | D-14b | pending |
+| D-17a | Reset a game: new world, enemies, projectiles and player | P1 | 4 | D-14b | done |
 | D-17b | Game state machine: menu, playing, victory, defeat | P1 | 4 | D-17a | pending |
 | D-18a | Main menu: title, start game, controls, credits | P1 | 4 | D-16a3, D-17b | pending |
 | D-18b | Controls and credits screens | P1 | 4 | D-18a | pending |
@@ -1097,6 +1097,12 @@ Acceptance criteria:
 - Tests: after a reset the old chunk is gone, no enemies or projectiles are left, and the player stands on an air cell with 100 health and 6 rounds.
 
 Files: `js/world.js`, `js/player.js`, `js/projectiles.js`, `tests/reset.test.js` (new).
+
+Decisions:
+- `resetGame()` lives in `js/world.js` and coordinates `clearProjectiles()` (`js/projectiles.js`) and `resetPlayer()` (`js/player.js`).
+- It does not place enemies; that stays `placeGameEnemies`, called at startup and later by D-18a Start game and D-20a Play again.
+- `nextEnemyId` resets to 1, so a new game also starts ids over.
+- "100 health" in the criteria means full health (`gameSettings.playerHitPoints`, 10 by default). The text stays as is, by team decision.
 
 ## D-17b: Game state machine
 

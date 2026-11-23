@@ -43,6 +43,25 @@ function setCameraPlaneLength(player, length) {
   player.planeY = player.dirX * length;
 }
 
+// D-17a / TDD 2.3.4: a new game sends the player back to the spawn of a newly
+// generated chunk (0, 0), facing east, with full health and a full magazine,
+// and no reload in progress.
+function resetPlayer() {
+  const spawn = getSpawnPosition();
+  player.posX = spawn.x;
+  player.posY = spawn.y;
+  player.dirX = 1;
+  player.dirY = 0;
+  player.planeX = 0;
+  player.planeY = getCameraPlaneLength();
+  player.maxHealth = gameSettings.playerHitPoints;
+  player.health = gameSettings.playerHitPoints;
+  player.ammo = gameSettings.magazineSize;
+  player.reloadsLeft = getReloadAllowance(gameSettings);
+  player.reloading = false;
+  player.reloadTime = 0;
+}
+
 // D-06b: health never goes below zero, and zero health means defeat.
 // D-16c1: god mode, from the admin panel, ignores every damage.
 function damagePlayer(player, amount) {

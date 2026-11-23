@@ -81,6 +81,20 @@ function removeAllEnemies() {
   enemiesByCell.clear();
 }
 
+// D-17a / TDD 2.3.4: a new game discards the whole world (chunks, lights,
+// enemies and their per-cell registry) and the projectiles, then puts the
+// player back at a fresh spawn. A new game is a new session, so the next
+// chunk (0, 0) is generated again with a brand new map.
+function resetGame() {
+  generatedChunks.clear();
+  lightsByChunk.clear();
+  removeAllEnemies();
+  spawnRoomCenter = null;
+  nextEnemyId = 1;
+  clearProjectiles();
+  resetPlayer();
+}
+
 // The air cells of the 8 chunks around the player's chunk. TDD 2.3.2 allows
 // one enemy per cell, so when they are not enough the area grows one ring of
 // chunks at a time until every enemy fits (100,000 reach about 18 rings).

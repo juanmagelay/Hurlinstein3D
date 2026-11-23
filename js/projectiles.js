@@ -8,6 +8,11 @@ const projectileSpeed = 20 / ticksPerSecond;
 // enough (they are not registered by cell like the enemies).
 const projectiles = [];
 
+// D-17a / TDD 2.3.4: a new game discards every projectile still in flight.
+function clearProjectiles() {
+  projectiles.length = 0;
+}
+
 // TDD 2.3.1: the center ray DDA gives the wall distance once, when firing.
 // Walls never change during the session (TDD 4.4), so that distance is the
 // projectile range. dir has length 1, so perpWallDist is also the distance
