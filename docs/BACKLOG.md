@@ -120,7 +120,7 @@ Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added i
 | D-19c | Boss appears after the kill target | P2 | 4 | D-19b | done |
 | D-16c2 | Admin settings for the boss flow: enemy and boss hit points, spawn boss | P2 | 4 | D-16c1e, D-19c | pending |
 | D-19d | Victory when the boss dies, victory screen | P2 | 4 | D-19c, D-20a | done |
-| D-20b | Score and local ranking storage | P2 | 4 | D-19d | pending |
+| D-20b | Score and remote ranking via the API | P2 | 4 | D-19d | pending |
 | D-20c | Ranking on the victory and defeat screens | P2 | 4 | D-20b | pending |
 | D-21a | Pick a licensed enemy sprite and embed it as a data URI | P2 | 4 | D-14b | done |
 | D-21b | Textured enemies with z-buffer occlusion | P2 | 4 | D-21a | done |
@@ -128,8 +128,9 @@ Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added i
 | D-21c | Boss as a tinted, larger enemy sprite | P2 | 4 | D-21b, D-19c | pending |
 | D-16d | Admin render toggles: textures, lighting, flat color | P2 | 4 | D-16b2 | pending |
 | D-27e | Enemies keep body distance from each other, optional | P2 | 4 | D-27b | pending |
-| D-22 | Player initials in the ranking, optional | P3 | 4 | D-20c | pending |
+| D-22 | Player initials for the ranking | P3 | 4 | D-20c | pending |
 | D-31 | Instant center ray shot instead of the projectile (reverts D-13a to D-13d) | P0 | 4 | D-13d | done |
+| D-32 | Remote ranking via the API (TDD, CLAUDE.md and code) | P0 | 4 | D-19d | in progress |
 
 ## Backlog review (2026-11-20)
 
@@ -829,6 +830,21 @@ Decisions:
 - The hit keeps the current rectangle: lateral within `enemy.width / 2` (half the 0.3 cell width), as the projectile did, not the old `enemy.size / 2` circle of D-07a.
 - `shootCenterRay` walks every enemy of `enemiesByChunk`, like D-07a; a shot is rare, so the per-frame cost stays in the D-23 active area.
 - The muzzle flash and the shotgun animation play on every shot, hit or miss.
+
+## D-32: Remote ranking via the API
+
+Request (2026-11-23, Juanma): the ranking moves out of localStorage and into the external scores API, so the top scores are shared.
+
+Acceptance criteria:
+- TDD 2.3.4: the ranking is the top 5 from the API; the player enters three initials at the end; the score is 100 per regular enemy plus 1000 for the boss; nothing is saved in the browser; an unreachable API shows its error.
+- CLAUDE.md 8.1: the fetch exception for `js/ranking.js`.
+- `js/ranking.js`: fetch `GET /top-puntuaciones` and `POST /all-puntuaciones`, checking `res.ok` and the 400/500/502 errors.
+- The initials screen before the submit (D-22 becomes required), and the victory/defeat screens show the top 5 (rewrites D-20b and D-20c).
+
+Decisions (backend answers, 2026-11-23):
+- CORS is open (`Access-Control-Allow-Origin: *`) and the preflight is handled; `top-puntuaciones` already comes sorted descending, so the frontend does not re-sort.
+- `nombre` is normalized in the frontend (trim, uppercase, remove spaces, cut to 3) because the backend returns 400 on spaces.
+- One optional retry at ~500 ms for the POST covers Vercel cold starts; an unreachable API shows its error body or a generic message.
 
 ## D-14a: Sync the docs with the code
 

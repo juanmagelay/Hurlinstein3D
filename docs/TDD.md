@@ -109,7 +109,7 @@ Cada partida arranca con un mundo nuevo: se descartan los chunks y los enemigos 
 
 El juego pasa por cuatro estados: menú, en juego, victoria y derrota. El jugador y los enemigos se actualizan solo en juego. En los otros estados la escena queda quieta detrás de la pantalla que corresponde.
 
-Al ganar o al perder aparece una pantalla con el resultado, los enemigos eliminados, el tiempo de juego, el ranking y dos botones: jugar de nuevo y volver al menú. El puntaje suma 100 puntos por cada enemigo común y 1000 por el jefe. El ranking guarda las 10 mejores partidas con su fecha, ordenadas por puntaje y, a igual puntaje, por menor tiempo. Vive en localStorage, que Chrome permite usar desde file:// y que conserva los datos en ese navegador de una sesión a otra. Si el navegador lo bloquea, el ranking dura mientras la página está abierta.
+Al ganar o al perder aparece una pantalla con el resultado, los enemigos eliminados, el tiempo de juego, el ranking y dos botones: jugar de nuevo y volver al menú. El puntaje suma 100 puntos por cada enemigo común y 1000 por el jefe. Al terminar, el jugador ingresa tres iniciales y la partida se envía a una API externa; el ranking muestra las cinco mejores puntuaciones que devuelve esa API, cada una con su nombre, puntaje y fecha. La API es la única fuente del ranking: no se guarda nada en el navegador. Si la API no responde, la pantalla muestra el error y el juego sigue funcionando.
 
 Los menús y las pantallas son elementos HTML superpuestos al canvas, dentro del mismo marco que lo escala (2.3.5). Así tienen botones reales y acompañan el tamaño de la ventana.
 

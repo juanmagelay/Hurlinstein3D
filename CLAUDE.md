@@ -170,7 +170,7 @@ TDD 1.3, 2.3, 4.6 y Fase 4: oscurecimiento por distancia, color de pared por chu
 
 - Doble clic en `index.html`. Sin npm, bundler ni servidor para el entregable. Navegador de referencia: Chrome.
 - Sin `type="module"`, `import` ni `export`. Funciones y constantes globales; el orden de los `<script>` resuelve dependencias, con `main.js` al final.
-- Sin `fetch`, `Assets.load` ni imágenes del disco.
+- Sin `fetch`, `Assets.load` ni imágenes del disco. Excepción: el ranking remoto usa `fetch` desde `js/ranking.js` contra la API externa de puntuaciones (base `https://backend-pixi.vercel.app/api`, `GET /top-puntuaciones`, `GET/POST /all-puntuaciones`); el resto del juego sigue sin red.
 - `lib/pixi.min.js`: bundle de navegador del paquete oficial `pixi.js` v8 (define el global `PIXI`), versión fija, copiado al repo. Podés obtenerlo en esta máquina (por ejemplo con `npm pack` del paquete y extrayendo el archivo de `dist/`); verificá que define `PIXI` antes de usarlo.
 
 ### 8.2 Estructura
