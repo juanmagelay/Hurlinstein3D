@@ -16,8 +16,8 @@ const gameStateTransitions = {
   [gameStateDefeat]: [gameStatePlaying, gameStateMenu],
 };
 
-// D-18a adds the menu; until then the game starts playable.
-let gameState = gameStatePlaying;
+// D-18a: the game opens on the main menu, so it starts there.
+let gameState = gameStateMenu;
 
 function getGameState() {
   return gameState;

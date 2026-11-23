@@ -112,7 +112,7 @@ Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added i
 | D-17a | Reset a game: new world, enemies, projectiles and player | P1 | 4 | D-14b | done |
 | D-30d | World seed in the admin panel: see it, type one, start a new world | P1 | 4 | D-30c, D-17a | pending |
 | D-17b | Game state machine: menu, playing, victory, defeat | P1 | 4 | D-17a | done |
-| D-18a | Main menu: title, start game, controls, credits | P1 | 4 | D-16a3, D-17b | pending |
+| D-18a | Main menu: title, start game, controls, credits | P1 | 4 | D-16a3, D-17b | done |
 | D-18b | Controls and credits screens | P1 | 4 | D-18a | pending |
 | D-20a | Defeat screen with play again and main menu | P1 | 4 | D-18a | pending |
 | D-19a | Kill counter and KILLS label on the HUD | P2 | 4 | D-15b, D-17a | pending |
@@ -1507,6 +1507,11 @@ Acceptance criteria:
 - The menu lives inside `#game-frame` and scales with it.
 
 Files: `index.html`, `js/screens.js` (new), `js/main.js`.
+
+Decisions:
+- The game now starts in `menu`, so D-18a also changes the initial state in `js/game-state.js` and its test.
+- Start game calls `resetGame()`, then `placeGameEnemies`, then `setGameState(playing)` and hides the menu; `placeGameEnemies` moved out of startup.
+- Controls and Credits buttons exist but are wired in D-18b.
 
 ## D-18b: Controls and credits screens
 

@@ -47,6 +47,52 @@
       height: 100%;
     }
 
+    /* D-18a / TDD 2.3.4: the screens are HTML over the canvas, inside #game-frame */
+    .screen {
+      position: absolute;
+      inset: 0;
+      z-index: 5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      padding: 24px;
+      background: var(--panel-color);
+    }
+
+    .screen[hidden] {
+      display: none;
+    }
+
+    .menu-title {
+      margin: 0 0 12px;
+      font-size: 42px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: var(--text-color);
+    }
+
+    .menu-button {
+      min-width: 220px;
+      padding: 12px 18px;
+      font: 600 15px/1 system-ui, -apple-system, "Segoe UI", sans-serif;
+      color: var(--text-color);
+      background: var(--accent-soft);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .menu-button:hover {
+      background: var(--accent-hover);
+    }
+
+    .menu-button:focus-visible {
+      outline: 2px solid var(--accent-color);
+      outline-offset: 2px;
+    }
+
     /* Lucide icons: 24 px grid, 2 px stroke, color from the text */
     .icon {
       width: 18px;
@@ -317,7 +363,14 @@
     <symbol id="icon-x" viewBox="0 0 24 24"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></symbol>
   </svg>
 
-  <div id="game-frame"></div>
+  <div id="game-frame">
+    <div id="menu-screen" class="screen">
+      <h1 class="menu-title">Hurlinstein3D</h1>
+      <button id="start-game" class="menu-button" type="button">Start game</button>
+      <button id="show-controls" class="menu-button" type="button">Controls</button>
+      <button id="show-credits" class="menu-button" type="button">Credits</button>
+    </div>
+  </div>
 
   <!-- TDD 2.3.5 / D-16b: admin panel, opened from the top strip or with P -->
   <div id="admin-hover-zone"></div>
@@ -457,6 +510,7 @@
   <script src="js/weapon.js"></script>
   <script src="js/admin.js"></script>
   <script src="js/game-state.js"></script>
+  <script src="js/screens.js"></script>
   <script src="js/main.js"></script>
 </body>
 </html>

@@ -27,9 +27,6 @@ async function startGame() {
   screenWidth = getScreenWidthForWindow(window.innerWidth, window.innerHeight);
   setCameraPlaneLength(player, getCameraPlaneLength());
 
-  // D-24 / TDD 2.3.2: the enemies of the game are placed once, around the spawn
-  placeGameEnemies(player, gameSettings.enemiesPerGame);
-
   const app = new PIXI.Application();
   await app.init({
     width: screenWidth,
@@ -123,6 +120,16 @@ async function startGame() {
 
   // D-16b: the admin panel is HTML over the game, wired once
   const adminPanel = createAdminPanel(document, player);
+
+  // D-18a: the main menu starts the game. Start game resets the world, places
+  // the enemies around the new spawn and switches to playing. Controls and
+  // Credits are wired in D-18b.
+  document.getElementById("start-game").addEventListener("click", () => {
+    resetGame();
+    placeGameEnemies(player, gameSettings.enemiesPerGame);
+    setGameState(gameStatePlaying);
+    hideScreens();
+  });
 
   // D-16a: resizing the window, or entering full screen, refits the game.
   // Registered once; a drag fires many events, so the canvas only changes when
