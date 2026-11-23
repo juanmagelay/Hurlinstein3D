@@ -16,6 +16,7 @@ function applyScreenWidth(app, scene, width) {
   drawCeilingAndFloor(scene.ceilingAndFloor);
   drawHud(scene.hud);
   drawDefeatOverlay(scene.defeatOverlay);
+  resizeDamageFlash(scene.damageFlash);
   scene.shotgun.sprite.x = getAimedShotgunX();
 }
 
@@ -75,6 +76,16 @@ async function startGame() {
   const projectileGraphics = new PIXI.Graphics();
   app.stage.addChild(projectileGraphics);
 
+  // D-07b / D-07c: the shotgun view model sits at the bottom, aimed at the crosshair,
+  // under the HUD and overlay
+  const shotgun = await createShotgun();
+  app.stage.addChild(shotgun.sprite);
+
+  // D-27d: the damage flash covers the view and the shotgun, under the minimap
+  // and the HUD, so LIFE stays readable
+  const damageFlash = createDamageFlash();
+  app.stage.addChild(damageFlash.sprite);
+
   // TDD 6.4: the minimap Graphics object is created once, above the view
   const minimap = new PIXI.Graphics();
   app.stage.addChild(minimap);
@@ -102,11 +113,6 @@ async function startGame() {
   const reloadCounter = createReloadCounter();
   app.stage.addChild(reloadCounter);
 
-  // D-07b / D-07c: the shotgun view model sits at the bottom, aimed at the crosshair,
-  // under the HUD and overlay
-  const shotgun = await createShotgun();
-  app.stage.addChild(shotgun.sprite);
-
   // D-06c: defeat overlay sits on top and stays hidden until health reaches zero
   const defeatOverlay = createDefeatOverlay();
   app.stage.addChild(defeatOverlay);
@@ -122,7 +128,7 @@ async function startGame() {
   // D-16a: resizing the window, or entering full screen, refits the game.
   // Registered once; a drag fires many events, so the canvas only changes when
   // the rounded width does. Called once now in case the window changed during init.
-  const scene = { ceilingAndFloor, hud, defeatOverlay, shotgun };
+  const scene = { ceilingAndFloor, hud, defeatOverlay, damageFlash, shotgun };
   function onWindowResize() {
     const width = getScreenWidthForWindow(window.innerWidth, window.innerHeight);
     if (width !== screenWidth) {
@@ -133,19 +139,26 @@ async function startGame() {
   window.addEventListener("resize", onWindowResize);
   onWindowResize();
 
+  // The bars follow the player's health and ammo
+  function updateHudBars() {
+    setBarFill(healthBar, getHealthBarWidth(player.health / player.maxHealth));
+    setBarFill(ammoBar, getAmmoBarWidth(player.ammo, gameSettings.magazineSize));
+    updateReloadCounter(reloadCounter, player.reloadsLeft);
+  }
+
   // TDD 6.4: inside the ticker goes only what changes every frame
   app.ticker.add((ticker) => {
     // D-16b: counts frames for the FPS and refreshes the panel four times per second
     adminPanel.update(ticker.deltaMS);
-    setBarFill(healthBar, getHealthBarWidth(player.health / player.maxHealth));
-    setBarFill(ammoBar, getAmmoBarWidth(player.ammo, gameSettings.magazineSize));
-    updateReloadCounter(reloadCounter, player.reloadsLeft);
+    // D-27d: the flash keeps fading, also after the last hit
+    updateDamageFlash(damageFlash, ticker.deltaTime);
     // D-06b: at zero health the game freezes on the last frame. D-16c1: new
     // hit points from the admin panel bring the player back, so the overlay
     // follows the health every frame.
     const defeated = isPlayerDefeated(player);
     defeatOverlay.visible = defeated;
     if (defeated) {
+      updateHudBars();
       return;
     }
     updatePlayer(player, pressedKeys, ticker.deltaTime);
@@ -164,7 +177,11 @@ async function startGame() {
     }
     updateProjectiles(ticker.deltaTime);
     updateShotgun(shotgun, ticker.deltaTime);
-    damagePlayer(player, getContactDamage(player, ticker.deltaTime));
+    // D-27c: whole hits. The flash starts and the bar drops in this same frame.
+    if (damagePlayer(player, getContactDamage(player, ticker.deltaTime))) {
+      triggerDamageFlash(damageFlash);
+    }
+    updateHudBars();
     drawWalls(walls, player, wallStrips);
     drawEnemies(enemies, player, enemyStrips);
     drawProjectiles(projectileGraphics, player);

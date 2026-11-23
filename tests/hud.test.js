@@ -72,3 +72,34 @@ test("the reload counter only shows while reloads are limited", () => {
   updateReloadCounter(counter, Infinity);
   assert.equal(counter.visible, false);
 });
+
+// D-27d: the damage flash fades from full to zero in damageFlashDuration (0.4 s)
+test("the damage flash is full after a hit, half at 0.2 s and gone at 0.4 s", () => {
+  const getDamageFlashAlpha = getGlobal("getDamageFlashAlpha");
+
+  assert.equal(getGlobal("damageFlashDuration"), 0.4);
+  assert.equal(getDamageFlashAlpha(0), 1);
+  assert.ok(Math.abs(getDamageFlashAlpha(0.2) - 0.5) < 1e-9);
+  assert.equal(getDamageFlashAlpha(0.4), 0);
+  assert.equal(getDamageFlashAlpha(1), 0);
+});
+
+test("one hit gives one pulse, and no hit gives no flash", () => {
+  const triggerDamageFlash = getGlobal("triggerDamageFlash");
+  const updateDamageFlash = getGlobal("updateDamageFlash");
+  const flash = { sprite: { alpha: 0 }, time: getGlobal("damageFlashDuration") };
+
+  updateDamageFlash(flash, 12);
+  assert.equal(flash.sprite.alpha, 0);
+
+  triggerDamageFlash(flash);
+  assert.equal(flash.sprite.alpha, 1);
+
+  // 12 ticker units are 0.2 s
+  updateDamageFlash(flash, 12);
+  assert.ok(Math.abs(flash.sprite.alpha - 0.5) < 1e-9);
+  updateDamageFlash(flash, 12);
+  assert.equal(flash.sprite.alpha, 0);
+  updateDamageFlash(flash, 12);
+  assert.equal(flash.sprite.alpha, 0);
+});

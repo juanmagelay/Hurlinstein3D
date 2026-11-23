@@ -91,10 +91,10 @@ Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added i
 | D-16e3 | Rays on the minimap | P1 | 4 | D-16c1b | done |
 | D-16f | Chunk borders on the minimap | P1 | 4 | D-16c1b | done |
 | D-08d | Re-cut the reload frames so no drawing is cut or split | P0 | 4 | D-08c | done |
-| D-27a | Specify in the TDD: the enemy keeps a body distance, contact damage in whole hits, the red damage flash | P0 | 4 | D-21b | pending |
-| D-27b | The enemy stops in front of the player at body distance, and the player cannot walk through enemies | P0 | 4 | D-27a | pending |
-| D-27c | Contact damage in whole hit points: one on contact, then one per second | P0 | 4 | D-27b | pending |
-| D-27d | Red damage flash from the screen edges, one pulse per hit | P0 | 4 | D-27c | pending |
+| D-27a | Specify in the TDD: the enemy keeps a body distance, contact damage in whole hits, the red damage flash | P0 | 4 | D-21b | done |
+| D-27b | The enemy stops in front of the player at body distance, and the player cannot walk through enemies | P0 | 4 | D-27a | done |
+| D-27c | Contact damage in whole hit points: one on contact, then one per second | P0 | 4 | D-27b | done |
+| D-27d | Red damage flash from the screen edges, one pulse per hit | P0 | 4 | D-27c | done |
 | D-12a | Specify the arrow keys and the mouse in TDD 2.2 and the README | P1 | 4 | D-27d | pending |
 | D-12b | Arrow keys: up and down move, left and right turn | P1 | 4 | D-12a | pending |
 | D-12c | Mouse turn with pointer lock and a sensitivity setting | P1 | 4 | D-12b, D-16c1b | pending |
@@ -1163,6 +1163,10 @@ Decisions (Juanma asked to implement it without a plan or a validation stop):
 
 Request (2026-11-22): the professor walked through the enemy. The enemy has to leave at least the distance of the two bodies, stop in front of the player, facing it, and hit once per second, each hit with a red flash from the screen edges.
 
+Settled by Juanma (2026-11-22): stop at 0.5 cells center to center, hit on first contact and then once per second, and the player is blocked by enemies but can always walk away, faster than the enemy chases. He asked to implement the four stories in one go, so the TDD text of D-27a is reviewed in the diff.
+
+Checked with headless Chrome on `file://` for the whole batch: an enemy placed two cells ahead of the spawn waits 2 s, chases, stops at exactly 0.5 cells, and takes 10, 9, 8, 7, 6 hit points about one second apart; each hit lights the red edges in the same frame and they fade in under 0.4 s. The minimap and the bars stay on top and untinted, and the console has no messages. 194 of 194 tests pass, and each new rule was checked by mutation (no step cut, no player guard, no way to walk away, no wait between hits, a flash that never fades, damage never reported): every one makes a test fail.
+
 ## D-27a: Specify the body distance, the hits and the flash in the TDD
 
 Acceptance criteria:
@@ -1174,6 +1178,9 @@ Acceptance criteria:
 
 Files: `docs/TDD.md`, `docs/BACKLOG.md`.
 
+Decisions:
+- 2.3.1 now says the hits are whole, one on contact and one per second per enemy, with the bar and the flash in the same frame, and that the player walks faster than the enemy chases (3.1 against 2 cells per second), so backing away leaves contact before the next hit. 2.3.2 adds the stop at 0.5 cells and changes the boss to two hit points per hit. 2.3.3 lists the damage flash as a sixth element and explains "non diegetic". 6.6 adds the enemies as obstacles for the player.
+
 ## D-27b: The enemy stops at body distance
 
 Acceptance criteria:
@@ -1183,6 +1190,14 @@ Acceptance criteria:
 - Tests: a chasing enemy stops at the distance and does not cross it in one long tick; a player walking into an enemy stops at the distance and slides on the other axis; a player inside the distance can walk away; an enemy two cells away does not block.
 
 Files: `js/enemies.js`, `js/player.js`, `tests/enemies.test.js`, `tests/player.test.js`.
+
+Decisions:
+- `enemyStopDistance` (0.5) lives in `js/config.js`, next to the enemy size, because `player.js` loads before `enemies.js` and both read it.
+- `getChaseStep` cuts the chase step to the distance left until 0.5. The move goes along the line to the player, so it never ends closer than that, even when a wall stops one axis (the displacement is never longer than the step).
+- `keepsDistanceFromEnemies` compares squared distances, like the radar of the presentation, and reads only the cells from floor(pos - 0.5) to floor(pos + 0.5) on each axis, the only ones that can hold an enemy center that close.
+- Patrol needs no stop: a patrolling enemy that could walk into the player sees it first and switches to chase, and idle enemies do not move.
+- Speed: the player walks at 200 / 64 = 3.125 cells per second (the demo speed) and the enemy chases at 2, so no speed changed. A test backs away from a chasing enemy for one second, frame by frame: the gap grows by 1.125 cells and only the first contact hits.
+- The tests live in a new `tests/body-distance.test.js`, with an open world where only the enemy and the player stop each other, instead of `tests/enemies.test.js` and `tests/player.test.js`.
 
 ## D-27c: Contact damage in whole hit points
 
@@ -1194,7 +1209,11 @@ Acceptance criteria:
 
 Files: `js/enemies.js`, `js/player.js`, `js/main.js`, `tests/health.test.js`.
 
-Decisions to record: replaces the D-06b decision "contact damage accumulates per enemy per tick".
+Decisions:
+- Replaces the D-06b decision "contact damage accumulates per enemy per tick". `contactDamagePerSecond` became `contactHitPoints` (1) and `contactHitWaitTicks` (60).
+- Each enemy keeps `hitWait`, created at 0 in `addEnemyAtCell` so the first contact hits at once. It runs down every frame the enemy is active, in or out of contact, which is what stops stepping in and out from adding hits.
+- `damagePlayer` returns true when the health dropped (false for zero damage and in god mode), and `main.js` starts the flash with that value.
+- The HUD bars moved after the contact damage in the ticker (`updateHudBars`), so the health bar drops in the same frame as the flash. Before, the bar showed the damage one frame later. While defeated the bars are still updated, as before.
 
 ## D-27d: Red damage flash
 
@@ -1205,6 +1224,12 @@ Acceptance criteria:
 - Tests: the opacity right after a hit, halfway and at the end; no hit, no flash.
 
 Files: `js/hud.js`, `js/main.js`, `tests/hud.test.js`.
+
+Decisions:
+- The gradient is drawn once on a hidden 256 by 256 canvas: clear inside a quarter of the canvas, 45% red at the edge midpoints and 90% at the corners. Stretched to the screen it follows the shape of the canvas. Red `rgb(200, 0, 0)`.
+- The opacity drops linearly, from 1 right after the hit to 0 at 0.4 s. It is updated at the top of the ticker, also while defeated, so the last hit fades under the defeat overlay.
+- Layers: the shotgun moved below the minimap and the HUD (it never overlaps them), and the flash went between the shotgun and the minimap. So the comment "under the HUD and overlay" next to the shotgun is now true.
+- A window resize stretches the same sprite (`resizeDamageFlash`), creating nothing (TDD 6.4).
 
 ## D-27e: Enemies keep body distance from each other (optional)
 

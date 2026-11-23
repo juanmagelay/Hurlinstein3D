@@ -46,11 +46,14 @@ function setCameraPlaneLength(player, length) {
 
 // D-06b: health never goes below zero, and zero health means defeat.
 // D-16c1: god mode, from the admin panel, ignores every damage.
+// D-27c: returns true when the health dropped, so the damage flash starts in
+// the same frame.
 function damagePlayer(player, amount) {
-  if (gameSettings.godMode) {
-    return;
+  if (gameSettings.godMode || amount <= 0) {
+    return false;
   }
   player.health = Math.max(0, player.health - amount);
+  return true;
 }
 
 function isPlayerDefeated(player) {
@@ -214,12 +217,44 @@ function updatePlayer(player, pressedKeys, deltaTime) {
   const moveY = player.dirY * moveDirection * moveSpeed * deltaTime;
 
   // Each axis moves on its own, so a blocked axis still lets the other slide.
-  if (moveX !== 0 && canStandAt(player.posX + moveX, player.posY)) {
-    player.posX += moveX;
+  // D-27b: enemies block the player like walls.
+  const newX = player.posX + moveX;
+  if (moveX !== 0 && canStandAt(newX, player.posY) && keepsDistanceFromEnemies(player.posX, player.posY, newX, player.posY)) {
+    player.posX = newX;
   }
-  if (moveY !== 0 && canStandAt(player.posX, player.posY + moveY)) {
-    player.posY += moveY;
+  const newY = player.posY + moveY;
+  if (moveY !== 0 && canStandAt(player.posX, newY) && keepsDistanceFromEnemies(player.posX, player.posY, player.posX, newY)) {
+    player.posY = newY;
   }
+}
+
+// D-27b / TDD 6.6: a move is refused when it ends closer than enemyStopDistance
+// to an enemy and closer than before, so walking away is always allowed.
+// Distances are compared squared, with no square root. Only the enemies
+// registered in the cells that can hold one that close are checked.
+function keepsDistanceFromEnemies(fromX, fromY, toX, toY) {
+  const minX = Math.floor(toX - enemyStopDistance);
+  const maxX = Math.floor(toX + enemyStopDistance);
+  const minY = Math.floor(toY - enemyStopDistance);
+  const maxY = Math.floor(toY + enemyStopDistance);
+  const limit = enemyStopDistance * enemyStopDistance;
+
+  for (let x = minX; x <= maxX; x += 1) {
+    for (let y = minY; y <= maxY; y += 1) {
+      for (const enemy of getEnemiesAtCell(x, y)) {
+        const newDistance = getSquaredDistance(toX, toY, enemy.posX, enemy.posY);
+        const oldDistance = getSquaredDistance(fromX, fromY, enemy.posX, enemy.posY);
+        if (newDistance < limit && newDistance < oldDistance) {
+          return false;
+        }
+      }
+    }
+  }
+  return true;
+}
+
+function getSquaredDistance(ax, ay, bx, by) {
+  return (bx - ax) * (bx - ax) + (by - ay) * (by - ay);
 }
 
 // TDD 6.6: a position is free when the player's square footprint, side

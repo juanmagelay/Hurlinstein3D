@@ -86,6 +86,11 @@ const enemyWidth = 0.3;
 const enemyHeight = 0.6;
 const enemyColor = 0xffc857;
 
+// D-27b / TDD 2.3.2 and 6.6: an enemy and the player never get closer than this,
+// center to center. Their bodies measure 0.35 together (0.15 + 0.2), so some
+// space always stays between them.
+const enemyStopDistance = 0.5;
+
 // D-21b: in 3D the enemy is the Husk Mutant sprite (js/enemy-sheet.js), 33 by
 // 57 px. It is drawn enemyHeight tall and as wide as its proportions give (about
 // 0.35 cells), so the art is not squeezed. Set to false to draw the amber

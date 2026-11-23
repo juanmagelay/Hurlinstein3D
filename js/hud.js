@@ -196,6 +196,66 @@ function createDefeatOverlay() {
   return overlay;
 }
 
+// D-27d / TDD 2.3.3: non diegetic damage flash. Red at the screen edges and
+// transparent toward the center, one pulse per hit that fades in 0.4 s.
+const damageFlashDuration = 0.4; // seconds
+const damageFlashCanvasSize = 256;
+
+// A radial gradient on a hidden square canvas, drawn once. Stretched to the
+// screen it becomes an ellipse with the shape of the canvas.
+function createDamageFlashCanvas() {
+  const canvas = document.createElement("canvas");
+  canvas.width = damageFlashCanvasSize;
+  canvas.height = damageFlashCanvasSize;
+  const context = canvas.getContext("2d");
+  const center = damageFlashCanvasSize / 2;
+  // Clear inside a quarter of the canvas, strongest at the corners (0.71 * size)
+  const gradient = context.createRadialGradient(
+    center, center, damageFlashCanvasSize * 0.25,
+    center, center, damageFlashCanvasSize * 0.71,
+  );
+  gradient.addColorStop(0, "rgba(200, 0, 0, 0)");
+  gradient.addColorStop(0.55, "rgba(200, 0, 0, 0.45)");
+  gradient.addColorStop(1, "rgba(200, 0, 0, 0.9)");
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, damageFlashCanvasSize, damageFlashCanvasSize);
+  return canvas;
+}
+
+// Created once, outside the ticker (TDD 6.4); hidden until the first hit
+function createDamageFlash() {
+  const sprite = new PIXI.Sprite(PIXI.Texture.from(createDamageFlashCanvas()));
+  sprite.alpha = 0;
+  const flash = { sprite, time: damageFlashDuration };
+  resizeDamageFlash(flash);
+  return flash;
+}
+
+// D-16a: a new canvas width stretches the same sprite, creating nothing
+function resizeDamageFlash(flash) {
+  flash.sprite.width = screenWidth;
+  flash.sprite.height = screenHeight;
+}
+
+// Full right after the hit, linear down to zero at damageFlashDuration
+function getDamageFlashAlpha(secondsSinceHit) {
+  return Math.max(0, 1 - secondsSinceHit / damageFlashDuration);
+}
+
+// D-27c: called on the frame the health drops, so both show together
+function triggerDamageFlash(flash) {
+  flash.time = 0;
+  flash.sprite.alpha = 1;
+}
+
+function updateDamageFlash(flash, deltaTime) {
+  if (flash.time >= damageFlashDuration) {
+    return;
+  }
+  flash.time += deltaTime / 60;
+  flash.sprite.alpha = getDamageFlashAlpha(flash.time);
+}
+
 // D-16a: drawn again, not created again, when the canvas width changes
 function drawDefeatOverlay(overlay) {
   overlay.clear();

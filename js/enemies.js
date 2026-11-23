@@ -13,11 +13,12 @@ const enemyLoseSightTicks = ticksPerSecond;
 // crosses a wall even when it cuts a corner
 const enemyCollisionRadius = enemyWidth / 2;
 
-// D-06b: an enemy touching the player deals damage every tick, so a full second
-// of contact costs contactDamagePerSecond. TDD 2.3.1 / D-16c1: health is in hit
-// points, so a second of contact takes one.
+// D-27c / TDD 2.3.1: contact damage comes in whole hit points. An enemy closer
+// than contactDistance hits once as soon as its wait is over, then waits a
+// second. A chasing enemy stops at enemyStopDistance (0.5), inside this range.
 const contactDistance = 0.6;
-const contactDamagePerSecond = 1;
+const contactHitPoints = 1;
+const contactHitWaitTicks = ticksPerSecond;
 
 // D-23 / TDD 3.6: only the chunks this close to the player's chunk are active.
 // Two chunks (32 cells) cover maxRayDistance (24 cells) from anywhere in the
@@ -114,16 +115,27 @@ function moveEnemyToCell(enemy, cellX, cellY) {
   registerEnemyAtCell(enemy);
 }
 
+// D-27c: the hit points the active enemies take from the player this frame
 function getContactDamage(player, deltaTime) {
   let damage = 0;
   for (const enemies of getActiveEnemyLists(player)) {
     for (const enemy of enemies) {
-      if (Math.hypot(enemy.posX - player.posX, enemy.posY - player.posY) < contactDistance) {
-        damage += contactDamagePerSecond * deltaTime / ticksPerSecond;
-      }
+      damage += updateContactHit(enemy, player, deltaTime);
     }
   }
   return damage;
+}
+
+// D-27c: each enemy keeps its own wait, which runs down in and out of contact,
+// so stepping in and out never gives more than one hit per second
+function updateContactHit(enemy, player, deltaTime) {
+  enemy.hitWait = Math.max(0, enemy.hitWait - deltaTime);
+  const touching = Math.hypot(enemy.posX - player.posX, enemy.posY - player.posY) < contactDistance;
+  if (!touching || enemy.hitWait > 0) {
+    return 0;
+  }
+  enemy.hitWait = contactHitWaitTicks;
+  return contactHitPoints;
 }
 
 // D-23: only the active enemies move. An enemy that crossed into another chunk
@@ -174,7 +186,7 @@ function hasLineOfSight(enemy, player) {
 function updateChase(enemy, player, deltaTime) {
   if (hasLineOfSight(enemy, player)) {
     enemy.stateTime = 0;
-    moveEnemyToward(enemy, { x: player.posX, y: player.posY }, enemyChaseSpeed * deltaTime);
+    moveEnemyToward(enemy, { x: player.posX, y: player.posY }, getChaseStep(enemy, player, deltaTime));
     updateEnemyCell(enemy);
     return;
   }
@@ -182,6 +194,15 @@ function updateChase(enemy, player, deltaTime) {
   if (enemy.stateTime >= enemyLoseSightTicks) {
     startPatrol(enemy);
   }
+}
+
+// D-27b / TDD 2.3.2: the step is cut to what is left until enemyStopDistance,
+// so the enemy stops in front of the player and never walks into its body.
+// The move is along the line to the player, so it never ends closer than that.
+function getChaseStep(enemy, player, deltaTime) {
+  const distance = Math.hypot(player.posX - enemy.posX, player.posY - enemy.posY);
+  const room = Math.max(0, distance - enemyStopDistance);
+  return Math.min(enemyChaseSpeed * deltaTime, room);
 }
 
 // A patrol route is two air cell centers: the enemy's own cell and one random
