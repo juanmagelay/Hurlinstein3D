@@ -111,7 +111,7 @@ Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added i
 | D-30c | Enemy placement and patrol from the world seed | P1 | 4 | D-30b | pending |
 | D-17a | Reset a game: new world, enemies, projectiles and player | P1 | 4 | D-14b | done |
 | D-30d | World seed in the admin panel: see it, type one, start a new world | P1 | 4 | D-30c, D-17a | pending |
-| D-17b | Game state machine: menu, playing, victory, defeat | P1 | 4 | D-17a | pending |
+| D-17b | Game state machine: menu, playing, victory, defeat | P1 | 4 | D-17a | done |
 | D-18a | Main menu: title, start game, controls, credits | P1 | 4 | D-16a3, D-17b | pending |
 | D-18b | Controls and credits screens | P1 | 4 | D-18a | pending |
 | D-20a | Defeat screen with play again and main menu | P1 | 4 | D-18a | pending |
@@ -1493,6 +1493,11 @@ Acceptance criteria:
 - Tests cover the allowed transitions.
 
 Files: `js/game-state.js` (new), `js/main.js`, `index.html`, `tests/game-state.test.js` (new).
+
+Decisions:
+- The state machine lives in `js/game-state.js` with a transition map; `setGameState` rejects edges not in the map.
+- The criteria said "player, enemies, projectiles, reload and weapon"; D-31 removed the projectiles, so it is "player, enemies, reload and weapon".
+- D-16c1's bring-back stays: from `defeat`, restoring health from the admin panel goes back to `playing` through the `defeat -> playing` edge.
 
 ## D-18a: Main menu
 

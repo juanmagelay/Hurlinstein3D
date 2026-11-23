@@ -154,12 +154,17 @@ async function startGame() {
     // D-12c: the mouse movement since the last frame. It is taken every frame,
     // also while defeated, so a frozen game does not pile up a turn.
     const mouseTurnPixels = mouseTurnInput.consumeTurn();
-    // D-06b: at zero health the game freezes on the last frame. D-16c1: new
-    // hit points from the admin panel bring the player back, so the overlay
-    // follows the health every frame.
-    const defeated = isPlayerDefeated(player);
-    defeatOverlay.visible = defeated;
-    if (defeated) {
+    // D-17b: zero health switches to defeat. D-16c1: new hit points from the
+    // admin panel bring the player back, so defeat returns to playing when the
+    // health is restored.
+    if (gameState === gameStatePlaying && isPlayerDefeated(player)) {
+      setGameState(gameStateDefeat);
+    } else if (gameState === gameStateDefeat && !isPlayerDefeated(player)) {
+      setGameState(gameStatePlaying);
+    }
+    defeatOverlay.visible = gameState === gameStateDefeat;
+    // D-17b: only playing updates the simulation; the scene stays on its last frame
+    if (gameState !== gameStatePlaying) {
       updateHudBars();
       return;
     }
