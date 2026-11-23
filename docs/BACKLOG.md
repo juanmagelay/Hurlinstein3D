@@ -119,7 +119,7 @@ Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added i
 | D-19b | Enemy hit points, one for regular enemies | P2 | 4 | D-19a | done |
 | D-19c | Boss appears after the kill target | P2 | 4 | D-19b | done |
 | D-16c2 | Admin settings for the boss flow: enemy and boss hit points, spawn boss | P2 | 4 | D-16c1e, D-19c | pending |
-| D-19d | Victory when the boss dies, victory screen | P2 | 4 | D-19c, D-20a | pending |
+| D-19d | Victory when the boss dies, victory screen | P2 | 4 | D-19c, D-20a | done |
 | D-20b | Score and local ranking storage | P2 | 4 | D-19d | pending |
 | D-20c | Ranking on the victory and defeat screens | P2 | 4 | D-20b | pending |
 | D-21a | Pick a licensed enemy sprite and embed it as a data URI | P2 | 4 | D-14b | done |
@@ -1668,7 +1668,12 @@ Acceptance criteria:
 - The victory screen shows a title, the kills and the game time, with the buttons Play again and Main menu. It is the defeat screen with another title.
 - Tests: killing the boss sets `victory`; killing a regular enemy does not.
 
-Files: `js/game-state.js`, `js/screens.js`, `index.html`, `tests/game-state.test.js`.
+Files: `js/enemies.js`, `js/game-state.js`, `js/hud.js`, `js/world.js`, `js/main.js`, `index.html`, `tests/boss.test.js`, `tests/hud.test.js`.
+
+Decisions:
+- `shootCenterRay` switches to `victory` when the killed enemy `isBoss`; the boss does not increment the regular kill count.
+- The game time lives in `js/game-state.js` (`gameTime`, `addGameTime`, `resetGameTime`), advances only while playing, and is reset by `resetGame`. `formatGameTime` (hud.js) shows it as m:ss.
+- The victory screen is HTML like the defeat screen, with Kills and Time spans filled by `updateVictoryStats` when the state changes to victory; `syncScreenToState` gained the victory branch.
 
 ## D-20b: Score and local ranking storage
 

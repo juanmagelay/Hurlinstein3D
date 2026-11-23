@@ -47,3 +47,20 @@ function addKill() {
 function resetKillCount() {
   killCount = 0;
 }
+
+// D-19d / TDD 2.3.4: seconds elapsed in the current game, shown on the victory
+// screen and used by the ranking (D-20b) to break ties.
+let gameTime = 0;
+
+function getGameTime() {
+  return gameTime;
+}
+
+// ticker.deltaTime counts 60 Hz ticks, so dividing by 60 gives seconds
+function addGameTime(deltaTime) {
+  gameTime += deltaTime / 60;
+}
+
+function resetGameTime() {
+  gameTime = 0;
+}

@@ -6,8 +6,8 @@ function findBoss(world) {
   return world("[...enemiesByChunk.values()].flat().find((enemy) => enemy.isBoss) || null");
 }
 
-// Registers one regular enemy straight ahead of the player, on its ray
-function addEnemyAhead(world, player) {
+// Registers one enemy straight ahead of the player, on its ray
+function addEnemyAhead(world, player, overrides = {}) {
   const enemy = {
     posX: player.posX + 2,
     posY: player.posY,
@@ -23,6 +23,7 @@ function addEnemyAhead(world, player) {
     state: "idle",
     stateTime: 0,
     hitWait: 0,
+    ...overrides,
   };
   const key = world("getChunkKey")(enemy.chunkX, enemy.chunkY);
   if (!world("enemiesByChunk").has(key)) {
@@ -80,4 +81,26 @@ test("the boss spawns when the kill count reaches the target", () => {
 
   assert.equal(world("getKillCount")(), 1);
   assert.notEqual(findBoss(world), null);
+});
+
+test("killing the boss sets the victory state", () => {
+  const world = makeShotWorld();
+  const player = world("player");
+  world("setGameState")(world("gameStatePlaying"));
+  addEnemyAhead(world, player, { isBoss: true, health: 1, color: world("bossColor") });
+
+  world("shootCenterRay")(player);
+
+  assert.equal(world("getGameState")(), world("gameStateVictory"));
+});
+
+test("killing a regular enemy does not set victory", () => {
+  const world = makeShotWorld();
+  const player = world("player");
+  world("setGameState")(world("gameStatePlaying"));
+  addEnemyAhead(world, player);
+
+  world("shootCenterRay")(player);
+
+  assert.equal(world("getGameState")(), world("gameStatePlaying"));
 });

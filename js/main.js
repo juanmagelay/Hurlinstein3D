@@ -132,6 +132,10 @@ async function startGame() {
   document.getElementById("main-menu").addEventListener("click", () => {
     setGameState(gameStateMenu);
   });
+  document.getElementById("victory-play-again").addEventListener("click", startNewGame);
+  document.getElementById("victory-main-menu").addEventListener("click", () => {
+    setGameState(gameStateMenu);
+  });
 
   // D-18b: Controls and Credits are sub-screens of the menu; Back returns to it.
   document.getElementById("show-controls").addEventListener("click", () => {
@@ -159,9 +163,18 @@ async function startGame() {
       showScreen("menu-screen");
     } else if (gameState === gameStateDefeat) {
       showScreen("defeat-screen");
+    } else if (gameState === gameStateVictory) {
+      updateVictoryStats();
+      showScreen("victory-screen");
     } else {
       hideScreens();
     }
+  }
+
+  // D-19d: the victory screen shows the kills and the game time
+  function updateVictoryStats() {
+    document.getElementById("victory-kills").textContent = getKillCount();
+    document.getElementById("victory-time").textContent = formatGameTime(getGameTime());
   }
 
   // D-16a: resizing the window, or entering full screen, refits the game.
@@ -210,6 +223,8 @@ async function startGame() {
       updateHudBars();
       return;
     }
+    // D-19d: the game time advances only while playing
+    addGameTime(ticker.deltaTime);
     turnPlayerWithMouse(player, mouseTurnPixels);
     updatePlayer(player, pressedControls, ticker.deltaTime);
     // D-25: enemies left far behind come back near the player's new chunk

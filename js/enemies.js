@@ -374,11 +374,16 @@ function shootCenterRay(player) {
   if (target !== null) {
     target.health -= 1;
     if (target.health <= 0) {
-      addKill();
       removeEnemy(target);
-      // D-19c: the last regular enemy spawns the boss, once per game
-      if (getKillCount() >= gameSettings.enemiesPerGame) {
-        spawnBoss(player);
+      if (target.isBoss) {
+        // D-19d: killing the boss wins the game
+        setGameState(gameStateVictory);
+      } else {
+        addKill();
+        // D-19c: the last regular enemy spawns the boss, once per game
+        if (getKillCount() >= gameSettings.enemiesPerGame) {
+          spawnBoss(player);
+        }
       }
     }
   }

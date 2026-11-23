@@ -131,6 +131,14 @@ function updateKillsLabel(label, killCount) {
   label.text = formatKillsLabel(killCount, gameSettings.enemiesPerGame);
 }
 
+// D-19d / TDD 2.3.4: the game time as "m:ss", for the victory screen.
+function formatGameTime(seconds) {
+  const total = Math.floor(seconds);
+  const minutes = Math.floor(total / 60);
+  const rest = total % 60;
+  return `${minutes}:${String(rest).padStart(2, "0")}`;
+}
+
 // D-06c: the fill width follows the health fraction, clamped to the bar.
 function getHealthBarWidth(healthFraction) {
   const clamped = Math.min(Math.max(healthFraction, 0), 1);

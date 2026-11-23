@@ -121,6 +121,13 @@
       text-align: center;
     }
 
+    .screen-stat {
+      margin: 0;
+      font-size: 16px;
+      color: var(--text-color);
+      font-variant-numeric: tabular-nums;
+    }
+
     /* Lucide icons: 24 px grid, 2 px stroke, color from the text */
     .icon {
       width: 18px;
@@ -402,6 +409,13 @@
       <h1 class="menu-title">You died</h1>
       <button id="play-again" class="menu-button" type="button">Play again</button>
       <button id="main-menu" class="menu-button" type="button">Main menu</button>
+    </div>
+    <div id="victory-screen" class="screen" hidden>
+      <h1 class="menu-title">You won</h1>
+      <p class="screen-stat">Kills: <span id="victory-kills">0</span></p>
+      <p class="screen-stat">Time: <span id="victory-time">0:00</span></p>
+      <button id="victory-play-again" class="menu-button" type="button">Play again</button>
+      <button id="victory-main-menu" class="menu-button" type="button">Main menu</button>
     </div>
     <div id="controls-screen" class="screen" hidden>
       <h1 class="menu-title">Controls</h1>

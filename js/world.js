@@ -94,6 +94,7 @@ function resetGame() {
   nextEnemyId = 1;
   bossSpawned = false;
   resetKillCount();
+  resetGameTime();
   resetPlayer();
 }
 

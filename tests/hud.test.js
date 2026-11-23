@@ -79,6 +79,13 @@ test("the kills label reads KILLS x / total on the row under AMMO", () => {
   assert.equal(getGlobal("getHudRowY")(2), 64);
 });
 
+// D-19d: the game time on the victory screen
+test("the game time formats as m:ss", () => {
+  assert.equal(getGlobal("formatGameTime")(0), "0:00");
+  assert.equal(getGlobal("formatGameTime")(65), "1:05");
+  assert.equal(getGlobal("formatGameTime")(123), "2:03");
+});
+
 // D-27d: the damage flash fades from full to zero in damageFlashDuration (0.4 s)
 test("the damage flash is full after a hit, half at 0.2 s and gone at 0.4 s", () => {
   const getDamageFlashAlpha = getGlobal("getDamageFlashAlpha");
