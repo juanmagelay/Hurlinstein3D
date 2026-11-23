@@ -512,7 +512,7 @@ function drawEnemies(graphics, player, enemyStrips) {
     return;
   }
 
-  const rects = [];
+  const rectsByColor = new Map();
   for (const { enemy, transformX, depth } of getVisibleEnemies(player)) {
     const box = getStandingSpriteBox(transformX, depth, enemy.width, enemy.height);
     const drawStart = Math.max(0, box.top);
@@ -520,12 +520,20 @@ function drawEnemies(graphics, player, enemyStrips) {
     if (drawEnd <= drawStart) {
       continue;
     }
+    const color = enemy.color ?? enemyColor;
+    let rects = rectsByColor.get(color);
+    if (rects === undefined) {
+      rects = [];
+      rectsByColor.set(color, rects);
+    }
     for (const x of getVisibleStripXs(box, depth)) {
       rects.push({ x, drawStart, drawEnd });
     }
   }
 
-  fillStrips(graphics, rects, enemyColor);
+  for (const [color, rects] of rectsByColor) {
+    fillStrips(graphics, rects, color);
+  }
 }
 
 // D-21b (Lode part 3): each visible strip of an enemy is one pool sprite showing

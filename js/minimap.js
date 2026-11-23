@@ -29,6 +29,7 @@ function getEnemyMinimapMarker(enemy, firstMapX, firstMapY) {
     y: centerY - markerSize / 2,
     width: markerSize,
     height: markerSize,
+    color: enemy.color ?? enemyColor,
   };
 }
 
@@ -157,11 +158,20 @@ function drawMinimap(graphics, player) {
     drawMinimapRays(graphics, player, minimapX, firstMapX, firstMapY);
   }
 
+  const markersByColor = new Map();
   for (const marker of enemyMarkers) {
-    graphics.rect(marker.x, marker.y, marker.width, marker.height);
+    let markers = markersByColor.get(marker.color);
+    if (markers === undefined) {
+      markers = [];
+      markersByColor.set(marker.color, markers);
+    }
+    markers.push(marker);
   }
-  if (enemyMarkers.length > 0) {
-    graphics.fill(enemyColor);
+  for (const [color, markers] of markersByColor) {
+    for (const marker of markers) {
+      graphics.rect(marker.x, marker.y, marker.width, marker.height);
+    }
+    graphics.fill(color);
   }
 
   const playerX = minimapX + (player.posX - firstMapX) * minimapCellSize;

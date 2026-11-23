@@ -22,6 +22,7 @@ function addEnemy(world, posX, posY, state) {
     chunkY: 0,
     width: 0.3,
     height: 0.6,
+    contactDamage: 1,
     state,
     stateTime: 0,
     hitWait: 0,

@@ -15,9 +15,8 @@ const enemyCollisionRadius = enemyWidth / 2;
 
 // D-27c / TDD 2.3.1: contact damage comes in whole hit points. An enemy closer
 // than contactDistance hits once as soon as its wait is over, then waits a
-// second. A chasing enemy stops at enemyStopDistance (0.5), inside this range.
+// second. D-19c: the amount is per enemy, one for a regular, two for the boss.
 const contactDistance = 0.6;
-const contactHitPoints = 1;
 const contactHitWaitTicks = ticksPerSecond;
 
 // D-23 / TDD 3.6: only the chunks this close to the player's chunk are active.
@@ -135,7 +134,7 @@ function updateContactHit(enemy, player, deltaTime) {
     return 0;
   }
   enemy.hitWait = contactHitWaitTicks;
-  return contactHitPoints;
+  return enemy.contactDamage;
 }
 
 // D-23: only the active enemies move. An enemy that crossed into another chunk
@@ -377,6 +376,10 @@ function shootCenterRay(player) {
     if (target.health <= 0) {
       addKill();
       removeEnemy(target);
+      // D-19c: the last regular enemy spawns the boss, once per game
+      if (getKillCount() >= gameSettings.enemiesPerGame) {
+        spawnBoss(player);
+      }
     }
   }
   return target;

@@ -181,6 +181,10 @@ function createAdminSettings(page, player, onApplied) {
     writeFields();
     onApplied();
   });
+  onAdminButton(page.querySelector("[data-admin-action='spawn-boss']"), () => {
+    spawnBoss(player);
+    onApplied();
+  });
 
   writeFields();
 }

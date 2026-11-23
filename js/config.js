@@ -87,6 +87,14 @@ const enemyHeight = 0.6;
 const enemyColor = 0xffc857;
 // D-19b: a regular enemy dies with one shot; D-16c2 turns this into a setting.
 const enemyHealth = 1;
+// D-19c / TDD 2.3.2: the boss is 1.5x the regular enemy (0.45 by 0.9 cells),
+// crimson, with five hit points and double the contact damage.
+const bossWidth = enemyWidth * 1.5;
+const bossHeight = enemyHeight * 1.5;
+const bossColor = 0xdc143c;
+const bossHealth = 5;
+const bossContactDamage = 2;
+const enemyContactDamage = 1;
 
 // D-27b / TDD 2.3.2 and 6.6: an enemy and the player never get closer than this,
 // center to center. Their bodies measure 0.35 together (0.15 + 0.2), so some

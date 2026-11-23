@@ -7,6 +7,7 @@ const enemiesByChunk = new Map();
 const enemiesByCell = new Map();
 let spawnRoomCenter = null;
 let nextEnemyId = 1;
+let bossSpawned = false;
 // D-24 / TDD 2.3.2: the enemies of the game are placed in the chunks this
 // close to the player's chunk, the 8 neighbors. The player's chunk stays empty.
 const enemyPlacementRadius = 1;
@@ -91,6 +92,7 @@ function resetGame() {
   removeAllEnemies();
   spawnRoomCenter = null;
   nextEnemyId = 1;
+  bossSpawned = false;
   resetKillCount();
   resetPlayer();
 }
@@ -149,6 +151,7 @@ function addEnemyAtCell(cellX, cellY) {
     height: enemyHeight,
     color: enemyColor,
     health: enemyHealth,
+    contactDamage: enemyContactDamage,
     state: "idle",
     stateTime: 0,
     // D-27c: ticker units until the next contact hit; 0 hits on first contact
@@ -158,6 +161,51 @@ function addEnemyAtCell(cellX, cellY) {
   addEnemyToChunk(enemy);
   registerEnemyAtCell(enemy);
   return enemy;
+}
+
+// D-19c / TDD 2.3.2: one boss per game, at the room center of a chunk next to
+// the player's. The room lights (D-10) mark each room center, so the first
+// light of a random cardinal neighbour gives the spawn point.
+function spawnBoss(player) {
+  if (bossSpawned) {
+    return null;
+  }
+  const playerChunkX = Math.floor(player.posX / chunkSize);
+  const playerChunkY = Math.floor(player.posY / chunkSize);
+  const offsets = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  const [offsetX, offsetY] = offsets[Math.floor(Math.random() * offsets.length)];
+  const cx = playerChunkX + offsetX;
+  const cy = playerChunkY + offsetY;
+  getChunkCells(cx, cy);
+  const lights = lightsByChunk.get(getChunkKey(cx, cy)) || [];
+  if (lights.length === 0) {
+    return null;
+  }
+  const cellX = Math.floor(lights[0].x);
+  const cellY = Math.floor(lights[0].y);
+  const boss = {
+    id: nextEnemyId,
+    posX: cellX + 0.5,
+    posY: cellY + 0.5,
+    cellX,
+    cellY,
+    chunkX: Math.floor(cellX / chunkSize),
+    chunkY: Math.floor(cellY / chunkSize),
+    width: bossWidth,
+    height: bossHeight,
+    color: bossColor,
+    health: bossHealth,
+    contactDamage: bossContactDamage,
+    isBoss: true,
+    state: "idle",
+    stateTime: 0,
+    hitWait: 0,
+  };
+  nextEnemyId += 1;
+  addEnemyToChunk(boss);
+  registerEnemyAtCell(boss);
+  bossSpawned = true;
+  return boss;
 }
 
 function addEnemyToChunk(enemy) {

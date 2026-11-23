@@ -117,7 +117,7 @@ Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added i
 | D-20a | Defeat screen with play again and main menu | P1 | 4 | D-18a | done |
 | D-19a | Kill counter and KILLS label on the HUD | P2 | 4 | D-15b, D-17a | done |
 | D-19b | Enemy hit points, one for regular enemies | P2 | 4 | D-19a | done |
-| D-19c | Boss appears after the kill target | P2 | 4 | D-19b | pending |
+| D-19c | Boss appears after the kill target | P2 | 4 | D-19b | done |
 | D-16c2 | Admin settings for the boss flow: enemy and boss hit points, spawn boss | P2 | 4 | D-16c1e, D-19c | pending |
 | D-19d | Victory when the boss dies, victory screen | P2 | 4 | D-19c, D-20a | pending |
 | D-20b | Score and local ranking storage | P2 | 4 | D-19d | pending |
@@ -1652,7 +1652,14 @@ Acceptance criteria:
 - The admin panel gets a Spawn boss button for quick validation.
 - Tests: no boss before the target, exactly one at the target, on an air cell, with its hit points.
 
-Files: `js/enemies.js`, `js/renderer.js`, `js/minimap.js`, `tests/boss.test.js` (new).
+Files: `js/config.js`, `js/world.js`, `js/enemies.js`, `js/renderer.js`, `js/minimap.js`, `js/admin.js`, `index.html`, `tests/boss.test.js` (new), `tests/health.test.js`.
+
+Decisions:
+- Boss constants live in `js/config.js`: 1.5x size (0.45 by 0.9), crimson `0xdc143c`, 5 hit points, 2 contact damage.
+- `spawnBoss` lives in `js/world.js`; it reuses the room lights (D-10) to get the room center of a random cardinal neighbour chunk. `bossSpawned` keeps it to one per game and `resetGame` clears it.
+- Contact damage became per enemy (`enemy.contactDamage`): regular 1, boss 2. The D-27 `contactHitPoints` constant was removed.
+- The renderer and minimap now group by `enemy.color`, so the boss draws crimson in flat color mode; the sprite mode stays D-21c.
+- The trigger is in `shootCenterRay`: after a kill, when `getKillCount()` reaches `enemiesPerGame`, `spawnBoss` runs (guarded to once).
 
 ## D-19d: Victory when the boss dies
 
