@@ -91,6 +91,7 @@ function resetGame() {
   removeAllEnemies();
   spawnRoomCenter = null;
   nextEnemyId = 1;
+  resetKillCount();
   resetPlayer();
 }
 

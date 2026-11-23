@@ -110,6 +110,27 @@ function updateReloadCounter(counter, reloadsLeft) {
   }
 }
 
+// D-19a / TDD 2.3.3: the kill count under AMMO, as "KILLS 3 / 20".
+function formatKillsLabel(killCount, total) {
+  return `KILLS ${killCount} / ${total}`;
+}
+
+// Created once, outside the ticker (TDD 6.4)
+function createKillsLabel() {
+  const label = new PIXI.Text({
+    text: formatKillsLabel(0, gameSettings.enemiesPerGame),
+    style: hudLabelStyle,
+  });
+  label.anchor.set(0, 0.5);
+  label.position.set(hudMargin, getHudRowY(2) + barBandHeight / 2);
+  return label;
+}
+
+// Called every frame; PixiJS only redraws the Text when the text changes
+function updateKillsLabel(label, killCount) {
+  label.text = formatKillsLabel(killCount, gameSettings.enemiesPerGame);
+}
+
 // D-06c: the fill width follows the health fraction, clamped to the bar.
 function getHealthBarWidth(healthFraction) {
   const clamped = Math.min(Math.max(healthFraction, 0), 1);

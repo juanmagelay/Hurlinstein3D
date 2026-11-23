@@ -15,6 +15,7 @@ const getChunkKey = getGlobal("getChunkKey");
 const getEnemiesAtCell = getGlobal("getEnemiesAtCell");
 const registerEnemyAtCell = getGlobal("registerEnemyAtCell");
 const enemyWidth = getGlobal("enemyWidth");
+const getKillCount = getGlobal("getKillCount");
 
 function makePlayer(posX, posY, dirX, dirY) {
   return { posX, posY, dirX, dirY };
@@ -23,6 +24,7 @@ function makePlayer(posX, posY, dirX, dirY) {
 function reset() {
   enemiesByChunk.clear();
   enemiesByCell.clear();
+  getGlobal("resetKillCount")();
 }
 
 // Registers an enemy in its own chunk list and cell, like the world does
@@ -125,4 +127,23 @@ test("the shot works in negative coordinates", () => {
 
   assert.notEqual(hit, null);
   assert.equal(getEnemiesAtCell(-7, -4).length, 0);
+});
+
+test("a kill adds one to the kill count (D-19a)", () => {
+  reset();
+  setWall(12);
+  addEnemy(6.5, 5.5);
+
+  shootCenterRay(makePlayer(3.5, 5.5, 1, 0));
+
+  assert.equal(getKillCount(), 1);
+});
+
+test("a miss adds nothing to the kill count (D-19a)", () => {
+  reset();
+  setWall(12);
+
+  shootCenterRay(makePlayer(3.5, 5.5, 1, 0));
+
+  assert.equal(getKillCount(), 0);
 });

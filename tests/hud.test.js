@@ -73,6 +73,12 @@ test("the reload counter only shows while reloads are limited", () => {
   assert.equal(counter.visible, false);
 });
 
+// D-19a: the kill count under AMMO
+test("the kills label reads KILLS x / total on the row under AMMO", () => {
+  assert.equal(getGlobal("formatKillsLabel")(3, 20), "KILLS 3 / 20");
+  assert.equal(getGlobal("getHudRowY")(2), 64);
+});
+
 // D-27d: the damage flash fades from full to zero in damageFlashDuration (0.4 s)
 test("the damage flash is full after a hit, half at 0.2 s and gone at 0.4 s", () => {
   const getDamageFlashAlpha = getGlobal("getDamageFlashAlpha");

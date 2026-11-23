@@ -105,6 +105,10 @@ async function startGame() {
   const reloadCounter = createReloadCounter();
   app.stage.addChild(reloadCounter);
 
+  // D-19a: the kill count, under AMMO
+  const killsLabel = createKillsLabel();
+  app.stage.addChild(killsLabel);
+
   // TDD 6.4: keyboard and mouse listeners are registered once, outside the
   // ticker. D-12: the mouse listens on the game frame only, so clicks on the
   // admin panel never fire or reload.
@@ -179,6 +183,7 @@ async function startGame() {
     setBarFill(healthBar, getHealthBarWidth(player.health / player.maxHealth));
     setBarFill(ammoBar, getAmmoBarWidth(player.ammo, gameSettings.magazineSize));
     updateReloadCounter(reloadCounter, player.reloadsLeft);
+    updateKillsLabel(killsLabel, getKillCount());
   }
 
   // TDD 6.4: inside the ticker goes only what changes every frame

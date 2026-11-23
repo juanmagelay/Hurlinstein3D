@@ -32,3 +32,18 @@ function setGameState(nextState) {
   gameState = nextState;
   return true;
 }
+
+// D-19a / TDD 2.3.1: enemies killed this game, shown as KILLS x / total.
+let killCount = 0;
+
+function getKillCount() {
+  return killCount;
+}
+
+function addKill() {
+  killCount += 1;
+}
+
+function resetKillCount() {
+  killCount = 0;
+}

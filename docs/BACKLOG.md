@@ -115,7 +115,7 @@ Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added i
 | D-18a | Main menu: title, start game, controls, credits | P1 | 4 | D-16a3, D-17b | done |
 | D-18b | Controls and credits screens | P1 | 4 | D-18a | done |
 | D-20a | Defeat screen with play again and main menu | P1 | 4 | D-18a | done |
-| D-19a | Kill counter and KILLS label on the HUD | P2 | 4 | D-15b, D-17a | pending |
+| D-19a | Kill counter and KILLS label on the HUD | P2 | 4 | D-15b, D-17a | done |
 | D-19b | Enemy hit points, one for regular enemies | P2 | 4 | D-19a | pending |
 | D-19c | Boss appears after the kill target | P2 | 4 | D-19b | pending |
 | D-16c2 | Admin settings for the boss flow: enemy and boss hit points, spawn boss | P2 | 4 | D-16c1e, D-19c | pending |
@@ -1546,12 +1546,17 @@ Decisions:
 ## D-19a: Kill counter
 
 Acceptance criteria:
-- Each enemy a projectile kills adds one to the kill count; `resetGame()` sets it back to 0.
+- Each enemy the shot kills adds one to the kill count; `resetGame()` sets it back to 0.
 - The target is the enemies per game setting (D-16c1e), 20 by default.
 - The HUD shows "KILLS 3 / 20" under AMMO. The `Text` object is created once and its text changes only when the count changes.
 - Tests: a kill adds one, a miss adds nothing, a reset clears the count.
 
-Files: `js/game-state.js`, `js/projectiles.js`, `js/hud.js`, `tests/projectiles.test.js`. `js/main.js` adds the label to the stage; split the story if it goes over four files.
+Files: `js/game-state.js`, `js/enemies.js`, `js/world.js`, `js/hud.js`, `js/main.js`, `tests/shoot.test.js`, `tests/reset.test.js`, `tests/hud.test.js`.
+
+Decisions:
+- The kill count lives in `js/game-state.js`; the shot increments it in `js/enemies.js`, and `resetGame()` clears it in `js/world.js`.
+- The label is a PixiJS Text at HUD row 2 (under AMMO), created once and updated in the ticker's `updateHudBars`.
+- Kept as one story despite touching five code files: each change is a few lines and it validates in one shot.
 
 ## D-23: Update and draw only the enemies near the player
 

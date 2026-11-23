@@ -56,3 +56,13 @@ test("resetGame respawns the player with full health and a full magazine (D-17a)
   assert.equal(player.reloadTime, 0);
   assert.equal(player.reloadsLeft, world("getReloadAllowance")(world("gameSettings")));
 });
+
+test("resetGame clears the kill count (D-19a)", () => {
+  const world = makeDirtyWorld();
+  world("addKill")();
+  world("addKill")();
+
+  world("resetGame")();
+
+  assert.equal(world("getKillCount")(), 0);
+});

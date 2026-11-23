@@ -373,6 +373,7 @@ function shootCenterRay(player) {
   }
 
   if (target !== null) {
+    addKill();
     removeEnemy(target);
   }
   return target;
