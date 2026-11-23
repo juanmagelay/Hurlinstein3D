@@ -91,7 +91,7 @@ test("a player walking into an enemy stops at the stop distance", () => {
   const moveSpeed = world("moveSpeed");
 
   for (let tick = 0; tick < 30; tick += 1) {
-    world("updatePlayer")(player, new Set(["w"]), 1);
+    world("updatePlayer")(player, new Set(["forward"]), 1);
   }
 
   const distance = getDistance(enemy, player);
@@ -106,7 +106,7 @@ test("a player blocked by an enemy slides along it on the other axis", () => {
   player.dirY = Math.SQRT1_2;
   addEnemy(world, 6, 5.5, "idle");
 
-  world("updatePlayer")(player, new Set(["w"]), 1);
+  world("updatePlayer")(player, new Set(["forward"]), 1);
 
   // x would bring it closer than 0.5; y moves it around the enemy
   assert.equal(player.posX, 5.5);
@@ -118,10 +118,10 @@ test("a player inside the stop distance can always walk away", () => {
   const player = createPlayerAt(5.5, 5.5);
   addEnemy(world, 5.8, 5.5, "idle");
 
-  world("updatePlayer")(player, new Set(["w"]), 1);
+  world("updatePlayer")(player, new Set(["forward"]), 1);
   assert.equal(player.posX, 5.5);
 
-  world("updatePlayer")(player, new Set(["s"]), 1);
+  world("updatePlayer")(player, new Set(["backward"]), 1);
   assertClose(player.posX, 5.5 - world("moveSpeed"));
 });
 
@@ -130,7 +130,7 @@ test("an enemy two cells away does not block the player", () => {
   const player = createPlayerAt(5.5, 5.5);
   addEnemy(world, 7.5, 5.5, "idle");
 
-  world("updatePlayer")(player, new Set(["w"]), 1);
+  world("updatePlayer")(player, new Set(["forward"]), 1);
 
   assertClose(player.posX, 5.5 + world("moveSpeed"));
 });
@@ -146,7 +146,7 @@ test("backing away outruns the chase and leaves contact before the next hit", ()
 
   // One second, frame by frame, as in the ticker
   for (let tick = 0; tick < 60; tick += 1) {
-    world("updatePlayer")(player, new Set(["s"]), 1);
+    world("updatePlayer")(player, new Set(["backward"]), 1);
     world("updateEnemies")(player, 1);
     damage += world("getContactDamage")(player, 1);
   }

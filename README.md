@@ -8,19 +8,25 @@ Open `index.html` directly in Chrome. No installation, network access or develop
 
 ## Controls
 
-| Key | Action |
+| Input | Action |
 |---|---|
-| W | Move forward |
-| S | Move backward |
-| A | Turn left |
-| D | Turn right |
-| Space | Fire the shotgun |
-| R | Reload the shotgun |
+| W or Up arrow | Move forward |
+| S or Down arrow | Move backward |
+| A | Strafe left |
+| D | Strafe right |
+| Left arrow | Turn left |
+| Right arrow | Turn right |
+| Mouse left and right | Turn left and right |
+| Space or left click | Fire the shotgun |
+| R or right click | Reload the shotgun |
+| Esc | Release the mouse |
 | P | Open or close the admin panel |
+
+The arrows alone move and turn, like the raycasting games of the nineties; W, A, S and D with the mouse is the later first-person scheme. The first click on the game fires and also captures the mouse (pointer lock), so moving it turns the camera. Esc or opening the admin panel releases it, and the next click on the game fires and captures it again. Clicks on the admin panel never fire or reload.
 
 The player collides with walls and slides along them. Life and ammo are in the upper-left corner and the minimap in the upper-right corner.
 
-The game fills the browser window on any screen between 4:3 and 21:9, and adapts live when the window is resized or goes full screen. For the team, moving the mouse to the top edge shows an Open admin panel button. The panel shows live FPS, position, chunk, health, ammo, enemies alive against the game total, active enemies and loaded chunks. It edits the regular enemies per game (20 by default, up to 100,000 for stress tests; a new total replaces the live enemies with new ones in the 8 chunks around the player, and enemies left more than two chunks behind reappear near the player), the active area (only enemies in the 5 by 5 chunks around the player are updated and drawn; turn it off to compare FPS), the player's hit points (10 by default; an enemy in contact takes one on first contact and one more every second), the magazine size (2 to 20), unlimited or limited reloads, the A and D turn speed (120 degrees per second by default), god mode, the strip width (1, 2, 4 or 8 px per ray), a fisheye mode that draws walls with the Euclidean distance, rays on the minimap and chunk borders on the minimap. It also refills the ammo. Settings apply right away and are saved in the browser's localStorage; Reset settings restores the defaults. While a panel field has the focus, the game keys do nothing; Enter or a click outside the field gives them back.
+The game fills the browser window on any screen between 4:3 and 21:9, and adapts live when the window is resized or goes full screen. For the team, moving the mouse to the top edge shows an Open admin panel button. The panel shows live FPS, position, chunk, health, ammo, enemies alive against the game total, active enemies and loaded chunks. It edits the regular enemies per game (20 by default, up to 100,000 for stress tests; a new total replaces the live enemies with new ones in the 8 chunks around the player, and enemies left more than two chunks behind reappear near the player), the active area (only enemies in the 5 by 5 chunks around the player are updated and drawn; turn it off to compare FPS), the player's hit points (10 by default; an enemy in contact takes one on first contact and one more every second), the magazine size (2 to 20), unlimited or limited reloads, the arrow turn speed (120 degrees per second by default), the mouse sensitivity (20 degrees per 100 px of mouse movement by default), god mode, the strip width (1, 2, 4 or 8 px per ray), a fisheye mode that draws walls with the Euclidean distance, rays on the minimap and chunk borders on the minimap. It also refills the ammo. Settings apply right away and are saved in the browser's localStorage; Reset settings restores the defaults. While a panel field has the focus, the game keys do nothing; Enter or a click outside the field gives them back.
 
 ## Project map
 
@@ -31,7 +37,7 @@ The game fills the browser window on any screen between 4:3 and 21:9, and adapts
 | `js/settings.js` | Admin settings: defaults, ranges, clamping and localStorage, with blocked storage falling back to the defaults | 2.3.5 |
 | `js/mapgen.js` | Generates a connected room (and often a second one) plus four corridors in each chunk | 4.2, 4.3 |
 | `js/world.js` | Cantor-keyed chunk storage, `getCell`, room lights, the game's enemies placed around the player, and the per-chunk and per-cell enemy registries | 2.3.2, 5.1, 5.2, 6.8 |
-| `js/player.js` | Camera state, keyboard input, movement, collisions against walls and enemies, health in hit points, ammo and reloads | 2.3.1, 3.2, 6.6 |
+| `js/player.js` | Camera state, keyboard and mouse input with pointer lock, movement and strafing, collisions against walls and enemies, health in hit points, ammo and reloads | 2.2, 2.3.1, 3.2, 6.6 |
 | `js/raycaster.js` | Camera rays and grid DDA | 3.2, 3.3, 3.4 |
 | `js/renderer.js` | Ceiling, floor, wall strips of any strip width, fisheye mode, procedural wall textures, point lights, enemy sprites standing on the floor with wall occlusion, and projectiles | 2.3.1, 2.3.2, 3.4, 6.4, 6.5 |
 | `js/enemies.js` | Active area around the player, far enemies brought back near the player, enemy state machine (idle, patrol, chase), DDA line of sight, wall sliding, a chase that stops in front of the player, and contact hits once per second | 2.3.1, 2.3.2 |
@@ -41,7 +47,7 @@ The game fills the browser window on any screen between 4:3 and 21:9, and adapts
 | `js/weapon.js` | Shotgun aimed at the crosshair, idle, firing and reload animation | 2.3.1, 2.3.3, 6.4 |
 | `js/enemy-sheet.js` | Embedded enemy sprite, a copy of `assets/enemy-sprites/ZOMBA1.png` | 2.3.2, 6.2 |
 | `js/weapon-sheet.js` | Embedded shotgun strip generated from `assets/gun-sprites/Sgun.png` | 6.1 |
-| `js/admin.js` | Admin panel: top strip, pinned panel, P key, live info and settings fields | 2.3.5 |
+| `js/admin.js` | Admin panel: top strip, pinned panel, P key, live info and settings fields; opening it releases the mouse | 2.3.5 |
 | `js/main.js` | PixiJS application, scene, window resize and ticker | 6.4, 6.5 |
 | `assets/icons/LICENSE` | License of the Lucide icons embedded in `index.html` | 2.3.5 |
 | `assets/enemy-sprites/` | Original enemy sprite and its source and license | 2.3.2 |

@@ -27,6 +27,7 @@ const defaults = {
   unlimitedReloads: true,
   reloadLimit: 5,
   turnSpeed: 120,
+  mouseSensitivity: 20,
   godMode: false,
   stripWidth: 2,
   fisheye: false,
@@ -89,6 +90,7 @@ test("flags only take true or false", () => {
 test("the range text is the one shown next to each field", () => {
   assert.equal(formatSettingRange("magazineSize"), "2 to 20");
   assert.equal(formatSettingRange("turnSpeed"), "30 to 360");
+  assert.equal(formatSettingRange("mouseSensitivity"), "5 to 100");
   assert.equal(formatSettingRange("enemiesPerGame"), "1 to 100,000");
 });
 

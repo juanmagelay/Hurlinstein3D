@@ -132,33 +132,99 @@ function isTypingInField(event) {
   return tag === "input" || tag === "textarea" || tag === "select" || Boolean(target.isContentEditable);
 }
 
-// TDD 6.6: only the four controls from TDD 2.2 affect the player
-const movementKeys = new Set(["w", "a", "s", "d"]);
+// TDD 2.2 / 6.6: each movement key and the control it presses. D-12b: the up
+// and down arrows act as W and S, and the left and right arrows turn. D-12e:
+// A and D strafe, so the keyboard turns only with the arrows.
+const movementKeys = new Map([
+  ["w", "forward"],
+  ["arrowup", "forward"],
+  ["s", "backward"],
+  ["arrowdown", "backward"],
+  ["a", "strafeLeft"],
+  ["d", "strafeRight"],
+  ["arrowleft", "turnLeft"],
+  ["arrowright", "turnRight"],
+]);
 
+// Returns the Set of controls held down, which updatePlayer reads every frame
 function createKeyboardInput(target) {
-  const pressedKeys = new Set();
+  const pressedControls = new Set();
 
   target.addEventListener("keydown", (event) => {
-    const key = event.key.toLowerCase();
-    if (movementKeys.has(key) && !isTypingInField(event)) {
-      pressedKeys.add(key);
+    const control = movementKeys.get(event.key.toLowerCase());
+    if (control && !isTypingInField(event)) {
+      // The arrows would scroll the admin panel
+      event.preventDefault();
+      pressedControls.add(control);
     }
   });
 
   target.addEventListener("keyup", (event) => {
-    pressedKeys.delete(event.key.toLowerCase());
+    const control = movementKeys.get(event.key.toLowerCase());
+    if (control) {
+      pressedControls.delete(control);
+    }
   });
 
-  return pressedKeys;
+  return pressedControls;
+}
+
+// D-12: MouseEvent.button numbers
+const leftMouseButton = 0;
+const rightMouseButton = 2;
+
+// D-12c / TDD 2.2: the browser only grants pointer lock in answer to a click.
+// Chrome returns a promise that rejects when it refuses, for example right after
+// Esc; the click still counts and the next click asks again.
+function requestMouseCapture(target) {
+  const request = target.requestPointerLock();
+  if (request && typeof request.catch === "function") {
+    request.catch(() => {});
+  }
+}
+
+// D-12c / TDD 2.2: a click on the game captures the mouse. While it is
+// captured, the horizontal movement of every mouse event adds up, and the
+// ticker spends the sum once per frame with consumeTurn(). The listeners go on
+// the game frame, so clicks on the admin panel never reach them.
+function createMouseTurnInput(page, gameTarget) {
+  let turnPixels = 0;
+
+  gameTarget.addEventListener("mousedown", () => {
+    if (page.pointerLockElement !== gameTarget) {
+      requestMouseCapture(gameTarget);
+    }
+  });
+
+  gameTarget.addEventListener("mousemove", (event) => {
+    if (page.pointerLockElement === gameTarget) {
+      turnPixels += event.movementX;
+    }
+  });
+
+  return {
+    consumeTurn() {
+      const pixels = turnPixels;
+      turnPixels = 0;
+      return pixels;
+    },
+  };
 }
 
 // D-07: firing is one shot per key press. The browser repeats keydown while a
 // key is held, so event.repeat is ignored and consumeShot() drains one shot.
-function createFireInput(target) {
+// D-12d: a left click on the game is a shot too. mousedown has no repeat, so a
+// held button fires once. Space and a click in the same frame are one shot.
+function createFireInput(keyTarget, gameTarget) {
   let pendingShot = false;
-  target.addEventListener("keydown", (event) => {
+  keyTarget.addEventListener("keydown", (event) => {
     if (event.key === " " && !event.repeat && !isTypingInField(event)) {
       event.preventDefault();
+      pendingShot = true;
+    }
+  });
+  gameTarget.addEventListener("mousedown", (event) => {
+    if (event.button === leftMouseButton) {
       pendingShot = true;
     }
   });
@@ -173,13 +239,23 @@ function createFireInput(target) {
   };
 }
 
-// D-08: R reloads, one press at a time, ignoring the browser key repeat
-function createReloadInput(target) {
+// D-08: R reloads, one press at a time, ignoring the browser key repeat.
+// D-12d: so does a right click on the game, and the browser menu it would open
+// stays closed.
+function createReloadInput(keyTarget, gameTarget) {
   let pendingReload = false;
-  target.addEventListener("keydown", (event) => {
+  keyTarget.addEventListener("keydown", (event) => {
     if (event.key.toLowerCase() === "r" && !event.repeat && !isTypingInField(event)) {
       pendingReload = true;
     }
+  });
+  gameTarget.addEventListener("mousedown", (event) => {
+    if (event.button === rightMouseButton) {
+      pendingReload = true;
+    }
+  });
+  gameTarget.addEventListener("contextmenu", (event) => {
+    event.preventDefault();
   });
   return {
     consumeReload() {
@@ -192,29 +268,62 @@ function createReloadInput(target) {
   };
 }
 
-// TDD 6.6: rotate the camera, move along dir and slide along walls by axis.
-// D-16c1: the turn speed is the admin setting, in degrees per second.
-function updatePlayer(player, pressedKeys, deltaTime) {
-  const turn = Number(pressedKeys.has("d")) - Number(pressedKeys.has("a"));
+// TDD 3.2: turning applies the same rotation matrix to dir and plane, so plane
+// stays perpendicular to dir and both keep their length. A positive angle turns
+// right (y grows downward on the map). The keys and the mouse both turn here.
+function rotateCamera(player, angle) {
+  const cosAngle = Math.cos(angle);
+  const sinAngle = Math.sin(angle);
+  const oldDirX = player.dirX;
+  const oldDirY = player.dirY;
+  const oldPlaneX = player.planeX;
+  const oldPlaneY = player.planeY;
+
+  player.dirX = oldDirX * cosAngle - oldDirY * sinAngle;
+  player.dirY = oldDirX * sinAngle + oldDirY * cosAngle;
+  player.planeX = oldPlaneX * cosAngle - oldPlaneY * sinAngle;
+  player.planeY = oldPlaneX * sinAngle + oldPlaneY * cosAngle;
+}
+
+// D-12c / TDD 2.2: the sensitivity is in degrees per 100 px of mouse movement.
+// The angle is not multiplied by deltaTime: the pixels the mouse moved in one
+// frame are already a distance, and a longer frame has more of them.
+function getMouseTurnAngle(movementX, sensitivity) {
+  return movementX / 100 * sensitivity * Math.PI / 180;
+}
+
+// Moving the mouse right (positive movementX) turns right, like D
+function turnPlayerWithMouse(player, movementX) {
+  if (movementX !== 0) {
+    rotateCamera(player, getMouseTurnAngle(movementX, gameSettings.mouseSensitivity));
+  }
+}
+
+// TDD 6.6: rotate the camera, move along dir and to its side, and slide along
+// walls by axis. D-16c1: the turn speed is the admin setting, in degrees per second.
+function updatePlayer(player, pressedControls, deltaTime) {
+  const turn = Number(pressedControls.has("turnRight")) - Number(pressedControls.has("turnLeft"));
   const rotation = turn * getRotationPerTick(gameSettings.turnSpeed) * deltaTime;
 
   if (rotation !== 0) {
-    const cosRotation = Math.cos(rotation);
-    const sinRotation = Math.sin(rotation);
-    const oldDirX = player.dirX;
-    const oldDirY = player.dirY;
-    const oldPlaneX = player.planeX;
-    const oldPlaneY = player.planeY;
-
-    player.dirX = oldDirX * cosRotation - oldDirY * sinRotation;
-    player.dirY = oldDirX * sinRotation + oldDirY * cosRotation;
-    player.planeX = oldPlaneX * cosRotation - oldPlaneY * sinRotation;
-    player.planeY = oldPlaneX * sinRotation + oldPlaneY * cosRotation;
+    rotateCamera(player, rotation);
   }
 
-  const moveDirection = Number(pressedKeys.has("w")) - Number(pressedKeys.has("s"));
-  const moveX = player.dirX * moveDirection * moveSpeed * deltaTime;
-  const moveY = player.dirY * moveDirection * moveSpeed * deltaTime;
+  const forward = Number(pressedControls.has("forward")) - Number(pressedControls.has("backward"));
+  const sideways = Number(pressedControls.has("strafeRight")) - Number(pressedControls.has("strafeLeft"));
+
+  // D-12e / TDD 6.6: forward and sideways together are normalized (divided by
+  // their magnitude), so W and D at once are not faster than W alone
+  const inputLength = Math.sqrt(forward * forward + sideways * sideways);
+  if (inputLength === 0) {
+    return;
+  }
+  const step = moveSpeed * deltaTime / inputLength;
+
+  // The side direction is dir turned 90 degrees to the right, (-dirY, dirX):
+  // where plane points (TDD 3.2), with length 1
+  const moveX = (player.dirX * forward - player.dirY * sideways) * step;
+  const moveY = (player.dirY * forward + player.dirX * sideways) * step;
 
   // Each axis moves on its own, so a blocked axis still lets the other slide.
   // D-27b: enemies block the player like walls.

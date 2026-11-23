@@ -117,10 +117,13 @@ async function startGame() {
   const defeatOverlay = createDefeatOverlay();
   app.stage.addChild(defeatOverlay);
 
-  // TDD 6.4: keyboard listeners are registered once, outside the ticker
-  const pressedKeys = createKeyboardInput(window);
-  const fireInput = createFireInput(window);
-  const reloadInput = createReloadInput(window);
+  // TDD 6.4: keyboard and mouse listeners are registered once, outside the
+  // ticker. D-12: the mouse listens on the game frame only, so clicks on the
+  // admin panel never fire or reload.
+  const pressedControls = createKeyboardInput(window);
+  const mouseTurnInput = createMouseTurnInput(document, gameFrame);
+  const fireInput = createFireInput(window, gameFrame);
+  const reloadInput = createReloadInput(window, gameFrame);
 
   // D-16b: the admin panel is HTML over the game, wired once
   const adminPanel = createAdminPanel(document, player);
@@ -152,6 +155,9 @@ async function startGame() {
     adminPanel.update(ticker.deltaMS);
     // D-27d: the flash keeps fading, also after the last hit
     updateDamageFlash(damageFlash, ticker.deltaTime);
+    // D-12c: the mouse movement since the last frame. It is taken every frame,
+    // also while defeated, so a frozen game does not pile up a turn.
+    const mouseTurnPixels = mouseTurnInput.consumeTurn();
     // D-06b: at zero health the game freezes on the last frame. D-16c1: new
     // hit points from the admin panel bring the player back, so the overlay
     // follows the health every frame.
@@ -161,7 +167,8 @@ async function startGame() {
       updateHudBars();
       return;
     }
-    updatePlayer(player, pressedKeys, ticker.deltaTime);
+    turnPlayerWithMouse(player, mouseTurnPixels);
+    updatePlayer(player, pressedControls, ticker.deltaTime);
     // D-25: enemies left far behind come back near the player's new chunk
     gatherFarEnemies(player);
     updateEnemies(player, ticker.deltaTime);

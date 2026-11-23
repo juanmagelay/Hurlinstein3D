@@ -95,10 +95,11 @@ Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added i
 | D-27b | The enemy stops in front of the player at body distance, and the player cannot walk through enemies | P0 | 4 | D-27a | done |
 | D-27c | Contact damage in whole hit points: one on contact, then one per second | P0 | 4 | D-27b | done |
 | D-27d | Red damage flash from the screen edges, one pulse per hit | P0 | 4 | D-27c | done |
-| D-12a | Specify the arrow keys and the mouse in TDD 2.2 and the README | P1 | 4 | D-27d | pending |
-| D-12b | Arrow keys: up and down move, left and right turn | P1 | 4 | D-12a | pending |
-| D-12c | Mouse turn with pointer lock and a sensitivity setting | P1 | 4 | D-12b, D-16c1b | pending |
-| D-12d | Left click fires, right click reloads | P1 | 4 | D-12c | pending |
+| D-12a | Specify the arrow keys and the mouse in TDD 2.2 and the README | P1 | 4 | D-27d | done |
+| D-12b | Arrow keys: up and down move, left and right turn | P1 | 4 | D-12a | done |
+| D-12c | Mouse turn with pointer lock and a sensitivity setting | P1 | 4 | D-12b, D-16c1b | done |
+| D-12d | Left click fires, right click reloads | P1 | 4 | D-12c | done |
+| D-12e | A and D strafe; the left and right arrows keep turning | P1 | 4 | D-12b | done |
 | D-28a | Specify the UNAHUR at night look and the textured floor and ceiling in the TDD | P1 | 4 | D-09, D-10 | pending |
 | D-28b | UNAHUR wall textures: white plaster, louvered windows, glass, green accents | P1 | 4 | D-28a | pending |
 | D-28c | Floor and ceiling casting with floor tile and ceiling panel textures | P1 | 4 | D-28a | pending |
@@ -128,7 +129,6 @@ Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added i
 | D-16d | Admin render toggles: textures, lighting, flat color | P2 | 4 | D-16b2 | pending |
 | D-27e | Enemies keep body distance from each other, optional | P2 | 4 | D-27b | pending |
 | D-22 | Player initials in the ranking, optional | P3 | 4 | D-20c | pending |
-| D-12e | Strafing, only if the team asks for it | P3 | 4 | D-12b | pending |
 
 ## Backlog review (2026-11-20)
 
@@ -195,7 +195,7 @@ Checked against the code and the TDD before writing the stories:
 Open questions, to settle before each story (proposed default in parentheses):
 - D-08d: reload length once the drawings are re-cut, about 10 instead of 12 frames (keep 0.96 s, so each reload frame lasts about 0.096 s and the gameplay does not change).
 - D-27: stop distance, center to center (0.5 cells: the two bodies measure 0.35 together, so 0.15 cells stay between them, and the enemy's head and chest fill the view without crossing the camera). First hit (on the frame contact starts, then one per second per enemy, so two enemies hit twice). Player against enemies (blocked at the same distance, but moving away is always allowed so the player never gets stuck). Enemies against each other (left for the optional D-27e).
-- D-12: sensitivity unit and default (degrees per 100 px of mouse movement, 5 to 100, 20 by default, in the Player box of the admin panel). Whether a mouse click also fires before the mouse is captured (no: the first click only captures it).
+- D-12: sensitivity unit and default (degrees per 100 px of mouse movement, 5 to 100, 20 by default, in the Player box of the admin panel). Settled by Juanma on 2026-11-22: every left click fires, including the first one, which also captures the mouse; there is no capture-only click.
 - D-28: wall color per chunk (D-02) with the new white walls (the chunk color tints only the accent stripe, the plaster stays white). Floor casting technique (Lode's loop in JavaScript into a hidden canvas at strip resolution, uploaded as one texture per frame; a GPU shader only if the FPS in the admin panel drops). Flickering lamps (a few, decided per light from its position).
 - D-29: filter source (the official `pixi-filters` browser bundle copied to `lib/` with a fixed version and its sha256, like PixiJS; the other option is our own GLSL filter). On by default (yes, with an admin toggle to compare).
 - D-30: seed at the start of a game (a random one, shown in the admin panel, so every game differs and any game can be repeated by typing its seed). Seeded enemy placement and patrol too (yes, so no `Math.random` is left in `js/` except the one that picks the starting seed).
@@ -1239,7 +1239,9 @@ Acceptance criteria:
 
 ## D-12: Arrow keys and mouse (split from D-12)
 
-Request (2026-11-22, Juanma): turn with the mouse left and right, fire with the left click, reload with the right click, and let the arrow keys work too. Strafing was not requested and stays optional as D-12e.
+Request (2026-11-22, Juanma): turn with the mouse left and right, fire with the left click, reload with the right click, and let the arrow keys work too. Strafing was not requested and stayed optional as D-12e, until Juanma asked for it the same day, before validating D-12a to D-12d.
+
+Settled by Juanma (2026-11-22): the mouse turns the camera and every left click is a shot. No click is spent only on capturing the mouse: the first click over the game fires and also asks for pointer lock (the browser needs a click to grant it), and after Esc the next click fires and captures again. Sensitivity keeps the proposed default (20 degrees per 100 px). Juanma prefers to go straight to the code, without a plan stop.
 
 ## D-12a: Specify the arrow keys and the mouse
 
@@ -1251,6 +1253,12 @@ Acceptance criteria:
 
 Files: `docs/TDD.md`, `README.md`, `docs/BACKLOG.md`.
 
+Decisions:
+- Written without the approval stop, as Juanma asked (2026-11-22). The TDD text is for him to review in the Changes tab before the commit.
+- TDD 2.2 lists the arrows, the horizontal mouse turn, Space or left click to fire and R or right click to reload (Space and R were only in 2.3.1 and 2.3.4 before). It explains the pointer lock, the first click that fires and captures, Esc and the admin panel releasing the mouse, and why the mouse angle is not multiplied by `deltaTime`. Strafing stays out, with the reason 2.2 already gave.
+- Also updated: 2.3.1 (left click fires), 2.3.4 (the controls screen lists the mouse), 2.3.5 (mouse sensitivity in the Player box; opening the panel releases the mouse), 6.3 (the player row reads keyboard and mouse) and 6.4 (mouse listeners outside the ticker, the mouse turn as the one exception to the `deltaTime` rule).
+- README: controls table with the arrows, the mouse and Esc, a paragraph on the capture, the sensitivity in the admin paragraph, and the `js/player.js` and `js/admin.js` rows of the project map.
+
 ## D-12b: Arrow keys
 
 Acceptance criteria:
@@ -1259,6 +1267,12 @@ Acceptance criteria:
 - Tests: each arrow moves or turns like its letter; typing an arrow in a field does nothing.
 
 Files: `js/player.js`, `tests/player.test.js`.
+
+Decisions:
+- `movementKeys` became a Map from each key to the letter it acts as. keyup goes through the same Map, so releasing ArrowUp releases w.
+- Every movement key cancels the browser default, so the arrows never scroll the admin panel. A key typed into a field returns before that, so the arrows still work inside the fields.
+- Known limit, kept for simplicity: holding W and ArrowUp together and releasing one of them stops the move until a key is pressed again, because both press the same letter in one Set.
+- The old test "ArrowUp is ignored" was replaced by the arrow tests. The fake targets in the tests keep several listeners per event, like the browser.
 
 ## D-12c: Mouse turn with pointer lock
 
@@ -1270,18 +1284,54 @@ Acceptance criteria:
 
 Files: `js/player.js`, `js/settings.js`, `js/main.js`, `index.html`, `tests/player.test.js`. Split if it goes over four code files.
 
+Decisions:
+- `rotateCamera(player, angle)` is the rotation matrix of TDD 3.2, taken out of `updatePlayer` so A, D, the arrows and the mouse turn with the same code. `updatePlayer` behaves as before.
+- `getMouseTurnAngle(movementX, sensitivity)` is movementX / 100 times the sensitivity in degrees, in radians. A positive movementX (mouse to the right) turns right, like D.
+- `createMouseTurnInput(document, gameFrame)`: a mousedown on the game frame asks for the pointer lock when the frame does not hold it, and mousemove adds movementX only while it does. The ticker takes the sum at the top of every frame, also while defeated, so new hit points from the panel do not bring back a turn piled up while the game was frozen.
+- `requestMouseCapture` catches the rejected promise Chrome returns when it refuses the lock (for example, a click less than about a second after Esc), so the console stays clean. The click still counts and the next one asks again.
+- The lock target is `#game-frame`, which holds the canvas. The admin hover zone (the top 48 px) and the panel are its siblings, so their clicks never reach the game. A click in that top band shows the strip and neither fires nor captures.
+- Opening the panel (strip or P) calls `document.exitPointerLock()` in `open()` of `js/admin.js`. That is a fifth code file, for one line, so the story was not split.
+- With the panel open, a click on the game below it fires and captures again, and the panel stays open (it never pauses the game). P closes it.
+- `mouseSensitivity`: 5 to 100, 20 by default, in the Player box under the turn speed.
+- Pointer lock on `file://` cannot be checked in headless Chrome; Juanma checks it by hand (validation step). A headless load of `index.html` showed no console errors.
+
+
 ## D-12d: Mouse buttons
 
 Acceptance criteria:
 - While the mouse is captured, the left click fires one shot per click, like Space, and the right click starts a reload, like R. The context menu does not open over the game.
-- The click that captures the mouse does not fire. Clicks on the admin panel never fire or reload.
-- Tests: one click, one shot; a held button does not repeat; the right click reloads; a click without capture does nothing.
+- Every left click over the game fires, including the first one, which also captures the mouse. Clicks on the admin panel never fire or reload.
+- Tests: one click, one shot; the first click fires and asks for the capture; a held button does not repeat; the right click reloads; a click on the admin panel does nothing.
 
 Files: `js/player.js`, `js/main.js`, `tests/weapon.test.js`, `tests/ammo.test.js`.
 
-## D-12e: Strafing (optional)
+Decisions:
+- `createFireInput(keyTarget, gameTarget)` and `createReloadInput(keyTarget, gameTarget)`: Space and the left click set the same pending shot, and R and the right click the same pending reload. A frame with both is one shot, and the firing code in `main.js` did not change.
+- mousedown has no repeat, so a held button gives one shot.
+- The first click fires and asks for the capture through two listeners on the same mousedown, one in `createMouseTurnInput` and one in `createFireInput`. Any button asks for the capture; the middle button does nothing else.
+- `createReloadInput` cancels the contextmenu event of the game frame, next to the right click that reloads.
+- Tests: 211 of 211 pass (`node --test "tests/*.test.js"`).
 
-Only if the team asks for it.
+## D-12e: Strafing with A and D
+
+Request (2026-11-22, Juanma): the arrows keep acting as they do (up and down move, left and right turn), and A and D strafe, to walk the dungeon more carefully. Juanma recalled that Wolfenstein 3D worked like that. It did not quite: Wolfenstein 3D strafed by holding Alt with the left and right arrows. A and D strafing with the mouse turning is the scheme of the later first-person games.
+
+Acceptance criteria:
+- A moves the player to the left of dir and D to the right, without turning. The left and right arrows and the mouse turn. W, S and the up and down arrows move as before.
+- The side direction is dir turned 90 degrees to the right, (-dirY, dirX), where plane points. Forward and sideways together are normalized, so a diagonal is not faster than walking straight.
+- A strafe slides along walls and stops at enemies like any other move (per axis, TDD 6.6).
+- TDD 2.2, 2.3.4, 2.3.5 and 6.6 and the README describe it.
+- Tests: D and A move to each side keeping dir and plane, the side direction on a diagonal dir, forward plus strafe has the length of one step, A and D together cancel out, a strafe into a wall slides.
+
+Files: `js/player.js`, `js/main.js`, `js/settings.js` (comment), `tests/player.test.js`, `tests/body-distance.test.js`, `docs/TDD.md`, `README.md`.
+
+Decisions:
+- Replaces the D-12b map of keys to letters. A and the left arrow no longer do the same thing, so `movementKeys` maps each key to a named control (forward, backward, strafeLeft, strafeRight, turnLeft, turnRight) and `updatePlayer` reads those names. The Set is now `pressedControls`. The tests that passed letters pass control names.
+- Turning with the keyboard is only on the left and right arrows. The turn speed setting now reads as the arrow turn speed; its name, range and default did not change.
+- The move vector is computed inline in `updatePlayer` (no object per frame): its length is sqrt(forward² + sideways²), 1 or about 1.41, and the step is moveSpeed * deltaTime divided by it. With no input the function returns before the collision checks.
+- TDD 2.2 no longer says strafing is left out. It explains the two schemes (the arrows alone, and W, A, S and D with the mouse) and that neither changes the camera state or the raycaster. TDD 6.6 explains the side direction and the normalization.
+- `CLAUDE.md` 7.1 still says A and D turn and that there is no strafing or mouse, and 7.2 lists strafing and the mouse as optional. It needs Juanma's update; it was not touched.
+- Tests: 216 of 216 pass (`node --test "tests/*.test.js"`).
 
 ## D-28: UNAHUR at night (split in four)
 
@@ -1654,4 +1704,4 @@ Open questions to settle before each story:
 - D-05: optional vision cone with the dot product, like the zombie radar from the presentation. To confirm.
 - D-06: settled in the 2026-11-20 review. The victory is killing the boss (D-14b, D-19).
 - D-08: settled in D-08a. The reload key is R.
-- D-12: split on 2026-11-22. The arrow keys and the mouse were requested (D-12a to D-12d); strafing stays optional (D-12e).
+- D-12: split on 2026-11-22. The arrow keys and the mouse were requested (D-12a to D-12d), and strafing too, later the same day (D-12e).
