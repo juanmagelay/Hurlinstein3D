@@ -414,23 +414,30 @@ function shootCenterRay(player) {
   }
 
   if (target !== null) {
-    target.health -= 1;
-    if (target.health <= 0) {
-      removeEnemy(target);
-      if (target.isBoss) {
-        // D-19d: killing the boss wins the game
-        setGameState(gameStateVictory);
-      } else {
-        addKill();
-        // D-19c: the last regular enemy spawns the boss. D-38: a live boss
-        // stays where it is; killing it ends the game, so it spawns once.
-        if (getKillCount() >= gameSettings.enemiesPerGame && findBoss() === null) {
-          spawnBoss(player);
-        }
-      }
-    }
+    damageEnemy(target, player);
   }
   return target;
+}
+
+// D-13b / D-31: one hit from the center ray or a projectile. The enemy loses
+// one point of health and, at zero, it is removed and counted (or wins the game).
+function damageEnemy(target, player) {
+  target.health -= 1;
+  if (target.health > 0) {
+    return;
+  }
+  removeEnemy(target);
+  if (target.isBoss) {
+    // D-19d: killing the boss wins the game
+    setGameState(gameStateVictory);
+  } else {
+    addKill();
+    // D-19c: the last regular enemy spawns the boss. D-38: a live boss
+    // stays where it is; killing it ends the game, so it spawns once.
+    if (getKillCount() >= gameSettings.enemiesPerGame && findBoss() === null) {
+      spawnBoss(player);
+    }
+  }
 }
 
 // A hit removes the enemy from its cell and its chunk.

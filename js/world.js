@@ -241,6 +241,7 @@ function resetGame(seed) {
   nextEnemyId = 1;
   resetKillCount();
   resetGameTime();
+  clearProjectiles();
   resetPlayer();
 }
 
