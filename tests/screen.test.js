@@ -61,3 +61,31 @@ test("menu navigation wraps around the available buttons", () => {
   assert.equal(getNextMenuButtonIndex(-1, 3, 1), 0);
   assert.equal(getNextMenuButtonIndex(0, 0, 1), -1);
 });
+
+// D-36b: the hint that a click captures the mouse, shown only while playing
+// with the mouse free
+test("the mouse hint shows while playing with the mouse free", () => {
+  const page = { pointerLockElement: null };
+  const gameFrame = {};
+  const hint = { hidden: true };
+  const mouseHint = getGlobal("createMouseHint")(page, gameFrame, hint);
+
+  mouseHint.update(false);
+  assert.equal(hint.hidden, true);
+
+  mouseHint.update(true);
+  assert.equal(hint.hidden, false);
+
+  page.pointerLockElement = gameFrame;
+  mouseHint.update(true);
+  assert.equal(hint.hidden, true);
+
+  // Esc releases the mouse, and the hint comes back
+  page.pointerLockElement = null;
+  mouseHint.update(true);
+  assert.equal(hint.hidden, false);
+
+  // Defeat, victory or the menu hide it
+  mouseHint.update(false);
+  assert.equal(hint.hidden, true);
+});

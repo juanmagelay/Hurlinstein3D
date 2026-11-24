@@ -22,7 +22,7 @@ Open `index.html` directly in Chrome. No installation, network access or develop
 | Esc | Release the mouse |
 | P | Open or close the admin panel |
 
-The arrows alone move and turn, like the raycasting games of the nineties; W, A, S and D with the mouse is the later first-person scheme. The first click on the game fires and also captures the mouse (pointer lock), so moving it turns the camera. Esc or opening the admin panel releases it, and the next click on the game fires and captures it again. Clicks on the admin panel never fire or reload.
+The arrows alone move and turn, like the raycasting games of the nineties; W, A, S and D with the mouse is the later first-person scheme. The first click on the game fires and also captures the mouse (pointer lock), so moving it turns the camera. Esc or opening the admin panel releases it, and the next click on the game fires and captures it again. Clicks on the admin panel never fire or reload, and clicks on the menu, victory and defeat screens never capture the mouse, fire or reload. While playing with the mouse free, a hint at the top of the view says that a click captures it. Once captured, the browser shows its own Esc notice, which the page cannot hide.
 
 The player collides with walls and slides along them. Life and ammo are in the upper-left corner and the minimap in the upper-right corner.
 

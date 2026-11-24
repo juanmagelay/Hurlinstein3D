@@ -416,3 +416,22 @@ test("a refused capture is caught, so the console shows no error", () => {
   gameTarget.dispatch("mousedown", { button: 0 });
   assert.equal(caught, true);
 });
+
+// D-36a: a fake element inside a menu screen of the game frame (TDD 2.3.4)
+const onMenuScreen = {
+  closest(selector) {
+    return selector === "#game-frame .screen" ? {} : null;
+  },
+};
+
+test("a click on a menu screen does not ask for the capture", () => {
+  const { page, gameTarget } = createMouseSetup();
+  getGlobal("createMouseTurnInput")(page, gameTarget);
+
+  gameTarget.dispatch("mousedown", { button: 0, target: onMenuScreen });
+  assert.equal(gameTarget.captureRequests, 0);
+
+  // Once the screens are hidden, a click on the view asks for it
+  gameTarget.dispatch("mousedown", { button: 0, target: { closest: () => null } });
+  assert.equal(gameTarget.captureRequests, 1);
+});

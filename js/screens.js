@@ -81,3 +81,25 @@ function showScreen(screenId) {
     }
   }
 }
+
+// D-36b / TDD 2.2: while playing with the mouse free, a hint inside the game
+// frame says that a click on the view captures it. The browser shows its own
+// notice once the mouse is captured; the page cannot hide or restyle that one.
+function shouldShowMouseHint(isPlaying, isMouseCaptured) {
+  return isPlaying && !isMouseCaptured;
+}
+
+// The ticker calls update() every frame; the element is written only when the
+// answer changes
+function createMouseHint(page, gameFrame, hintElement) {
+  let shown = !hintElement.hidden;
+  return {
+    update(isPlaying) {
+      const show = shouldShowMouseHint(isPlaying, page.pointerLockElement === gameFrame);
+      if (show !== shown) {
+        shown = show;
+        hintElement.hidden = !show;
+      }
+    },
+  };
+}

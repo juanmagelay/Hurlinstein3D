@@ -124,3 +124,20 @@ test("a click on the admin panel does not fire", () => {
   windowTarget.dispatch("mousedown", leftClick);
   assert.equal(fireInput.consumeShot(), false);
 });
+
+// D-36a: the menu screens live inside the game frame, so their clicks reach it
+test("a click on a menu screen neither fires nor asks for the capture", () => {
+  const page = { pointerLockElement: null };
+  const gameTarget = createFakeTarget();
+  let captureRequests = 0;
+  gameTarget.requestPointerLock = () => {
+    captureRequests += 1;
+  };
+  createMouseTurnInput(page, gameTarget);
+  const fireInput = createFireInput(createFakeTarget(), gameTarget);
+  const onMenuScreen = { closest: (selector) => (selector === "#game-frame .screen" ? {} : null) };
+
+  gameTarget.dispatch("mousedown", { button: 0, target: onMenuScreen });
+  assert.equal(fireInput.consumeShot(), false);
+  assert.equal(captureRequests, 0);
+});

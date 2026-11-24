@@ -133,6 +133,8 @@ async function startGame() {
   const mouseTurnInput = createMouseTurnInput(document, gameFrame);
   const fireInput = createFireInput(window, gameFrame);
   const reloadInput = createReloadInput(window, gameFrame);
+  // D-36b: the hint that a click on the view captures the mouse
+  const mouseHint = createMouseHint(document, gameFrame, document.getElementById("mouse-hint"));
 
   // D-16b: the admin panel is HTML over the game, wired once
   const adminPanel = createAdminPanel(document, player);
@@ -298,6 +300,7 @@ async function startGame() {
     }
     // D-20a: the visible screen follows the state
     syncScreenToState();
+    mouseHint.update(gameState === gameStatePlaying);
     // D-17b: only playing updates the simulation; the scene stays on its last frame
     if (gameState !== gameStatePlaying) {
       updateHudBars();

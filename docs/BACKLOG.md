@@ -138,6 +138,8 @@ Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added i
 | D-34d | Keep the focused menu button visibly highlighted | P2 | 4 | D-34a | done |
 | D-35a | Add a one-second cooldown between successful shots | P2 | 4 | D-08a, D-17a | done |
 | D-35b | Document the shot cooldown in the TDD | P2 | 4 | D-35a | done |
+| D-36a | Clicks on the menu screens never capture the mouse, fire or reload | P0 | 4 | D-12d, D-18a | done |
+| D-36b | In-game hint that a click on the view captures the mouse | P0 | 4 | D-36a | done |
 
 ## Backlog review (2026-11-20)
 
@@ -1872,6 +1874,40 @@ Files: `js/config.js`, `js/renderer.js`, `js/main.js`, `js/admin.js`.
 
 Acceptance criteria:
 - At the end of a game the player can type three initials, stored with the record and shown in the ranking.
+
+## D-36a: Menu clicks do not capture the mouse
+
+Bug (2026-11-24, Juanma): on the main menu, the first click on a button showed Chrome's "file:/// To show your cursor, press Esc" notice. The menu screens (D-18a) live inside `#game-frame`, and D-12c asks for the pointer lock on any mousedown on the frame. The same mousedown also left a pending shot (D-12d), so Start game and Play again fired on the first frame of the game.
+
+Acceptance criteria:
+- Clicks on the menu, Controls, Credits, victory and defeat screens never capture the mouse, fire or reload. Chrome shows no capture notice while in the menus.
+- During the game, a click on the view still fires and captures, as TDD 2.2 says.
+- Tests: a click on a menu screen asks for no capture and fires no shot; a right click there does not reload.
+
+Files: `js/player.js`, `tests/player.test.js`, `tests/weapon.test.js`, `tests/ammo.test.js`.
+
+Decisions:
+- `isOnGameScreen(event)` checks `event.target.closest("#game-frame .screen")`. The three mousedown listeners (capture, fire, reload) and the Space listener use it; Space already had the same check inline (D-34c).
+- The screens cover the whole frame (`inset: 0`), so every click while one is visible lands on it.
+- The contextmenu stays cancelled on the whole frame, menus included.
+
+## D-36b: Mouse capture hint inside the game
+
+Request (2026-11-24, Juanma): any message about the mouse has to be styled and inside the player's screen.
+
+Acceptance criteria:
+- While playing with the mouse free (at the start of each game, after Esc, with the admin panel open), a pill at the top center of the view reads "Click to turn with the mouse". It hides once the mouse is captured and outside the playing state.
+- It lets clicks through to the game frame and does not cover the HUD or the minimap.
+- Tests: the hint shows while playing with the mouse free and hides when captured, in the menu, on victory and on defeat.
+
+Files: `index.html`, `js/screens.js`, `js/main.js`, `tests/screen.test.js`.
+
+Decisions:
+- Chrome's own notice ("To show your cursor, press Esc") appears every time the pointer lock starts. It is browser UI: the page cannot hide or restyle it. D-36a moves it out of the menu, so it now shows only at the first click on the view during a game.
+- The hint is HTML inside `#game-frame`, styled with the screens' tokens (panel color, accent border, system font), with the Lucide `mouse` icon (Lucide 1.77.0, ISC, already in `assets/icons/LICENSE`). `pointer-events: none`, so the click goes to the frame. A 240 ms fade in, off with reduced motion.
+- `createMouseHint(document, gameFrame, element)` returns `update(isPlaying)`; the ticker calls it after `syncScreenToState()` and it writes `hidden` only when the answer changes.
+- Top center, 64 px down: under the admin hover band and between the bars and the minimap.
+- Tests: 253 of 253 pass (`node --test "tests/*.test.js"`).
 
 ## Desirables
 

@@ -228,3 +228,13 @@ test("Space typed into an admin panel field does not fire", () => {
   assert.equal(fireInput.consumeShot(), false);
   assert.equal(prevented, false);
 });
+
+// D-36a: a right click on a menu screen of the game frame does not reload
+test("a right click on a menu screen does not reload", () => {
+  const gameTarget = createFakeTarget();
+  const reloadInput = createReloadInput(createFakeTarget(), gameTarget);
+  const onMenuScreen = { closest: (selector) => (selector === "#game-frame .screen" ? {} : null) };
+
+  gameTarget.dispatch("mousedown", { button: 2, target: onMenuScreen });
+  assert.equal(reloadInput.consumeReload(), false);
+});

@@ -93,6 +93,60 @@
       outline-offset: 2px;
     }
 
+    /* D-36b / TDD 2.2: hint over the view while playing with the mouse free.
+       It lets clicks through to the game frame. */
+    .game-hint {
+      position: absolute;
+      top: 64px;
+      left: 50%;
+      z-index: 4;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 16px 9px 12px;
+      font: 600 13px/1 system-ui, -apple-system, "Segoe UI", sans-serif;
+      color: var(--text-color);
+      white-space: nowrap;
+      background: var(--panel-color);
+      -webkit-backdrop-filter: blur(6px);
+      backdrop-filter: blur(6px);
+      border: 1px solid var(--border-color);
+      border-radius: 999px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+      transform: translateX(-50%);
+      pointer-events: none;
+      user-select: none;
+      animation: game-hint-in 240ms ease-out;
+    }
+
+    .game-hint[hidden] {
+      display: none;
+    }
+
+    .game-hint .icon {
+      color: var(--accent-color);
+    }
+
+    .game-hint-key {
+      padding: 3px 7px;
+      font: 700 12px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      color: var(--accent-color);
+      background: var(--accent-soft);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+    }
+
+    @keyframes game-hint-in {
+      from {
+        opacity: 0;
+        transform: translate(-50%, -6px);
+      }
+      to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+      }
+    }
+
     /* D-18b: key/action rows for Controls, plain centered lines for Credits */
     .screen-list {
       list-style: none;
@@ -411,6 +465,10 @@
       #admin-panel {
         transition: none !important;
       }
+
+      .game-hint {
+        animation: none;
+      }
     }
   </style>
 </head>
@@ -426,9 +484,15 @@
     <symbol id="icon-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></symbol>
     <symbol id="icon-chevron-up" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6" /></symbol>
     <symbol id="icon-x" viewBox="0 0 24 24"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></symbol>
+    <symbol id="icon-mouse" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="7" /><path d="M12 6v4" /></symbol>
   </svg>
 
   <div id="game-frame">
+    <!-- D-36b: shown by js/screens.js while playing with the mouse free -->
+    <div id="mouse-hint" class="game-hint" role="status" hidden>
+      <svg class="icon" aria-hidden="true"><use href="#icon-mouse"></use></svg>
+      <span><span class="game-hint-key">Click</span> to turn with the mouse</span>
+    </div>
     <div id="menu-screen" class="screen">
       <h1 class="menu-title">Hurlinstein3D</h1>
       <button id="start-game" class="menu-button" type="button">Start game</button>

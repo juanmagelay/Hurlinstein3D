@@ -161,6 +161,17 @@ function isTypingInField(event) {
   return tag === "input" || tag === "textarea" || tag === "select" || Boolean(target.isContentEditable);
 }
 
+// D-36a / TDD 2.2: the menu and end screens are HTML inside #game-frame
+// (TDD 2.3.4). Their clicks and keys belong to their buttons, so they never
+// capture the mouse, fire or reload.
+function isOnGameScreen(event) {
+  const target = event.target;
+  if (!target || typeof target.closest !== "function") {
+    return false;
+  }
+  return target.closest("#game-frame .screen") !== null;
+}
+
 // TDD 2.2 / 6.6: each movement key and the control it presses. D-12b: the up
 // and down arrows act as W and S, and the left and right arrows turn. D-12e:
 // A and D strafe, so the keyboard turns only with the arrows.
@@ -215,11 +226,15 @@ function requestMouseCapture(target) {
 // D-12c / TDD 2.2: a click on the game captures the mouse. While it is
 // captured, the horizontal movement of every mouse event adds up, and the
 // ticker spends the sum once per frame with consumeTurn(). The listeners go on
-// the game frame, so clicks on the admin panel never reach them.
+// the game frame, so clicks on the admin panel never reach them. D-36a: clicks
+// on the menu screens do not capture, so the browser shows no capture notice.
 function createMouseTurnInput(page, gameTarget) {
   let turnPixels = 0;
 
-  gameTarget.addEventListener("mousedown", () => {
+  gameTarget.addEventListener("mousedown", (event) => {
+    if (isOnGameScreen(event)) {
+      return;
+    }
     if (page.pointerLockElement !== gameTarget) {
       requestMouseCapture(gameTarget);
     }
@@ -248,11 +263,7 @@ function createFireInput(keyTarget, gameTarget) {
   let pendingShot = false;
   keyTarget.addEventListener("keydown", (event) => {
     if (event.key === " " && !event.repeat && !isTypingInField(event)) {
-      if (
-        event.target &&
-        typeof event.target.closest === "function" &&
-        event.target.closest("#game-frame .screen") !== null
-      ) {
+      if (isOnGameScreen(event)) {
         return;
       }
       event.preventDefault();
@@ -260,7 +271,7 @@ function createFireInput(keyTarget, gameTarget) {
     }
   });
   gameTarget.addEventListener("mousedown", (event) => {
-    if (event.button === leftMouseButton) {
+    if (event.button === leftMouseButton && !isOnGameScreen(event)) {
       pendingShot = true;
     }
   });
@@ -286,7 +297,7 @@ function createReloadInput(keyTarget, gameTarget) {
     }
   });
   gameTarget.addEventListener("mousedown", (event) => {
-    if (event.button === rightMouseButton) {
+    if (event.button === rightMouseButton && !isOnGameScreen(event)) {
       pendingReload = true;
     }
   });
