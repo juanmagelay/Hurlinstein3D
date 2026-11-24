@@ -4,7 +4,7 @@ Source of truth: `docs/TDD.md` (TDD v1.1). Work follows the story cycle in `CLAU
 
 Branches: every story is committed on `develop`, and once validated `develop` is merged into `main` (fast forward). `main` never gets direct commits. Details in `CLAUDE.md` section 10.3.
 
-Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added in the 2026-11-20 review use P0 (unblocks the rest) to P3 (only if time allows) and are listed in execution order. D-21 (enemy sprite) does not depend on the game flow stories and can be pulled forward. Rows added on 2026-11-22 (team and professor feedback) use the same scale and go before the pending game flow stories: D-08d first, D-27 second, then D-12, D-28, D-29 and D-30 in the order the team listed them.
+Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added in the 2026-11-20 review use P0 (unblocks the rest) to P3 (only if time allows) and are listed in execution order. D-21 (enemy sprite) does not depend on the game flow stories and can be pulled forward. Rows added on 2026-11-22 (team and professor feedback) use the same scale and go before the pending game flow stories: D-08d first, D-27 second, then D-12, D-28, D-29 and D-30 in the order the team listed them. Rows added on 2026-11-24 (professor feedback) use the same scale: first D-42 (the docs and tests catch up with the projectile already in the game), then the order the professor gave: D-39 (enemy death and blood), D-40 (vertical look and footstep bob), D-41 (sound and music).
 
 | ID | Story | Priority | TDD phase | Depends on | Status |
 |---|---|---|---|---|---|
@@ -148,6 +148,26 @@ Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added i
 | D-38a | Enemies spawn evenly in the rooms of the 4 door neighbors, out of the player's sight | P1 | 4 | D-24 | done |
 | D-38b | Hidden enemies left behind come back one door away on every chunk change | P1 | 4 | D-38a, D-25 | done |
 | D-38c | Boss spawns with the same rules; the admin button always shows it | P1 | 4 | D-38a, D-19c | done |
+| D-42a | Flying shotgun projectile restored (ce1e26a, outside the story flow) | P1 | 4 | D-31 | done |
+| D-42b | Sync the TDD, the tests and the minimap with the restored projectile; retire the unused instant shot | P1 | 4 | D-42a | pending |
+| D-39a | Specify in the TDD: death animation, blood stain stored per cell, blood particles | P1 | 4 | D-38c | pending |
+| D-39b | Death frames of the Husk Mutant, packed offline into one strip and embedded | P1 | 4 | D-39a, D-21b | pending |
+| D-39c | Death animation: the killed enemy leaves play at once and falls where it died | P1 | 4 | D-39b | pending |
+| D-39d | Blood stain stored per cell, in the chunk of its cell, kept for the session | P1 | 4 | D-39c | pending |
+| D-39e | Blood stain drawn on the floor by the floor casting and marked on the minimap | P1 | 4 | D-39d, D-28c | pending |
+| D-39f | Blood particle simulation: a spray on each hit and on death, gravity with an Euler step, fixed pool | P1 | 4 | D-39c | pending |
+| D-39g | Blood drops drawn in 3D with z-buffer occlusion | P1 | 4 | D-39f | pending |
+| D-40a | Specify in the TDD: limited vertical look with the mouse (y-shearing), shot height along the crosshair, footstep bob | P1 | 4 | D-38c | pending |
+| D-40b | Vertical look: the mouse moves the horizon up and down within a limit, walking or standing | P1 | 4 | D-40a, D-12c, D-28c | pending |
+| D-40c | The projectile follows the crosshair height: it climbs or drops with the aim and hits only across a body | P1 | 4 | D-40b, D-42b | pending |
+| D-40d | Footstep bob: each left and right step moves the camera up and down and side to side, like running | P1 | 4 | D-40b | pending |
+| D-40e | Shotgun bob: the gun dips and swings side to side with each left and right step | P1 | 4 | D-40d, D-07c | pending |
+| D-41a | Pick the sound and music sources and specify the audio in the TDD | P1 | 4 | D-38c | pending |
+| D-41b | Audio engine: one AudioContext, sounds decoded once from data URIs, silent fallback | P1 | 4 | D-41a | pending |
+| D-41c | Master, music and effects volume in the admin panel, and a mute key | P1 | 4 | D-41b, D-16c1b | pending |
+| D-41d | Arena sounds: shot, dry fire, reload, enemy hit and death, player hit, boss | P1 | 4 | D-41b, D-39c | pending |
+| D-41e | Music and UI sounds: menu and arena tracks, button focus and click, victory and defeat | P1 | 4 | D-41b, D-17b | pending |
+| D-41f | Enemy sounds by distance and side, with the dot product of the presentation (optional) | P3 | 4 | D-41d | pending |
 
 ## Backlog review (2026-11-20)
 
@@ -218,6 +238,35 @@ Open questions, to settle before each story (proposed default in parentheses):
 - D-28: wall color per chunk (D-02) with the new white walls (the chunk color tints only the accent stripe, the plaster stays white). Floor casting technique (Lode's loop in JavaScript into a hidden canvas at strip resolution, uploaded as one texture per frame; a GPU shader only if the FPS in the admin panel drops). Flickering lamps (a few, decided per light from its position).
 - D-29: filter source (the official `pixi-filters` browser bundle copied to `lib/` with a fixed version and its sha256, like PixiJS; the other option is our own GLSL filter). On by default (yes, with an admin toggle to compare).
 - D-30: seed at the start of a game (a random one, shown in the admin panel, so every game differs and any game can be repeated by typing its seed). Seeded enemy placement and patrol too (yes, so no `Math.random` is left in `js/` except the one that picks the starting seed).
+
+## Professor feedback (2026-11-24)
+
+Requested by the professor, passed on by Juanma, in this order:
+1. A death animation for the enemies (D-39c).
+2. A blood stain left by each dead enemy (D-39d, D-39e).
+3. The place of the stain is saved: its cell (D-39d).
+4. See whether particles fit here (D-39f, D-39g).
+5. Aim higher and lower with the mouse, walking or standing, even though the engine is a raycaster; and while moving, the left and right steps move the camera as if running. Both limited, never a free movement (D-40). Clarified by Juanma the same day: the first note read "the shotgun moves up and sways a little to the sides and down when aiming", and the professor meant the view.
+6. Sound and music in the arena and in the UI (D-41).
+
+Added by Juanma the same day: the flying projectile restored in ce1e26a stays (D-42).
+
+Checked against the code and the TDD before writing the stories:
+- Death (D-39c): `damageEnemy` (`js/enemies.js`) calls `removeEnemy` on the last hit, so the enemy vanishes in that frame, and a boss kill switches to the victory screen in that same frame. The TDD has no death animation, blood or corpses.
+- Death frames (D-39b): the game embeds only the front frame `ZOMBA1.png`. D-21a left the walk, attack and death frames of the Husk Mutant archive for a future story; they are not in the repo, so the archive (`husk_mutant.zip`, CC0) is downloaded again and checked against the sha256 recorded in `assets/enemy-sprites/LICENSE.md`.
+- Stain (D-39d, D-39e): the floor is drawn with floor casting (D-28c), which already computes the world cell of every floor pixel (`Math.floor` of the floor point), so a stain stored by cell is drawn there without a new projection. A `Map` lookup per floor pixel would slow the floor down (4.45 ms per frame, D-28d); a 16 by 16 `Uint8Array` per chunk, like the chunk tiles (TDD 6.8), turns it into an index.
+- Particles (D-39f, D-39g): the TDD has no particles. `lib/pixi.min.js` (8.21.0) ships `ParticleContainer`, whose v8 API is checked in the docs before using it. A drop in the 3D view is projected like an enemy (Lode part 3) and hidden by the z-buffer (D-04c1), so a particle system fits the engine as it is.
+- Vertical look and bob (D-40): the horizon is fixed at `screenHeight / 2` in every drawing that depends on it (walls, floor casting, ceiling, enemies, projectiles), and the mouse only turns (`movementX`, D-12c). Lode's floor casting tutorial already covers both requests with two numbers: `pitch`, the pixels the horizon moves to look up or down, and `posZ`, the camera height, for jumping or crouching. Looking up or down that way is a y-shearing: the image slides vertically and the walls stay vertical, so it is no real rotation and it looks wrong past a small angle, which is why it stays limited. It departs from the restriction explained in class (no looking up or down: the Wolfenstein slide of the presentation and `CLAUDE.md` 4.1; the TDD does not state it), so the TDD has to explain it. There is no run key: W, S, A and D move at 3.125 cells per second, about a jog.
+- Projectile (D-42): ce1e26a (2026-11-24) brought back `js/projectiles.js` from before D-31 and `drawProjectiles`, and the game fires it (`js/main.js`). TDD 2.3.1 still describes the instant hit of D-31, `tests/projectiles.test.js` and the minimap dots of D-13d did not come back, and `shootCenterRay` is no longer called by the game (only `tests/shoot.test.js` and `tests/boss.test.js` call it). The projectile flies at eye height (`drawProjectiles` centers it on the horizon), so aiming higher or lower needs it to carry a height (D-40c). 270 of 270 tests pass.
+- Sound (D-41): the game has no audio and the TDD does not mention it. TDD 6.2 forbids reading files from the disk, so the sounds go embedded as data URIs, like the sprites, and are decoded once with the Web Audio API from the bytes of the data URI, without `fetch`. Chrome starts audio only after a user gesture, so the first click or key opens the `AudioContext`; the main menu shows before any gesture, so its music starts on that first gesture. To check inside the portfolio iframe as well.
+
+Open questions, to settle before each story (proposed default in parentheses):
+- D-39c: what stays after the animation (the body lies on the last death frame for 2 s and fades out, and only the stain stays, so the infinite map does not fill up with bodies). Boss death (the same frames, tinted and larger; the victory screen waits until its animation ends, about 1 s).
+- D-39d, D-39e: stain look (a dark red blob drawn by code on a hidden canvas, TDD 6.2, one of four shapes picked from the world seed and the cell, so the same seed gives the same stains; centered in its cell). One stain per cell (a second death in a stained cell keeps the first). On the minimap (yes, a dark red dot: the visible proof that the cell is stored, as the minimap is for the DDA). Flat color mode (no stains: that mode shows the bare algorithm). A new game or a new world clears every stain.
+- D-39f, D-39g: particles yes or no (yes for the spray, no for the stain: the spray lives under a second and is a particle system with gravity, integrated with an Euler step and `deltaTime`, which is simulation material for the course; the stain stays for the session, so it is stored data that the floor casting draws). Amount (6 drops per hit, 24 on death, a pool of 256 created once). A landed drop adds no stain (the stain comes from the death cell, one per cell, as the professor asked).
+- D-40, settled by Juanma (2026-11-24): the view looks up and down with the mouse (y-shearing), walking or standing, and the steps bob the camera like running. The shot follows the crosshair height (D-40c). The shotgun bobs with the same steps (D-40e, required): that is the sway the professor meant. Still open: vertical limit (the horizon moves at most 30% of the screen height either way; Lode's example allows more, but the shear shows beyond that). Mouse Y speed (the same sensitivity as the turn: one mouse pixel moves the view the same angle up as sideways; the look is stored as an angle and turned into `pitch` pixels each frame, `pitch = screenHeight * tan(angle)`, so a resize keeps it; mouse up looks up, with no invert option). Footsteps (one step per cell walked, about 3 per second at full speed; the eye dips 0.03 cells at each foot strike and the camera shifts 0.03 cells toward the foot in support, so one stride, left then right, is one side to side cycle; render only, well inside the 0.2 cell player radius). No roll (the walls of a raycaster stay vertical; tilting needs the view drawn larger than the screen and rotated). Running (no run key: the bob follows the real speed, so backing and strafing bob too). Admin toggles (yes, one for the vertical look and one for the bob, on by default, to compare in the defense and for players prone to motion sickness). Shotgun bob size (a dip of 1.5% of the screen height at each foot strike and a sideways swing of 2% per stride, in step with the camera).
+- D-42: `shootCenterRay` (removed with `tests/shoot.test.js`, and the boss tests fire projectiles instead, since the game no longer uses it). Minimap dots for projectiles (yes, as in D-13d).
+- D-41: sources (CC0 files from OpenGameArt or Kenney, picked by the team like the sprite in D-21a, embedded as MP3 data URIs because every browser decodes MP3, Safari included for the portfolio; effects synthesized by code are possible, like the textures, but take longer and sound worse). Music (one 30 to 60 s loop for the menu and one for the arena, under 1 MB each at 96 kbps; base64 adds a third). Mute key (M, not defined by the TDD). Footsteps (optional, one sound at each foot strike of the D-40d bob, added to D-41d if the team wants them).
 
 ## H-01a: Repo layout
 
@@ -836,6 +885,8 @@ Decisions:
 ## D-31: Instant center ray shot instead of the projectile
 
 Request (2026-11-23, Juanma): the shot should be a raycast, not a visible projectile. D-13a to D-13d replaced the D-07a instant hit with a traveling projectile; this story brings the instant hit back and removes the projectile.
+
+Reverted on 2026-11-24: the projectile came back in ce1e26a and stays (D-42).
 
 Acceptance criteria:
 - `shootCenterRay(player)` in `js/enemies.js` casts the center ray DDA once and removes the nearest enemy whose body crosses the ray, closer than the first wall (or `maxRayDistance` with no wall).
@@ -2143,6 +2194,227 @@ Alejo's commit 77aff04 (2026-11-23) implemented D-16c2, D-16d, D-21c, D-27e, D-2
 - README: project map rows for `js/random.js`, `js/game-state.js`, `js/screens.js` and `js/ranking.js`, and the new admin settings.
 - Tests: 102 at the 2026-11-20 review, 262 after 77aff04, 270 now (`node --test "tests/*.test.js"`).
 
+## D-39: Enemy death and blood (split in seven)
+
+Request (2026-11-24, the professor): a death animation for the enemies, a blood stain left by each one, the stain's cell saved, and see whether particles fit. Diagnosis and open questions in the 2026-11-24 feedback section.
+
+## D-39a: Specify the death, the stain and the particles in the TDD
+
+Acceptance criteria:
+- TDD 2.3.1 and 2.3.2: a killed enemy leaves play in the frame it dies (no collision, no contact damage, no shot target, the kill counts at once) and plays its death frames where it died. The boss too, and the victory screen waits for its animation.
+- TDD 2.3.2: one blood stain per cell, stored for the session in the chunk of its cell, drawn on the floor and on the minimap.
+- TDD 2.3.2 and 3.5: the blood spray as a particle system (state per drop, gravity, an Euler step with `deltaTime`), as simulation material.
+- TDD 6.2: the death frames as a data URI strip and the stain as a texture drawn by code. TDD 6.4: the drop pool created once, outside the ticker. TDD 6.8: the stain data per chunk (16 by 16 `Uint8Array`, index `ly * 16 + lx`).
+- The open questions of D-39 are settled.
+
+Files: `docs/TDD.md`, `docs/BACKLOG.md`.
+
+## D-39b: Death frames of the Husk Mutant
+
+Acceptance criteria:
+- The archive is downloaded again from OpenGameArt and matches the sha256 in `assets/enemy-sprites/LICENSE.md`.
+- The front death frames are copied unchanged to `assets/enemy-sprites/` and recorded in `LICENSE.md` with their sha256.
+- An offline script outside the repo packs them into one strip with a shared bottom anchor, so the feet stay on the same pixel (like D-08d), embedded as a data URI in `js/enemy-sheet.js`.
+- A test reads the strip size from the PNG header of the data URI and checks the frame count and size in `js/config.js`.
+
+Files: `assets/enemy-sprites/`, `js/enemy-sheet.js`, `js/config.js`, `tests/enemy-sheet.test.js` (new).
+
+## D-39c: Death animation
+
+Acceptance criteria:
+- On the last hit the enemy leaves its cell and its chunk in the same frame, as today, so it stops blocking, hitting, taking shots and counting for placement. It moves to a list of dying enemies that is only drawn.
+- The dying enemy plays the death frames at its last position, standing on the floor, with the z-buffer and the distance bands of a live enemy, through the same sprite pool (D-21b).
+- What stays after the animation follows the settled open question.
+- The boss falls with the same frames, tinted and larger; the victory screen appears when its animation ends.
+- A new game clears the dying list.
+- Tests: the kill frees the cell at once; the frame for a given elapsed time; the dying enemy leaves the list at the end; the victory waits for the boss animation.
+
+Files: `js/enemies.js`, `js/renderer.js`, `js/main.js`, `tests/enemies.test.js`.
+
+## D-39d: Blood stain stored per cell
+
+Acceptance criteria:
+- When an enemy dies, its cell (`Math.floor` of its position) gets a stain, stored in the chunk of that cell: a 16 by 16 `Uint8Array` per chunk in a `Map` with the Cantor key (TDD 6.8), 0 for no stain and 1 to 4 for its shape.
+- `getStain(x, y)` answers any cell, negative ones included, and returns 0 for a chunk without stains without creating it.
+- The stain stays for the session: walking away and coming back finds it in the same cell. A new game or a new world clears every stain.
+- Tests: stains at negative cells and on both sides of a chunk border; one stain per cell; the same seed gives the same shape; a reset clears them.
+
+Files: `js/blood.js` (new), `js/enemies.js`, `index.html`, `tests/blood.test.js` (new).
+
+## D-39e: Blood stain on the floor and the minimap
+
+Acceptance criteria:
+- The floor casting draws the stain texture over the floor tile of a stained cell, with the fractional part of the floor point as texture coordinates, shaded by the same lights and distance bands as the floor.
+- The stain texture is drawn by code on a hidden canvas, created once (TDD 6.2 and 6.4).
+- The minimap marks every stained cell inside its window with a dark red dot.
+- The floor frame time in the admin panel stays within 10% of today's.
+- Tests: the stain texel chosen for a floor point against a hand computed value.
+
+Files: `js/renderer.js`, `js/minimap.js`, `tests/renderer.test.js`.
+
+## D-39f: Blood particle simulation
+
+Acceptance criteria:
+- Each hit throws a few drops from the enemy's chest and each death throws more. A drop has a world position (x, y and a height z), a velocity and a remaining life.
+- Every frame, gravity is added to the velocity and the velocity to the position, both times `deltaTime` (Euler step). A drop dies on reaching the floor (z 0) or when its life ends.
+- A fixed pool, created once outside the ticker; when it is full, new drops are skipped. Nothing is created inside the ticker.
+- Tests: one Euler step against a hand computed value; a drop dies on the floor; the pool never grows past its size; a new game empties it.
+
+Files: `js/particles.js` (new), `js/enemies.js`, `index.html`, `tests/particles.test.js` (new).
+
+## D-39g: Blood drops in 3D
+
+Acceptance criteria:
+- Every live drop is projected like an enemy (inverse of the matrix formed by plane and dir, Lode part 3), its height moving it above the floor line, and drawn only when it is closer than the wall depth of its column.
+- Drops use `ParticleContainer` if its v8 API, checked in the docs, fits a pool created once; otherwise small sprites from a pool, like the enemies.
+- The minimap does not show drops.
+- Tests: a drop behind a wall is not drawn; a drop straight ahead lands on the center column.
+
+Files: `js/renderer.js`, `js/main.js`, `tests/renderer.test.js`.
+
+## D-42: The flying projectile stays (split in two)
+
+Request (2026-11-24, Juanma): the flying projectile stays. It reverts the removal of D-31; the shot keeps its one second cooldown (D-35a).
+
+## D-42a: Flying projectile restored
+
+Done in ce1e26a (2026-11-24, "Restore the flying shotgun projectile"), outside the story flow, and recorded here afterwards.
+
+Decisions:
+- `js/projectiles.js` came back from before D-31: the center ray DDA gives the range once when firing, the projectile flies 20 cells per second and hits the nearest enemy whose body crosses its segment, looked up in the cells the segment touches (spatial hashing). `drawProjectiles` draws it in 3D with the z-buffer, and `resetGame` clears it.
+- `damageEnemy` (`js/enemies.js`) is now shared by the ray and the projectile, so a projectile kill counts, spawns the boss and wins the game like the instant hit did.
+- Checked on 2026-11-24: 270 of 270 tests pass, but no test covers the projectile (D-42b).
+
+## D-42b: Docs, tests and minimap for the projectile
+
+Acceptance criteria:
+- TDD 2.3.1 describes the projectile again: the range from the center ray DDA, the flight, the hit across the segment, the nearest enemy first, the walls that stop it. 2.3.4 and the README say a new game clears the projectiles.
+- `tests/projectiles.test.js` comes back from the history before D-31 and is adapted to `damageEnemy`: a direct hit, a blocked shot, a lateral miss, the nearest of two, no wall up to the max distance, negative coordinates, a projectile that never goes past the wall.
+- The minimap shows the projectiles as dots again (D-13d).
+- `shootCenterRay` and `tests/shoot.test.js` are removed, and the boss tests fire projectiles, if the open question is settled that way.
+
+Files: `docs/TDD.md`, `README.md`, `js/minimap.js`, `tests/projectiles.test.js`. The removal of `shootCenterRay` (`js/enemies.js`, `tests/shoot.test.js`, `tests/boss.test.js`) may go in a story of its own if this one grows.
+
+## D-40: Vertical look and footstep bob (split in five)
+
+Request (2026-11-24, the professor, clarified by Juanma): even though the engine is a raycaster, aim higher and lower with the mouse, walking or standing; and while moving, the left and right steps move the camera as if running. Both limited, never a free movement. Diagnosis and open questions in the 2026-11-24 feedback section.
+
+## D-40a: Specify the vertical look and the bob in the TDD
+
+Acceptance criteria:
+- TDD 2.2: the mouse also moves up and down to look up and down, within a limit.
+- TDD 3.4: the projection with Lode's `pitch` and `posZ`. The horizon sits at screenHeight / 2 + pitch; drawStart = -lineHeight / 2 + screenHeight / 2 + pitch + posZ / perpWallDist, and the same for drawEnd, so lineHeight keeps its formula (H / d). As in Lode, posZ is in pixels: the eye offset in cells times screenHeight. The section explains the y-shearing: the image slides and the walls stay vertical, which is why the look is limited, and why it does not break the raycasting (every ray stays in the 2D plane).
+- TDD 6.5: the floor casting with the moved horizon and the camera height. TDD 2.3.1: the shot height along the crosshair. TDD 2.3.3: the shotgun bobs with the steps.
+- TDD 6.6: the footstep bob moves only the camera that draws; pos, the collisions, the minimap and the shot stay where they are.
+- TDD 2.3.5: one admin toggle for the vertical look and one for the bob.
+- The difference with what was presented in class (no looking up or down) is written down, so it can be explained in the defense.
+- The open questions of D-40 are settled.
+
+Files: `docs/TDD.md`, `docs/BACKLOG.md`.
+
+## D-40b: Vertical look
+
+Acceptance criteria:
+- Moving the mouse up and down, walking or standing, changes the vertical look angle, clamped to its limit. Each frame it gives `pitch = screenHeight * tan(angle)` in pixels.
+- Everything that uses the horizon uses screenHeight / 2 + pitch: wall strips, the floor casting and the ceiling, the flat color ceiling and floor (one Graphics drawn once, taller than the screen, moved by pitch), the enemies, the projectiles, and later the stains and the drops.
+- The crosshair stays at the screen center; the shotgun, the HUD and the minimap stay where they are.
+- A new game levels the view. With the toggle off the view is exactly today's.
+- Tests: drawStart and drawEnd for a given perpWallDist and pitch against hand computed values; pitch 0 gives today's values; the angle never passes the limit; the floor row distance with pitch against a hand computed value.
+
+Files: `js/player.js`, `js/renderer.js`, `js/main.js`, `tests/renderer.test.js`.
+
+## D-40c: The projectile follows the crosshair height
+
+Acceptance criteria:
+- When firing, the projectile takes the height of the aimed line: it starts at eye height and gains pitch / screenHeight cells of height per cell it travels along dir.
+- Its range is the nearest of the wall from the center ray DDA (as today), the floor (height 0) and the ceiling (height 1).
+- It hits an enemy only when its height, where it crosses the enemy, is inside the body (0 to `enemyHeight`, or `bossHeight` for the boss).
+- It is drawn at its height, so it rises or drops on screen with the aim.
+- Tests: a level shot behaves as today; aiming down stops on the floor at a hand computed distance; a shot aimed over an enemy's head misses it and hits the one behind; a shot aimed at the body of the boss hits above the height of a regular enemy.
+
+Files: `js/projectiles.js`, `js/renderer.js`, `tests/projectiles.test.js`.
+
+## D-40d: Footstep bob
+
+Acceptance criteria:
+- While the player moves, a step phase advances with the distance actually walked (so sliding along a wall bobs less), one step per foot. The eye dips at each foot strike (camera height `posZ`) and the camera shifts sideways toward the foot in support, along plane: one stride, left then right, is one side to side cycle. Standing still, both ease back to rest.
+- The sideways shift moves only the ray origin of the drawing; pos, the collisions, the minimap and the shot keep the real position. The shift stays well inside the player radius, so the camera never enters a wall.
+- Walls, floor, ceiling, enemies and projectiles use the same camera height and shift, so the view moves as one piece. Near walls move more than far ones (posZ / perpWallDist).
+- Amplitudes and step length live in `js/config.js`. With the toggle off the view is exactly today's.
+- Tests: the phase after walking a given distance; the eye height at a foot strike against a hand computed value; the sideways shift changes sign between the left and the right step; at rest both return to zero.
+
+Files: `js/player.js`, `js/renderer.js`, `js/main.js`, `tests/player.test.js`.
+
+## D-40e: Shotgun bob
+
+Settled by Juanma (2026-11-24): the shotgun sway the professor asked for comes with the steps.
+
+Acceptance criteria:
+- The shotgun reads the step phase of D-40d: it dips at each foot strike and swings sideways toward the foot in support, one side to side cycle per stride, in step with the camera.
+- Standing still, the gun eases back to its place with `deltaTime`. The offset never passes its limits, and the bob toggle of D-40d turns it off too.
+- With the toggle off, or at rest, the gun is exactly where it is today and the barrel still crosses the crosshair (D-07c test). The fire and reload animations keep working while walking.
+- Tests: the offset at a foot strike against a hand computed value; the sideways offset changes sign between the left and the right step; back to zero when the player stops.
+
+Files: `js/weapon.js`, `js/main.js`, `tests/weapon.test.js`.
+
+## D-41: Sound and music (split in six)
+
+Request (2026-11-24, the professor): sound and music in the arena and in the UI. Diagnosis and open questions in the 2026-11-24 feedback section.
+
+## D-41a: Pick the sources and specify the audio
+
+Acceptance criteria:
+- The team picks every sound and track from free sources with a clear license (CC0 preferred, or CC-BY with credit), none taken from a commercial game, like the sprite in D-21a. Each file and its license go to `assets/sounds/` with a `LICENSE.md` (author, URL, license, download date, sha256).
+- TDD: a new 2.3 subsection for sound and music (which sounds, when, the track of each screen, volumes, mute key); 6.2 for audio as data URIs decoded with the Web Audio API without `fetch`, and the user gesture rule; 6.3 for `js/audio.js` and `js/sound-sheet.js`; 6.4 for decoding once, outside the ticker.
+- The README and the credits list the sources.
+
+Files: `docs/TDD.md`, `docs/BACKLOG.md`, `assets/sounds/`, `README.md`.
+
+## D-41b: Audio engine
+
+Acceptance criteria:
+- `js/sound-sheet.js` holds every sound as a data URI. `js/audio.js` opens one `AudioContext` on the first click or key, decodes each sound once to an `AudioBuffer` (base64 to bytes, `decodeAudioData`, no `fetch`), and offers `playSound(name)` and `playMusic(name)` with a short crossfade. Gain nodes for master, music and effects.
+- Each play creates a new `AudioBufferSourceNode`, which the Web Audio API makes single use by design. It is not a Pixi object, so TDD 6.4 still holds.
+- Audio never stops the game: if a sound fails to decode or the context cannot start, the game runs silent and logs one warning.
+- Works with a double click on `file://` and inside the portfolio iframe.
+- Tests: base64 to bytes; `playSound` before the first gesture does nothing and does not throw.
+
+Files: `js/audio.js` (new), `js/sound-sheet.js` (new), `index.html`, `tests/audio.test.js` (new).
+
+## D-41c: Volume and mute
+
+Acceptance criteria:
+- Master, music and effects volume (0 to 100) in the admin panel, saved with the other settings (D-16c1b) and restored by Reset.
+- The mute key, as settled, toggles every sound and is ignored while typing in the panel.
+- Tests: the volume ranges and defaults; mute keeps the volumes and restores them.
+
+Files: `js/settings.js`, `js/admin.js`, `js/audio.js`, `index.html`.
+
+## D-41d: Arena sounds
+
+Acceptance criteria:
+- Shot, dry fire with an empty magazine, reload, enemy hit, enemy death (with D-39c), player hit (with the red flash of D-27d), boss appears. Each one plays in the frame of its event and the fast ones (shots, hits) can overlap.
+- Tests, with a fake audio that records the names: each game event plays its sound once.
+
+Files: `js/enemies.js`, `js/weapon.js`, `js/player.js`, `tests/arena-sounds.test.js` (new).
+
+## D-41e: Music and UI sounds
+
+Acceptance criteria:
+- The menu track plays on the menu, Controls and Credits; the arena track while playing; it crossfades on every state change (D-17b). Victory and defeat play a short sting, then the menu track.
+- Button focus and click sounds on every full screen, keyboard focus included (D-34a).
+- Tests: each game state picks its track.
+
+Files: `js/screens.js`, `js/game-state.js`, `js/audio.js`, `tests/audio.test.js`.
+
+## D-41f: Enemy sounds by distance and side (optional)
+
+Acceptance criteria:
+- Enemy hit and death sounds get quieter with distance and are panned left or right with a `StereoPannerNode`. The pan is the dot product of the unit vector from the player to the enemy with plane normalized: the zombie radar of the presentation used dir to tell front from back, and plane tells right (positive) from left (negative).
+- Tests: an enemy right of the camera gives a positive pan, straight ahead 0, left a negative one; the volume falls with distance.
+
+Files: `js/audio.js`, `js/enemies.js`, `tests/audio.test.js`.
+
 ## Desirables
 
 Open questions to settle before each story:
@@ -2151,3 +2423,4 @@ Open questions to settle before each story:
 - D-06: settled in the 2026-11-20 review. The victory is killing the boss (D-14b, D-19).
 - D-08: settled in D-08a. The reload key is R.
 - D-12: split on 2026-11-22. The arrow keys and the mouse were requested (D-12a to D-12d), and strafing too, later the same day (D-12e).
+- D-39, D-40, D-41: requested by the professor on 2026-11-24, and D-42 by Juanma the same day. The diagnosis and the open questions are in the 2026-11-24 feedback section.
