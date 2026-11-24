@@ -50,11 +50,12 @@ function getActiveEnemyLists(player) {
 let gatheredChunkX = null;
 let gatheredChunkY = null;
 
-// D-25 / TDD 2.3.2: when the player enters another chunk, the enemies left
-// outside the active area reappear in free air cells of the 8 chunks around
-// the player, so the ones still alive are never lost in the infinite world.
-// Outside the active area they are not drawn, so the player never sees one
-// vanish. With no free cell left, an enemy waits where it is.
+// D-25 and D-38 / TDD 2.3.2: when the player enters another chunk, every live
+// enemy out of play moves to a room of the four door neighbors of the new
+// chunk, to the one with the fewest enemies, with the same rules as the start
+// of the game (js/world.js). The ones still alive, the boss included, stay one
+// door away in the infinite world. With no free cell left, an enemy waits
+// where it is.
 function gatherFarEnemies(player) {
   const playerChunkX = Math.floor(player.posX / chunkSize);
   const playerChunkY = Math.floor(player.posY / chunkSize);
@@ -64,37 +65,53 @@ function gatherFarEnemies(player) {
   gatheredChunkX = playerChunkX;
   gatheredChunkY = playerChunkY;
 
-  // Collected first and moved after, so no list changes while it is being walked
-  const farEnemies = [];
-  for (const enemies of enemiesByChunk.values()) {
-    for (const enemy of enemies) {
-      const distance = Math.max(
-        Math.abs(enemy.chunkX - playerChunkX),
-        Math.abs(enemy.chunkY - playerChunkY),
-      );
-      if (distance > activeChunkRadius) {
-        farEnemies.push(enemy);
-      }
-    }
+  const areas = getSpawnAreas(player);
+  let freeCells = 0;
+  for (const area of areas) {
+    freeCells += area.roomCells.length + area.corridorCells.length;
   }
-  if (farEnemies.length === 0) {
-    return;
-  }
-
-  const freeCells = getFreeAirCellsAround(playerChunkX, playerChunkY);
-  const moves = Math.min(farEnemies.length, freeCells.length);
-  for (let index = 0; index < moves; index += 1) {
-    const cell = pickRandomCell(freeCells, index);
-    moveEnemyToCell(farEnemies[index], cell.x, cell.y);
+  const outOfPlay = collectOutOfPlayEnemies(player, freeCells);
+  for (const enemy of outOfPlay) {
+    const cell = takeSpreadSpawnCell(areas);
+    moveEnemyToCell(enemy, cell.x, cell.y);
   }
 }
 
-// D-25: air cells of the 8 chunks around this chunk with no enemy in them,
-// so two enemies never share a cell (TDD 2.3.2)
-function getFreeAirCellsAround(chunkX, chunkY) {
-  const airCells = [];
-  addRingAirCells(airCells, chunkX, chunkY, enemyPlacementRadius);
-  return airCells.filter((cell) => getEnemiesAtCell(cell.x, cell.y).length === 0);
+// D-38: at most limit enemies out of play, one per free cell. Collected first
+// and moved after, so no list changes while it is being walked. Stopping at
+// the limit keeps a chunk change cheap with 100,000 enemies and full rooms.
+function collectOutOfPlayEnemies(player, limit) {
+  const outOfPlay = [];
+  if (limit === 0) {
+    return outOfPlay;
+  }
+  for (const enemies of enemiesByChunk.values()) {
+    for (const enemy of enemies) {
+      if (isEnemyOutOfPlay(enemy, player)) {
+        outOfPlay.push(enemy);
+        if (outOfPlay.length === limit) {
+          return outOfPlay;
+        }
+      }
+    }
+  }
+  return outOfPlay;
+}
+
+// D-38: an enemy is in play in the player's chunk or a door neighbor (chunk
+// distance 0 or 1 counting only straight steps), while it chases, or while
+// the player could see it. Only the hidden ones move, so nobody sees one vanish.
+function isEnemyOutOfPlay(enemy, player) {
+  if (enemy.state === "chase") {
+    return false;
+  }
+  const playerChunkX = Math.floor(player.posX / chunkSize);
+  const playerChunkY = Math.floor(player.posY / chunkSize);
+  const chunkSteps = Math.abs(enemy.chunkX - playerChunkX) + Math.abs(enemy.chunkY - playerChunkY);
+  if (chunkSteps <= 1) {
+    return false;
+  }
+  return isHiddenFromPlayer(enemy.posX, enemy.posY, player);
 }
 
 // D-25: the enemy reappears idle at the center of the new cell, listed in its
@@ -405,8 +422,9 @@ function shootCenterRay(player) {
         setGameState(gameStateVictory);
       } else {
         addKill();
-        // D-19c: the last regular enemy spawns the boss, once per game
-        if (getKillCount() >= gameSettings.enemiesPerGame) {
+        // D-19c: the last regular enemy spawns the boss. D-38: a live boss
+        // stays where it is; killing it ends the game, so it spawns once.
+        if (getKillCount() >= gameSettings.enemiesPerGame && findBoss() === null) {
           spawnBoss(player);
         }
       }
