@@ -2,7 +2,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const { loadScripts } = require("./load-scripts.js");
 
-// An all-air world so any neighbour is a valid patrol step. Math.random always
+// An all-air world so any neighbour is a valid patrol step. The world random always
 // picks the first neighbour (+X) to keep the patrol deterministic. The player
 // stays 32 cells away, past the 24 cell sight distance, so patrol tests never
 // trigger the chase state, but inside the active area of D-23 (chunk (0, 2)).
@@ -143,7 +143,7 @@ test("an enemy with no open neighbour stays idle", () => {
 const losGlobal = loadScripts();
 losGlobal("wallOn = false");
 losGlobal("getCell = function (x, y) { return (wallOn && x === 7 && y === 5) ? 1 : 0; }");
-losGlobal("Math.random = function () { return 0; }");
+losGlobal("gameRandom = function () { return 0; }");
 const losUpdateEnemies = losGlobal("updateEnemies");
 const losChunks = losGlobal("enemiesByChunk");
 const losChunkKey = losGlobal("getChunkKey");

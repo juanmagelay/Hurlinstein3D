@@ -31,7 +31,7 @@ Separamos dos niveles de ambición para que la entrega no dependa de terminar to
 
 El **alcance mínimo** es lo que nos comprometemos a entregar: recorrer en primera persona una mazmorra infinita generada proceduralmente, con colisiones contra las paredes y un minimapa, dibujado con colores planos. El capítulo 7 lo desglosa en fases y criterios de éxito.
 
-El **alcance deseable** son las extensiones que se implementan solo si el alcance mínimo cierra con tiempo de sobra: combate, enemigos con máquina de estados, un jefe que define la victoria, HUD completo, texturas e iluminación por distancia, menús con ranking y un panel de administración. El capítulo 2.3 las describe. Ninguna de ellas condiciona la entrega.
+El **alcance deseable** son las extensiones que se implementan solo si el alcance mínimo cierra con tiempo de sobra: combate, enemigos con máquina de estados, un jefe que define la victoria, HUD completo, texturas en paredes, piso y cielorraso con una estética nocturna inspirada en los edificios de la universidad, iluminación, un filtro CRT, menús con ranking y un panel de administración. El capítulo 2.3 las describe. Ninguna de ellas condiciona la entrega.
 
 # 2. Descripción del juego
 ## 2.1 Bucle de juego
@@ -69,7 +69,7 @@ Ninguno de los dos cambia el estado de la cámara, que sigue siendo un vector di
 ### 2.3.2 Enemigos y comportamiento
 La mazmorra estaría habitada por un tipo de enemigo común y un jefe, controlados por la misma **máquina de estados**. En la vista en primera persona el enemigo es un sprite: el cuadro frontal de Husk Mutant, de HorrorMovieRei, una imagen de 33 por 57 píxeles con licencia CC0 embebida como data URI (6.2). Se proyecta con la inversa de la matriz que forman plane y dir, como en la parte 3 de Lode, elige en cada franja su columna de textura, como las paredes, y solo se dibuja en las franjas donde está más cerca que la pared. Los enemigos cercanos tapan a los lejanos, y su brillo baja con la distancia en las mismas bandas que las paredes. En el modo de colores planos vuelve a ser un rectángulo ámbar.
 
-La partida tiene un total de enemigos comunes, 20 por defecto, que se ubican todos juntos al empezar en los cuatro chunks que comparten una puerta con el del jugador (arriba, abajo, izquierda y derecha), repartidos en partes iguales: con 20 quedan cinco por chunk. Cada enemigo ocupa una celda de aire distinta elegida al azar, primero entre las de las salas y, cuando las salas se llenan, entre las de los corredores. Ningún enemigo aparece donde el jugador podría verlo: la celda queda a más de 10 celdas de la del jugador, fuera de la ventana del minimapa (6.7), y sin línea de visión hacia él, comprobada con el mismo DDA que usa el enemigo para detectarlo. Así ninguno nace encima del jugador. El chunk del jugador queda vacío, y la partida arranca sin contacto. Si el total no entra en esos cuatro chunks, el resto ocupa los chunks de alrededor de a un anillo por vez, con la misma regla de visibilidad. Los chunks que se generan después, al explorar, no suman enemigos nuevos. Cada enemigo mide 0,6 celdas de alto y está apoyado en el piso: el ojo del jugador está a media altura de la pared, así que a una profundidad d la línea del piso queda alturaPantalla / (2d) por debajo del horizonte, y el enemigo sube desde ahí. El sprite toma el ancho que dan sus proporciones, unas 0,35 celdas, y el rectángulo del modo plano mide 0,3. En el minimapa los enemigos son de color ámbar. En el mapa ocupa un cuadrado de 0,3 celdas de lado: con esa huella se desliza por eje contra las paredes, igual que el jugador, y su cuerpo nunca las atraviesa. Al perseguir, el enemigo se acerca hasta quedar de frente al jugador, a 0,5 celdas de su centro, y ahí se detiene: los dos cuerpos suman 0,35 celdas, así que entre ellos siempre queda espacio. El paso de cada cuadro se recorta a lo que falta para esa distancia, y desde ahí ya está en contacto, que llega hasta 0,6 celdas (2.3.1). Su registro por celda se conserva durante la sesión. En cada cuadro solo se actualizan y se dibujan los enemigos del área activa, los 5 por 5 chunks alrededor del chunk del jugador, que cubren la distancia máxima del rayo. Cada enemigo figura en la lista del chunk donde está parado y cambia de lista al cruzar una frontera, así el área activa se arma con a lo sumo 25 consultas al Map y su costo no crece con lo explorado, igual que el del render (3.6). Cuando el jugador entra a otro chunk, los enemigos vivos que quedaron fuera de juego reaparecen en reposo en los cuatro chunks con puerta al nuevo, con las mismas reglas del comienzo, cada uno en el chunk que tenga menos enemigos. Un enemigo queda fuera de juego cuando no está en el chunk del jugador ni en esos cuatro, no lo persigue y el jugador no podría verlo. Así los que siguen vivos, el jefe incluido, quedan siempre a una puerta de distancia en el mapa infinito, y el jugador nunca ve desaparecer a uno. Si no hay celdas libres, esperan quietos donde estaban.
+La partida tiene un total de enemigos comunes, 20 por defecto, que se ubican todos juntos al empezar en los cuatro chunks que comparten una puerta con el del jugador (arriba, abajo, izquierda y derecha), repartidos en partes iguales: con 20 quedan cinco por chunk. Cada enemigo ocupa una celda de aire distinta elegida al azar, primero entre las de las salas y, cuando las salas se llenan, entre las de los corredores. Ningún enemigo aparece donde el jugador podría verlo: la celda queda a más de 10 celdas de la del jugador, fuera de la ventana del minimapa (6.7), y sin línea de visión hacia él, comprobada con el mismo DDA que usa el enemigo para detectarlo. Así ninguno nace encima del jugador. El chunk del jugador queda vacío, y la partida arranca sin contacto. Si el total no entra en esos cuatro chunks, el resto ocupa los chunks de alrededor de a un anillo por vez, con la misma regla de visibilidad. Los chunks que se generan después, al explorar, no suman enemigos nuevos. Cada enemigo mide 0,6 celdas de alto y está apoyado en el piso: el ojo del jugador está a media altura de la pared, así que a una profundidad d la línea del piso queda alturaPantalla / (2d) por debajo del horizonte, y el enemigo sube desde ahí. El sprite toma el ancho que dan sus proporciones, unas 0,35 celdas, y el rectángulo del modo plano mide 0,3. En el minimapa los enemigos son de color ámbar. En el mapa ocupa un cuadrado de 0,3 celdas de lado: con esa huella se desliza por eje contra las paredes, igual que el jugador, y su cuerpo nunca las atraviesa. Al perseguir, el enemigo se acerca hasta quedar de frente al jugador, a 0,5 celdas de su centro, y ahí se detiene: los dos cuerpos suman 0,35 celdas, así que entre ellos siempre queda espacio. El paso de cada cuadro se recorta a lo que falta para esa distancia, y desde ahí ya está en contacto, que llega hasta 0,6 celdas (2.3.1). Dos enemigos tampoco se superponen: el paso de un enemigo en cada eje se rechaza si dejaría su cuerpo encima del de otro, y solo se revisan los enemigos registrados en las celdas vecinas. Así varios perseguidores se reparten alrededor del jugador. Su registro por celda se conserva durante la sesión. En cada cuadro solo se actualizan y se dibujan los enemigos del área activa, los 5 por 5 chunks alrededor del chunk del jugador, que cubren la distancia máxima del rayo. Cada enemigo figura en la lista del chunk donde está parado y cambia de lista al cruzar una frontera, así el área activa se arma con a lo sumo 25 consultas al Map y su costo no crece con lo explorado, igual que el del render (3.6). Cuando el jugador entra a otro chunk, los enemigos vivos que quedaron fuera de juego reaparecen en reposo en los cuatro chunks con puerta al nuevo, con las mismas reglas del comienzo, cada uno en el chunk que tenga menos enemigos. Un enemigo queda fuera de juego cuando no está en el chunk del jugador ni en esos cuatro, no lo persigue y el jugador no podría verlo. Así los que siguen vivos, el jefe incluido, quedan siempre a una puerta de distancia en el mapa infinito, y el jugador nunca ve desaparecer a uno. Si no hay celdas libres, esperan quietos donde estaban.
 
 Los estados previstos son:
 
@@ -79,11 +79,9 @@ Los estados previstos son:
 
 - **Persecución**: al detectar al jugador mediante una comprobación de línea de visión, que es un raycast contra el mismo mapa, el enemigo abandona la patrulla, persigue al jugador y le inflige daño por contacto.
 
-Cuando el jugador elimina al último enemigo común de ese total, aparece un único **jefe**, con las mismas reglas que los enemigos comunes: en una sala de uno de los cuatro chunks con puerta al del jugador, fuera de su vista. Usa la misma máquina de estados y las mismas velocidades que un enemigo común, mide una vez y media su tamaño (0,45 por 0,9 celdas), es de color carmesí, tiene cinco puntos de vida, así que necesita cinco impactos para morir, y cada uno de sus golpes quita dos puntos, el doble que los de un enemigo común. Matar al jefe gana la partida.
+Cuando el jugador elimina al último enemigo común de ese total, aparece un único **jefe**, con las mismas reglas que los enemigos comunes: en una sala de uno de los cuatro chunks con puerta al del jugador, fuera de su vista. Usa la misma máquina de estados y las mismas velocidades que un enemigo común, mide una vez y media su tamaño (0,45 por 0,9 celdas), es de color carmesí (en la vista en primera persona, el mismo sprite del enemigo teñido de ese color y dibujado a su tamaño), tiene cinco puntos de vida, así que necesita cinco impactos para morir, y cada uno de sus golpes quita dos puntos, el doble que los de un enemigo común. Matar al jefe gana la partida.
 
-Vale la pena notar que la línea de visión del enemigo y el disparo del jugador reutilizan el mismo recorrido DDA del capítulo 3. El render, la percepción de la IA y el punto donde el disparo choca contra la pared salen del mismo código con distinto propósito.
-
-La iluminación también puede resolverse con raycasting.
+Vale la pena notar que la línea de visión del enemigo y el disparo del jugador reutilizan el mismo recorrido DDA del capítulo 3. El render, la percepción de la IA y el punto donde el disparo choca contra la pared salen del mismo código con distinto propósito. La iluminación también lo reutiliza: el rayo de sombra de cada luz es otro recorrido DDA (2.3.6).
 
 ### 2.3.3 Elementos en pantalla
 La vista en primera persona se acompaña de un HUD minimalista con seis elementos superpuestos:
@@ -116,7 +114,7 @@ Los menús y las pantallas son elementos HTML superpuestos al canvas, dentro del
 ### 2.3.5 Panel de administración
 El juego ocupa toda la ventana en cualquier pantalla (6.5). Sobre él hay un panel de administración en HTML para el equipo, que sirve para configurar cómo se juega y para mostrar el motor en la defensa. Arranca oculto. Al acercar el mouse al borde superior baja un zócalo centrado con el botón Open admin panel, que se vuelve a esconder cuando el mouse se aleja. Al hacer clic, el panel baja a todo el ancho y queda fijo hasta cerrarlo con la X de arriba a la derecha, con el botón Close admin panel de abajo o con la tecla P, que también lo abre. El panel se superpone al juego sin achicarlo ni pausarlo, así los valores cambian a la vista mientras se juega. Abrirlo libera el mouse capturado (2.2). Sus íconos son de la familia Lucide, embebidos como SVG en index.html.
 
-El panel muestra datos en vivo, actualizados unas cuatro veces por segundo: cuadros por segundo, posición del jugador, chunk actual, vida, munición, enemigos vivos sobre el total de la partida, enemigos en el área activa (2.3.2) y cantidad de chunks cargados. También tiene configuraciones editables, cada una con su rango indicado junto al campo. Se aplican en el momento y se guardan en localStorage para la próxima vez; el botón Reset vuelve a los valores por defecto, y si el navegador bloquea localStorage se usan esos mismos valores. Las configuraciones son:
+El panel muestra datos en vivo, actualizados unas cuatro veces por segundo: cuadros por segundo, posición del jugador, chunk actual, vida, munición, enemigos vivos sobre el total de la partida, enemigos en el área activa (2.3.2), cantidad de chunks cargados y semilla del mundo (4.4). También tiene configuraciones editables, cada una con su rango indicado junto al campo. Se aplican en el momento y se guardan en localStorage para la próxima vez; el botón Reset vuelve a los valores por defecto, y si el navegador bloquea localStorage se usan esos mismos valores. Las configuraciones son:
 
 - **Partida**: el total de enemigos comunes, entre 1 y 100.000, 20 por defecto, que al cambiarse reemplaza a los enemigos vivos por el total nuevo alrededor del jugador y que con un número enorme sirve para medir memoria y rendimiento; el área activa (2.3.2), que se puede apagar para comparar los cuadros por segundo con la misma cantidad de enemigos; y los puntos de vida del jugador (10), del enemigo común (1) y del jefe (5).
 
@@ -126,11 +124,26 @@ El panel muestra datos en vivo, actualizados unas cuatro veces por segundo: cuad
 
 - **Raycasting**: el ancho de franja, de 1, 2, 4 u 8 píxeles, que cambia la cantidad de rayos por cuadro (6.5); el ojo de pez, que dibuja las paredes con la distancia euclídea en lugar de distPerp para mostrar la curva que describe 3.4; y los rayos sobre el minimapa, uno de cada ocho, que muestran hasta dónde llegan los rayos del DDA en ese cuadro.
 
-- **Generación procedural**: las fronteras de los chunks dibujadas sobre el minimapa.
+- **Generación procedural**: un campo para la semilla y el botón New world, que arranca una partida nueva en el mundo de esa semilla, o de una al azar si el campo queda vacío (4.4); al terminar, el campo muestra la semilla en uso, para poder compartirla. También las fronteras de los chunks dibujadas sobre el minimapa.
 
-- **Render**: texturas, iluminación y modo de colores planos.
+- **Render**: las texturas de paredes, piso y cielorraso, la iluminación, el modo de colores planos y el filtro CRT (2.3.6). Apagarlos de a uno sirve para mostrar cada técnica por separado en la defensa.
 
-Suma dos acciones: recargar la munición y hacer aparecer al jefe. Si el jefe ya está vivo, el botón lo trae a una sala de los cuatro chunks con puerta al del jugador, con las mismas reglas de aparición, así nunca hay dos. Mientras se escribe en un campo del panel, las teclas del juego quedan sin efecto.
+Suma dos acciones más: recargar la munición y hacer aparecer al jefe. Si el jefe ya está vivo, el botón lo trae a una sala de los cuatro chunks con puerta al del jugador, con las mismas reglas de aparición, así nunca hay dos. La caja Partida, la semilla y New world funcionan solo durante la partida: en el menú y en las pantallas de victoria y derrota quedan desactivados. Mientras se escribe en un campo del panel, las teclas del juego quedan sin efecto.
+
+### 2.3.6 Dirección de arte: UNAHUR de noche
+La mazmorra toma como referencia los edificios de la Universidad Nacional de Hurlingham, imaginados de noche. Todas las texturas se dibujan por código en canvas ocultos (6.2): las fotos de los edificios sirvieron solo de referencia y ninguna entra al proyecto.
+
+- **Paredes**: tres texturas. Revoque blanco con una franja verde y celeste cerca del piso, una banda de ventanas cubierta por celosías negras horizontales y paños vidriados altos entre marcos. Cada celda de pared elige la suya con un número pseudoaleatorio calculado a partir de sus coordenadas, así la misma pared se ve siempre igual, también en coordenadas negativas. El color del chunk y el sombreado las tiñen.
+
+- **Piso y cielorraso**: baldosas claras con juntas oscuras abajo y paneles blancos en grilla arriba, alineados a la grilla del mundo, así se deslizan bajo el jugador cuando camina y giran con la cámara. Se dibujan con floor casting (6.5).
+
+- **Luz**: la luz ambiente es baja y cada sala tiene una luz en su centro. Cada luz ilumina las paredes que la miran, con una intensidad que baja con la distancia, y un rayo de sombra, que es el mismo DDA del capítulo 3, decide si otra pared la tapa. También ilumina el piso y el cielorraso a su alrededor, con la misma caída y sin rayo de sombra, que costaría un rayo por píxel. En el cielorraso, cada luz se ve como una luminaria fluorescente, un panel claro sobre su celda. Una de cada cinco luminarias parpadea: cada cuatro segundos se atenúa dos veces, y con ella su luz sobre las paredes. La elección depende de la posición de la luminaria, así la misma parpadea siempre.
+
+- **Distancia**: los enemigos se oscurecen con la distancia en cuatro bandas, y con la iluminación apagada también las paredes, el piso y el cielorraso, hasta quedar casi negros cerca del tope de distancia del rayo. Más allá del tope se ve el color de fondo, un azul casi negro.
+
+- **Filtro CRT**: sobre la vista en primera persona va un filtro de posprocesado que imita un monitor de tubo, con líneas de barrido, una curvatura leve, viñeta y un poco de ruido que se mueven con el tiempo. El minimapa, el HUD y las pantallas HTML quedan fuera del filtro y se leen nítidos. Es el CRTFilter de la biblioteca pixi-filters (6.2).
+
+Cada parte se puede apagar desde el panel (2.3.5). Con todo apagado, la vista vuelve a los colores planos del alcance mínimo (1.3).
 
 # 3. Algoritmo 1: raycasting sobre grilla con DDA
 ## 3.1 Qué resuelve
@@ -212,11 +225,15 @@ Las puertas están en la misma posición en todos los chunks, así que la puerta
 Lo importante del argumento es que **la conectividad sale de la construcción**: el generador arma cada chunk sin mirar a sus vecinos y sin recorrer el mapa después para verificar que no quedó una zona aislada. No hay ninguna pasada de validación ni ningún caso en el que haya que descartar un chunk y volver a sortearlo.
 
 ## 4.4 Por qué el mapa se mantiene estable durante la partida
-Volver a una zona ya recorrida muestra exactamente el mismo mapa, y eso no depende del generador sino del almacenamiento: cada chunk se genera **una sola vez** y queda guardado en el Map. En la segunda consulta ya no se genera nada, se lee lo que se escribió antes.
+Volver a una zona ya recorrida muestra exactamente el mismo mapa. Lo garantizan dos cosas: cada chunk se genera **una sola vez** y queda guardado en el Map, y el azar con el que se genera sale de una **semilla**, así que generarlo de nuevo daría las mismas celdas. En la segunda consulta ya no se genera nada, se lee lo que se escribió antes.
 
 La memoria alcanza de sobra. Cada chunk ocupa 256 bytes, un Uint8Array de 16 por 16, y con el costo de la entrada en el Map quedan unos 350 bytes por chunk. Diez mil chunks entran en pocos megabytes, y diez mil chunks son un área de 100 por 100 chunks, es decir 1.600 por 1.600 celdas: mucho más de lo que un jugador recorre caminando en una sesión.
 
-Como los chunks nunca se descartan, el generador usa Math.random directamente. La consecuencia es que cada partida arranca con una mazmorra distinta, que es el comportamiento que buscamos.
+Cada mundo tiene una semilla, un entero de 32 bits elegido al azar al empezar la partida o escrito en el panel de administración (2.3.5). Un generador pseudoaleatorio chico, mulberry32, convierte una semilla en una secuencia de números entre 0 y 1, siempre la misma para la misma semilla, y el generador de chunks la usa en lugar de Math.random. Cada número sale de unas pocas operaciones con enteros.
+
+Los chunks se generan en el orden en que el jugador los explora. Con una sola secuencia para todo el mundo, el chunk (1, 0) saldría distinto según el jugador fuera primero al este o al oeste, porque cada chunk generado antes consume números de la secuencia. Por eso cada chunk arranca su propia secuencia, con una semilla que mezcla la semilla del mundo con la clave de Cantor del chunk (6.8). El resultado: la misma semilla da el mismo mundo en cualquier orden de exploración, y dos computadoras con la misma semilla ven la misma mazmorra, como pasa en Minecraft. La ubicación inicial de los enemigos y sus patrullas usan otra secuencia, creada con la semilla del mundo, así una partida con la misma semilla también arranca con los enemigos en las mismas celdas.
+
+El Map sigue guardando todos los chunks, ahora como caché: pesan muy poco y leer uno es más barato que tallarlo otra vez. La semilla ordena la generación y permite que los tests fijen un mundo y esperen un resultado exacto. Cada partida nueva arranca con otra semilla, y por lo tanto con otra mazmorra, salvo que el equipo escriba una en el panel.
 
 ## 4.5 Relación con la Unidad 1
 De la unidad tomamos el manejo del mundo por chunks guardados en una **tabla hash con clave de coordenadas**, que en JavaScript es un Map cuya clave es un número único calculado a partir de cx y cy. La propiedad que nos interesa es que la memoria crece con lo explorado y queda independiente del tamaño del mundo, que es justamente lo que hace posible un mundo sin bordes.
@@ -235,7 +252,7 @@ El módulo world la resuelve así: calcula el chunk con cx = Math.floor(x / 16) 
 Esa separación es la que hace viable el proyecto en el tiempo que tenemos: el motor se desarrolla contra un mapa escrito a mano detrás de la misma getCell, y el generador se enchufa después sin tocar una línea del renderer.
 
 ## 5.2 Invariantes del sistema
-Para que los dos algoritmos convivan, el generador y el motor tienen que respetar cinco invariantes.
+Para que los dos algoritmos convivan, el generador y el motor tienen que respetar seis invariantes.
 
 | **Invariante**                             | **Por qué hace falta**                                                                                                                                                                                                                                                           |
 |--------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -244,13 +261,14 @@ Para que los dos algoritmos convivan, el generador y el motor tienen que respeta
 | getCell responde cualquier coordenada      | El DDA, las colisiones y el minimapa preguntan en cualquier dirección y sin aviso previo. Si el chunk todavía no existe, se genera en ese momento.                                                                                                                               |
 | Bordes del chunk macizos salvo las puertas | Garantiza que las puertas de dos chunks vecinos siempre queden pegadas y que ningún corredor abra un hueco imprevisto en la frontera.                                                                                                                                            |
 | Spawn en aire                              | El jugador arranca en el centro de la sala del chunk (0, 0), que siempre es aire. Si arrancara dentro de una pared, la distancia perpendicular tendería a cero y la altura de la franja se dispararía.                                                                           |
+| Misma semilla, mismo mundo                 | Un chunk depende solo de la semilla del mundo y de sus coordenadas, nunca del orden de exploración (4.4). Así un chunk generado de nuevo sale idéntico, dos computadoras con la misma semilla ven la misma mazmorra y los tests pueden fijar una semilla y esperar un mapa exacto. |
 
 ## 5.3 La restricción de escala
 En la dirección contraria, el motor le impone una restricción al generador: la escala. Una celda es una unidad de mundo y mide lo mismo de ancho que de alto, así que un pasillo de una celda se ve angosto y todas las paredes tienen la misma altura. El generador tiene que diseñar dentro de esa restricción: no puede pedir corredores más anchos en metros sin cambiar el tamaño del chunk, ni paredes de distinta altura sin cambiar el proyector.
 
 # 6. Arquitectura técnica
 ## 6.1 Decisión: JavaScript clásico, sin build ni servidor
-El proyecto es una carpeta que se abre con doble clic en index.html. PixiJS v8 es la única dependencia y va como un solo archivo dentro del proyecto: sin npm, sin bundler y sin servidor de desarrollo.
+El proyecto es una carpeta que se abre con doble clic en index.html. PixiJS v8 y su biblioteca oficial de filtros, pixi-filters, son las únicas dependencias, y cada una va como un solo archivo dentro del proyecto: sin npm, sin bundler y sin servidor de desarrollo.
 
 PixiJS se usa desde el objeto global PIXI que define pixi.min.js, el bundle de navegador de la versión 8, de unos 830 KB. Lo copiamos dentro del proyecto para que el juego funcione también sin internet. index.html carga cada archivo con un \<script\> clásico, en orden de dependencias y con main.js al final.
 
@@ -263,12 +281,17 @@ Abrir la página desde el disco impone dos reglas que condicionan toda la arquit
 
 - **Sin recursos externos.** El navegador tampoco deja pedir archivos con fetch ni subir imágenes del disco a WebGL, por eso Assets.load falla en file://. El alcance mínimo dibuja solo colores planos y no carga ningún archivo externo. Si llegamos a las texturas, las generamos por código en un elemento canvas que nunca se muestra, así no hay ningún archivo que cargar. Por ejemplo, un cuadrado blanco que después se estira y se entinta, fragmentos de humo con ruido Perlin o un piso con ruido Worley. Una imagen hecha a mano puede ir embebida como data URI.
 
+- **Bibliotecas copiadas y cargadas en orden.** pixi-filters 6.1.5, con licencia MIT, trae el filtro CRT (2.3.6). Va copiada sin cambios en lib/pixi-filters.js, con su versión y su huella SHA-256 anotadas en el README, y se carga con un script clásico justo después de pixi.min.js, porque agrega sus filtros al global PIXI.filters.
+
+La única petición de red del juego es la del ranking a la API externa (2.3.4). La restricción de file:// alcanza a los archivos del disco: un fetch a un servidor https funciona aunque la página se abra con doble clic, y si la API no responde el juego sigue sin ranking.
+
 ## 6.3 Estructura de archivos
 ```
 proyecto/
   index.html
   lib/pixi.min.js
   js/config.js
+  js/random.js
   js/mapgen.js
   js/world.js
   js/player.js
@@ -281,15 +304,16 @@ proyecto/
 | **Archivo** | **Responsabilidad**                                                                    | **Cuándo corre**                                   |
 |-------------|----------------------------------------------------------------------------------------|----------------------------------------------------|
 | config      | Constantes: tamaño de canvas, chunk, ancho de franja, tope de distancia, velocidades y colores | Se lee siempre                                     |
+| random      | Generador pseudoaleatorio con semilla (mulberry32) y semilla de cada chunk (4.4)       | Cuando se genera un chunk                          |
 | mapgen      | Genera un chunk: sala y corredores hacia las cuatro puertas                            | Cuando getCell pide un chunk que todavía no existe |
 | world       | Map de chunks y getCell(x, y)                                                          | En cada consulta                                   |
 | player      | pos, dir, plane, lectura de teclado y mouse, giro, movimiento y colisiones             | Cada cuadro                                        |
 | raycaster   | DDA por columna; devuelve distPerp y side                                              | Cada cuadro                                        |
-| renderer    | Dibuja techo, piso y franjas de pared                                                  | Techo y piso una vez; franjas cada cuadro          |
+| renderer    | Dibuja techo, piso y franjas de pared                                                  | Techo y piso planos una vez; con texturas, techo y piso cada cuadro; franjas cada cuadro |
 | minimap     | Vista cenital de las celdas alrededor del jugador, con su posición y dirección         | Cada cuadro                                        |
 | main        | Crea la aplicación, arma la escena y registra el ticker                                | Una vez al cargar                                  |
 
-El alcance deseable suma estos archivos, también como scripts clásicos cargados en orden antes de main.js:
+El alcance deseable suma lib/pixi-filters.js, cargado justo después de pixi.min.js (6.2), y estos archivos, también como scripts clásicos cargados en orden antes de main.js:
 
 | **Archivo**  | **Responsabilidad**                                                                  |
 |--------------|--------------------------------------------------------------------------------------|
@@ -300,19 +324,23 @@ El alcance deseable suma estos archivos, también como scripts clásicos cargado
 | weapon       | Escopeta apuntada a la mira, animación de disparo y de recarga                        |
 | enemy-sheet  | Sprite del enemigo embebido como data URI                                             |
 | game-state   | Estados de la partida, contador de enemigos eliminados y reinicio                    |
-| ranking      | Puntaje y ranking guardado en localStorage                                           |
+| ranking      | Puntaje, envío de la partida y lectura del ranking en la API externa (2.3.4)         |
 | screens      | Menú principal, controles, créditos y pantallas de victoria y derrota                |
 | admin        | Panel de administración con datos en vivo y controles                                |
 
 ## 6.4 Ciclo de ejecución y uso del ticker
 La regla del motor es simple: **lo que se crea o se carga una sola vez va fuera del ticker, y dentro del ticker va solo lo que cambia en cada cuadro.**
 
-Fuera del ticker van app.init, que es asíncrono y por eso main.js envuelve el arranque en una función async; los tres objetos Graphics (techo y piso, paredes, minimapa); los listeners de teclado y de mouse, que guardan qué teclas están apretadas, suman el movimiento horizontal del mouse y anotan los clics; y la ubicación del spawn. También el listener del tamaño de la ventana: cuando el ancho del canvas cambia no se crea ningún objeto, el canvas toma el ancho nuevo, plane se recalcula (3.2) y se vuelven a dibujar techo y piso y la mira. Las franjas texturizadas y el buffer de profundidad se crean una sola vez para el ancho máximo con franjas de 1 píxel, así ni el tamaño de la ventana ni el ancho de franja crean objetos, y las franjas que sobran quedan ocultas.
+Fuera del ticker van app.init, que es asíncrono y por eso main.js envuelve el arranque en una función async; los tres objetos Graphics (techo y piso, paredes, minimapa); los listeners de teclado y de mouse, que guardan qué teclas están apretadas, suman el movimiento horizontal del mouse y anotan los clics; y la ubicación del spawn. También el listener del tamaño de la ventana: cuando el ancho del canvas cambia no se crea ningún objeto, el canvas toma el ancho nuevo, plane se recalcula (3.2) y se vuelven a dibujar techo y piso y la mira. Las franjas texturizadas, el buffer de profundidad y el canvas oculto del piso y el cielorraso, con su textura y su sprite, se crean una sola vez para el ancho máximo con franjas de 1 píxel, así ni el tamaño de la ventana ni el ancho de franja crean objetos, y las franjas que sobran quedan ocultas. El filtro CRT también se crea una sola vez.
 
-Dentro del ticker van la lectura de teclas y del movimiento del mouse sumado desde el cuadro anterior, el giro y el movimiento con colisiones, el DDA por columna y el redibujo de paredes y minimapa. Las velocidades se multiplican por ticker.deltaTime, que vale cerca de 1 a 60 cuadros por segundo, para que el movimiento sea igual con cualquier tasa de cuadros. El giro con el mouse queda fuera de esa regla, porque el movimiento del mouse en un cuadro ya es una distancia (2.2).
+Dentro del ticker van la lectura de teclas y del movimiento del mouse sumado desde el cuadro anterior, el giro y el movimiento con colisiones, el DDA por columna, los píxeles del piso y el cielorraso, el redibujo de paredes y minimapa y el tiempo del filtro CRT, que mueve sus líneas y su ruido. Las velocidades se multiplican por ticker.deltaTime, que vale cerca de 1 a 60 cuadros por segundo, para que el movimiento sea igual con cualquier tasa de cuadros. El giro con el mouse queda fuera de esa regla, porque el movimiento del mouse en un cuadro ya es una distancia (2.2).
 
 ## 6.5 Render
-El techo y el piso son dos rectángulos en un Graphics que se dibuja una sola vez. Las paredes van en otro Graphics que arranca cada cuadro con clear() y dibuja un rect() por columna. Las columnas del mismo color se acumulan y se pintan con un solo fill(), así cada cuadro hace dos llamadas de relleno, una por cara de pared, más una para las columnas sin impacto cuando las hay.
+En el modo de colores planos, el techo y el piso son dos rectángulos en un Graphics que se dibuja una sola vez. Las paredes van en otro Graphics que arranca cada cuadro con clear() y dibuja un rect() por columna. Las columnas del mismo color se acumulan y se pintan con un solo fill(), así cada cuadro hace dos llamadas de relleno, una por cara de pared, más una para las columnas sin impacto cuando las hay.
+
+Con texturas, cada franja de pared es un sprite que muestra una columna de su textura, y el techo y el piso se dibujan en cada cuadro con el **floor casting** de Lode. El ojo está a media altura de pared, así que un punto del piso que se ve en la fila y de la pantalla está a una distancia rowDistance = (alturaPantalla / 2) / \|y - alturaPantalla / 2\| a lo largo de dir, por los mismos triángulos semejantes de 3.4; el cielorraso es su reflejo. Todos los puntos de una fila están a esa distancia y caen sobre una recta, desde el rayo del borde izquierdo (cameraX -1) hasta el del borde derecho (cameraX +1): el primero sale de pos + rowDistance \* rayDir y cada uno de los siguientes suma un paso constante. Cada punto toma su color según dónde cae dentro de su celda, junta o baldosa, y se sombrea como las paredes: con la iluminación encendida, por la luz de las salas (2.3.6); con la iluminación apagada, por las bandas de distancia. Las filas más lejanas que el tope de distancia del rayo se pintan del color de fondo, como las columnas sin impacto.
+
+El floor casting se muestrea en cuadrados del ancho de franja. Cada muestra es un píxel de un canvas oculto, que se estira para cubrir la pantalla, así la muestra i queda justo debajo de la franja i. Su costo es proporcional a la cantidad de muestras y queda independiente del tamaño del mundo, igual que el del DDA (3.6): con franjas de 2 píxeles en 16:9 son 640 por 360, unas 230.000 por cuadro, y el ancho de franja las baja o las sube igual que a los rayos.
 
 El canvas del proyecto mide **720 píxeles de alto**, y su ancho sigue la forma de la ventana: 720 por la proporción de la ventana, entre 960 (4:3) y 1680 (21:9), redondeado a un múltiplo de 8 píxeles, el ancho de franja más grande, así cualquier ancho de franja entra una cantidad entera de veces. En una pantalla 16:9 mide 1280 por 720. Con CSS se escala para llenar la ventana sin deformar ni recortar; fuera de ese rango de proporciones quedan bandas del color de la página. El alto fijo mantiene el HUD y la fórmula de 3.4 iguales en cualquier pantalla, y evita renderizar a la resolución nativa de una pantalla de alta densidad, que duplicaría los rayos. El ancho de franja se elige en el panel (2.3.5) y es la palanca principal de rendimiento: con franjas de 2 píxeles, el valor por defecto, se lanzan entre 480 y 840 rayos por cuadro, 640 en 16:9; con 1 píxel, el doble, y con 8, la cuarta parte.
 
@@ -355,7 +383,7 @@ Las fases están ordenadas para que siempre haya algo jugable y para que un retr
 | Pantalla en blanco al abrir           | La consola muestra un error de CORS                                                                  | Scripts clásicos sin type="module", sin fetch ni Assets.load                                                                                      |
 | Jugador encerrado                     | Una zona no tiene salida                                                                             | Puertas fijas en todos los chunks, corredores a las cuatro puertas y spawn en el centro de una sala                                               |
 | Ojo de pez                            | Las paredes se curvan hacia los bordes de la pantalla                                                | Usar la distancia perpendicular al plano de cámara, no la euclídea                                                                                |
-| Caída de rendimiento                  | Los FPS bajan al agrandar el canvas                                                                  | Ancho de franja configurable, franjas agrupadas por color en un fill(), objetos Pixi creados fuera del ticker, clave numérica en el Map de chunks |
+| Caída de rendimiento                  | Los FPS bajan al agrandar el canvas                                                                  | Ancho de franja configurable, que también fija la resolución del piso y el cielorraso, franjas agrupadas por color en un fill(), objetos Pixi creados fuera del ticker, clave numérica en el Map de chunks |
 | Alcance inflado                       | Llegar a la entrega con dos sistemas a medias                                                        | Cerrar cada fase antes de empezar la siguiente y tratar el capítulo 2.3 como opcional                                                             |
 
 ## 7.3 Criterios de éxito
@@ -371,22 +399,9 @@ La entrega se considera cumplida si:
 
 # 8. Referencias
 
-# Anexo de decisiones, historias D-28 a D-30
-
-## Semilla del mundo (D-30)
-
-El mundo elige una semilla de 32 bits al iniciar. `createRandom(seed)` genera una secuencia determinística. Cada chunk inicializa su propio generador con una semilla derivada de la semilla del mundo y de su clave de Cantor; así, recorrer los chunks en distinto orden no cambia el mapa. La semilla organiza también las decisiones aleatorias de enemigos. Los chunks permanecen en el `Map` como caché de la sesión.
-
-## Dirección de arte nocturna (D-28)
-
-La extensión visual toma como referencia los edificios de UNAHUR de noche: revoque blanco frío, bandas de ventanas con celosías, paños vidriados con marcos oscuros, acentos verdes y celestes, piso de baldosas claras y cielorraso con luminarias fluorescentes. Las texturas se generan por código, no se incorporan fotografías.
-
-## Posprocesado CRT (D-29)
-
-El filtro CRT usa `pixi-filters` 6.1.5, bundle de navegador bajo licencia MIT, copiado en `lib/pixi-filters.js`. Su SHA-256 es `3bb1830fe730687c9aa24b331b51f8f2263023ac7c91885e50cf9f339cff36ef`. Se carga como script clásico después de PixiJS y extiende el global `PIXI.filters`; el control queda disponible en Render.
-
-El piso y el cielorraso texturados usan floor casting de Lode: por fila se calcula `rowDistance = posZ / abs(y - screenHeight / 2)`, con `posZ = screenHeight / 2`, y el punto del mundo interpola los rayos del plano de cámara. El canvas y su textura persisten; cada cuadro actualiza sus píxeles y la textura Pixi sin crear objetos dentro del ticker. Las luminarias se dibujan como paneles claros en el cielorraso en la posición de cada luz de sala.
 *Lode Vandevenne, Lode's Computer Graphics Tutorial: Raycasting*. Referencia conceptual del motor. [<u>lodev.org/cgtutor/raycasting.html</u>](http://lodev.org/cgtutor/raycasting.html)
+
+*Lode Vandevenne, Lode's Computer Graphics Tutorial: Raycasting II, Floor and Ceiling*. Floor casting por filas para el piso y el cielorraso texturados. [<u>lodev.org/cgtutor/raycasting2.html</u>](http://lodev.org/cgtutor/raycasting2.html)
 
 *javidx9, Super Fast Ray Casting in Tiled Worlds using DDA*. Explicación en video del recorrido DDA. [<u>youtube.com/watch?v=NbSee-XM7WA</u>](http://youtube.com/watch?v=NbSee-XM7WA)
 
@@ -395,6 +410,8 @@ El piso y el cielorraso texturados usan floor casting de Lode: por fila se calcu
 *PixiJS v8, guía de Graphics*. [<u>pixijs.com/8.x/guides/components/scene-objects/graphics</u>](http://pixijs.com/8.x/guides/components/scene-objects/graphics)
 
 *PixiJS v8, guía de Ticker*. [<u>pixijs.com/8.x/guides/components/ticker</u>](http://pixijs.com/8.x/guides/components/ticker)
+
+*pixi-filters 6.1.5*. Biblioteca oficial de filtros de PixiJS, con licencia MIT, de la que sale el filtro CRT. [<u>github.com/pixijs/filters</u>](https://github.com/pixijs/filters)
 
 *Fabien Sanglard, Game Engine Black Book: Wolfenstein 3D*. Contexto histórico y técnico del motor original. [<u>fabiensanglard.net/gebbwolf3d</u>](http://fabiensanglard.net/gebbwolf3d)
 

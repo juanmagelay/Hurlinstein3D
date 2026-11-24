@@ -39,94 +39,220 @@ test("D-28c row distance and center-column floor point match Lode's projection",
   assert.ok(Math.abs(point.y + 0.9) < 1e-12);
 });
 
-test("D-28c floor casting samples once per strip and covers each surface pixel", () => {
-  const drawFloorCasting = getGlobal("drawFloorCasting");
-  const updateFloorCasting = getGlobal("updateFloorCasting");
-  const getLightsAtCell = getGlobal("getLightsAtCell");
-  const getFloorTextureColor = getGlobal("getFloorTextureColor");
-  getGlobal("floorColorCalls = 0");
-  getGlobal("getLightsAtCell = function () { return []; }");
-  getGlobal("getFloorTextureColor = function () { floorColorCalls += 1; return [11, 22, 33]; }");
+// D-28c: a fake floor casting surface, as wide as the real one, that records
+// the dirty rectangle and the sprite scale of the last frame
+function createFakeFloorSurface(height) {
   const width = getGlobal("maxWallStripCount");
-  const height = 4;
-  const canvas = { width, height };
-  const pixels = new Uint8ClampedArray(width * height * 4);
   const surface = {
-    canvas,
-    imageData: { data: pixels },
-    context: { putImageData() {} },
-    sprite: { visible: true, texture: { source: { update() {} } } },
+    canvas: { width, height },
+    imageData: { data: new Uint8ClampedArray(width * height * 4) },
+    context: {
+      putImageData(imageData, x, y, dirtyX, dirtyY, dirtyWidth, dirtyHeight) {
+        surface.dirtyRect = [dirtyX, dirtyY, dirtyWidth, dirtyHeight];
+      },
+    },
+    sprite: {
+      visible: true,
+      scale: { set(x, y) { surface.spriteScale = [x, y]; } },
+      texture: { source: { update() { surface.uploads += 1; } } },
+    },
+    uploads: 0,
   };
+  return surface;
+}
+
+function readPixel(surface, column, row) {
+  const index = (row * surface.canvas.width + column) * 4;
+  return [...surface.imageData.data.slice(index, index + 4)];
+}
+
+// Replaces getFloorTextureColor while fn runs, so a test sees every sample
+function withRecordedFloorSamples(color, fn) {
+  const original = getGlobal("getFloorTextureColor");
+  getGlobal("floorSamples = []");
+  getGlobal(`getFloorTextureColor = function (x, y, isCeiling, rowDistance) {
+    floorSamples.push({ x, y, isCeiling, rowDistance });
+    return ${color};
+  }`);
+  try {
+    return fn(getGlobal("floorSamples"));
+  } finally {
+    getGlobal(`getFloorTextureColor = ${original.toString()}`);
+  }
+}
+
+test("D-28c floor casting takes one sample per strip width square, stretched to the strips", () => {
+  const updateFloorCasting = getGlobal("updateFloorCasting");
+  const getWallStripCount = getGlobal("getWallStripCount");
+  const getRowDistance = getGlobal("getRowDistance");
+  const surface = createFakeFloorSurface(screenHeight);
   const player = { posX: 0.5, posY: 0.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66 };
   try {
     gameSettings.stripWidth = 4;
-    const samplesPerFrame = getGlobal("getWallStripCount")() * height;
-    updateFloorCasting(surface, player, false);
-    assert.equal(surface.sprite.visible, false);
-    assert.equal(getGlobal("floorColorCalls"), 0);
-    updateFloorCasting(surface, player, true);
-    assert.equal(surface.sprite.visible, true);
-    assert.equal(getGlobal("floorColorCalls"), samplesPerFrame);
-    assert.ok(samplesPerFrame < width * height);
-    assert.equal(pixels.length / 4, width * height);
-    for (let index = 0; index < pixels.length; index += 4) {
-      assert.deepEqual([...pixels.slice(index, index + 4)], [11, 22, 33, 255]);
-    }
-  } finally {
-    gameSettings.stripWidth = stripWidth;
-    getGlobal(`getLightsAtCell = ${getLightsAtCell.toString()}`);
-    getGlobal(`getFloorTextureColor = ${getFloorTextureColor.toString()}`);
-  }
-});
-
-test("D-28c floor casting keeps horizon samples finite and fills the horizon with background", () => {
-  const drawFloorCasting = getGlobal("drawFloorCasting");
-  const getLightsAtCell = getGlobal("getLightsAtCell");
-  const getFloorTextureColor = getGlobal("getFloorTextureColor");
-  getGlobal("floorSamples = []");
-  getGlobal("getLightsAtCell = function () { return []; }");
-  getGlobal(`getFloorTextureColor = function (x, y, isCeiling, distance) {
-    floorSamples.push({ x, y, isCeiling, distance });
-    return isCeiling ? [11, 22, 33] : [44, 55, 66];
-  }`);
-  const width = getGlobal("maxWallStripCount");
-  const pixels = new Uint8ClampedArray(width * screenHeight * 4);
-  const surface = {
-    canvas: { width, height: screenHeight },
-    imageData: { data: pixels },
-    context: { putImageData() {} },
-    sprite: { texture: { source: { update() {} } } },
-  };
-  const player = { posX: 0.5, posY: 0.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66 };
-  try {
-    drawFloorCasting(surface, player);
-    const samples = getGlobal("floorSamples");
-    assert.ok(samples.length > 0);
-    assert.ok(samples.every((sample) =>
-      Number.isFinite(sample.x) && Number.isFinite(sample.y) &&
-      Number.isFinite(sample.distance) && sample.distance > 0
-    ));
-    assert.ok(samples.some((sample) => sample.isCeiling));
-    assert.ok(samples.some((sample) => !sample.isCeiling));
-    assert.equal(samples.length, getGlobal("getWallStripCount")() * screenHeight);
-    for (let pixelX = 0; pixelX < width; pixelX += 1) {
-      for (const [row, isCeiling] of [[screenHeight / 2 - 1, true], [screenHeight / 2, false]]) {
-        const index = (row * width + pixelX) * 4;
-        assert.deepEqual([...pixels.slice(index, index + 4)], isCeiling ? [11, 22, 33, 255] : [44, 55, 66, 255]);
+    const columns = getWallStripCount();
+    const rows = screenHeight / 4;
+    let texturedRows = 0;
+    for (let row = 0; row < rows; row++) {
+      if (getRowDistance((row + 0.5) * 4) <= maxRayDistance) {
+        texturedRows += 1;
       }
     }
+    withRecordedFloorSamples("0x0b1621", (samples) => {
+      updateFloorCasting(surface, player, false);
+      assert.equal(surface.sprite.visible, false);
+      assert.equal(samples.length, 0);
+
+      updateFloorCasting(surface, player, true);
+      assert.equal(surface.sprite.visible, true);
+      assert.equal(samples.length, columns * texturedRows);
+    });
+    // One canvas pixel per sample, only that corner is written and uploaded,
+    // and the sprite is stretched 4 times, so sample i covers wall strip i
+    assert.deepEqual(surface.dirtyRect, [0, 0, columns, rows]);
+    assert.deepEqual(surface.spriteScale, [4, 4]);
+    assert.equal(surface.uploads, 1);
+    assert.deepEqual(readPixel(surface, 0, 0), [0x0b, 0x16, 0x21, 255]);
+    assert.deepEqual(readPixel(surface, columns - 1, rows - 1), [0x0b, 0x16, 0x21, 255]);
+    assert.deepEqual(readPixel(surface, columns, 0), [0, 0, 0, 0]);
   } finally {
-    getGlobal(`getLightsAtCell = ${getLightsAtCell.toString()}`);
-    getGlobal(`getFloorTextureColor = ${getFloorTextureColor.toString()}`);
+    gameSettings.stripWidth = stripWidth;
   }
 });
 
-test("D-28d floor and ceiling colors darken with distance and room lamps are visible", () => {
-  const lights = [{ x: 2.5, y: 3.5 }];
-  const lit = getFloorTextureColor(2.5, 3.5, true, 1, lights);
-  const unlit = getFloorTextureColor(2.5, 3.5, true, maxRayDistance, []);
-  assert.ok(lit[0] > unlit[0]);
-  assert.ok(getFloorTextureColor(2.5, 3.5, false, 1, []).some((value) => value > 0));
+test("D-28c each floor sample is Lode's floor point of its strip center ray", () => {
+  const drawFloorCasting = getGlobal("drawFloorCasting");
+  const getWallStripCount = getGlobal("getWallStripCount");
+  const surface = createFakeFloorSurface(screenHeight);
+  const player = { posX: 3.25, posY: -2.5, dirX: 0.6, dirY: 0.8, planeX: -0.528, planeY: 0.396 };
+  withRecordedFloorSamples("0x000000", (samples) => {
+    drawFloorCasting(surface, player);
+    const columns = getWallStripCount();
+    // The bottom row is a floor row; its samples are the last columns ones
+    const bottomRow = samples.slice(-columns);
+    assert.ok(bottomRow.every((sample) => !sample.isCeiling));
+    for (let column = 0; column < columns; column += 37) {
+      const cameraX = 2 * (column + 0.5) / columns - 1;
+      const sample = bottomRow[column];
+      const expected = getFloorWorldPoint(player, cameraX, sample.rowDistance);
+      assert.ok(Math.abs(sample.x - expected.x) < 1e-9);
+      assert.ok(Math.abs(sample.y - expected.y) < 1e-9);
+    }
+    assert.ok(samples.some((sample) => sample.isCeiling));
+  });
+});
+
+test("D-28c rows past maxRayDistance are the background, like a ray without a hit", () => {
+  const drawFloorCasting = getGlobal("drawFloorCasting");
+  const getRowDistance = getGlobal("getRowDistance");
+  const surface = createFakeFloorSurface(screenHeight);
+  const player = { posX: 0.5, posY: 0.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66 };
+  withRecordedFloorSamples("0x2c3742", (samples) => {
+    drawFloorCasting(surface, player);
+    assert.ok(samples.every((sample) => sample.rowDistance <= maxRayDistance));
+  });
+  // With 2 px strips, row 179 is centered 1 px above the horizon: far past the cap
+  const horizonRow = screenHeight / 2 / stripWidth - 1;
+  assert.ok(getRowDistance((horizonRow + 0.5) * stripWidth) > maxRayDistance);
+  const background = [(backgroundColor >> 16) & 0xff, (backgroundColor >> 8) & 0xff, backgroundColor & 0xff, 255];
+  assert.deepEqual(readPixel(surface, 0, horizonRow), background);
+  assert.deepEqual(readPixel(surface, 0, horizonRow + 1), background);
+  assert.deepEqual(readPixel(surface, 0, 0), [0x2c, 0x37, 0x42, 255]);
+});
+
+function getRed(color) {
+  return (color >> 16) & 0xff;
+}
+
+// D-28d: a steady room light, like the ones js/world.js creates
+function createSteadyLight() {
+  const light = { x: 2.5, y: 3.5, radius: getGlobal("lightRadius"), intensity: getGlobal("lightIntensity") };
+  assert.equal(getGlobal("isFlickeringLamp")(light), false);
+  return light;
+}
+
+test("D-28d with lighting off, floor and ceiling darken with the distance bands and lamps show", () => {
+  const light = createSteadyLight();
+  getGlobal("useLighting = false");
+  try {
+    const lamp = getFloorTextureColor(2.5, 3.5, true, 1, [light]);
+    const near = getFloorTextureColor(2.5, 3.5, true, 1, []);
+    const far = getFloorTextureColor(2.5, 3.5, true, maxRayDistance, []);
+    assert.ok(getRed(lamp) > getRed(near));
+    assert.ok(getRed(near) > getRed(far));
+    assert.ok(getFloorTextureColor(2.5, 3.5, false, 1, []) > 0);
+  } finally {
+    getGlobal("useLighting = true");
+  }
+});
+
+test("D-28d with lighting on, the room light shades the floor like the walls", () => {
+  const light = createSteadyLight();
+  const underLight = getFloorTextureColor(2.6, 3.6, false, 1, [light]);
+  const pastRadius = getFloorTextureColor(2.6 + light.radius, 3.6, false, 1, [light]);
+  const ambientOnly = getFloorTextureColor(2.6, 3.6, false, 1, []);
+  assert.ok(getRed(underLight) > getRed(pastRadius));
+  assert.equal(pastRadius, ambientOnly);
+  // The light replaces the distance bands (D-10), so distance alone changes nothing
+  assert.equal(getFloorTextureColor(2.6, 3.6, false, 20, [light]), underLight);
+});
+
+test("D-28d a tile joint is darker than the tile, and the color stays one 0xRRGGBB number", () => {
+  const tile = getFloorTextureColor(2.5, 3.5, false, 1, []);
+  const joint = getFloorTextureColor(2.01, 3.5, false, 1, []);
+  assert.ok(getRed(joint) < getRed(tile));
+  assert.ok(Number.isInteger(tile) && tile >= 0 && tile <= 0xffffff);
+});
+
+// D-28d: lamps at the center of cells in a 40 by 40 area, negatives included
+function getSampleLamps() {
+  const lamps = [];
+  for (let x = -20; x < 20; x++) {
+    for (let y = -20; y < 20; y++) {
+      lamps.push({ x: x + 0.5, y: y + 0.5 });
+    }
+  }
+  return lamps;
+}
+
+test("D-28d about one lamp in five flickers, always the same ones", () => {
+  const isFlickeringLamp = getGlobal("isFlickeringLamp");
+  const lamps = getSampleLamps();
+  const flickering = lamps.filter((lamp) => isFlickeringLamp(lamp));
+  const share = flickering.length / lamps.length;
+  assert.ok(share > 0.12 && share < 0.28, `share ${share}`);
+  for (const lamp of lamps) {
+    assert.equal(isFlickeringLamp(lamp), isFlickeringLamp({ x: lamp.x, y: lamp.y }));
+  }
+});
+
+test("D-28d a steady lamp never dims and a flickering one blinks twice per period", () => {
+  const isFlickeringLamp = getGlobal("isFlickeringLamp");
+  const getLampBrightness = getGlobal("getLampBrightness");
+  const lampFlickerPeriod = getGlobal("lampFlickerPeriod");
+  const lampFlickerDim = getGlobal("lampFlickerDim");
+  const lamps = getSampleLamps();
+  const steady = lamps.find((lamp) => !isFlickeringLamp(lamp));
+  const flickering = lamps.find((lamp) => isFlickeringLamp(lamp));
+
+  let blinks = 0;
+  let dimSamples = 0;
+  let wasDim = false;
+  const samples = 4000;
+  for (let step = 0; step < samples; step++) {
+    const time = lampFlickerPeriod * step / samples;
+    assert.equal(getLampBrightness(steady, time), 1);
+    const isDim = getLampBrightness(flickering, time) === lampFlickerDim;
+    if (isDim) {
+      dimSamples += 1;
+    }
+    if (isDim && !wasDim) {
+      blinks += 1;
+    }
+    wasDim = isDim;
+  }
+  // Two short blinks; one may be split by the end of the sampled period
+  assert.ok(blinks >= 2 && blinks <= 3, `blinks ${blinks}`);
+  assert.ok(dimSamples / samples < 0.1);
 });
 
 test("D-28b wall variants are stable and cover all three across negative cells", () => {
@@ -456,6 +582,34 @@ test("the light stays at the ambient floor beyond the radius or behind the wall"
   // The normal points toward -X, so a light on the +X side faces away
   const behind = [{ x: 6.5, y: 2.5, radius: lightRadius, intensity: lightIntensity }];
   assert.equal(getWallLight(5.5, 2.5, -1, 0, behind), ambientLight);
+});
+
+test("D-28d a flickering lamp dims its light on the wall while it blinks", () => {
+  const isFlickeringLamp = getLightGlobal("isFlickeringLamp");
+  const getLampBrightness = getLightGlobal("getLampBrightness");
+  const lampFlickerPeriod = getLightGlobal("lampFlickerPeriod");
+  // A lamp one cell in front of the wall, at the first cell where it flickers
+  let lampCellX = 0;
+  while (!isFlickeringLamp({ x: lampCellX + 0.5, y: 2.5 })) {
+    lampCellX += 1;
+  }
+  const light = { x: lampCellX + 0.5, y: 2.5, radius: lightRadius, intensity: lightIntensity };
+  const times = [];
+  for (let step = 0; step < 400; step++) {
+    times.push(lampFlickerPeriod * step / 400);
+  }
+  const dimTime = times.find((time) => getLampBrightness(light, time) < 1);
+  const steadyTime = times.find((time) => getLampBrightness(light, time) === 1);
+  try {
+    getLightGlobal(`gameTime = ${steadyTime}`);
+    const steadyFactor = getWallLight(light.x + 1, 2.5, -1, 0, [light]);
+    getLightGlobal(`gameTime = ${dimTime}`);
+    const dimFactor = getWallLight(light.x + 1, 2.5, -1, 0, [light]);
+    assert.ok(dimFactor < steadyFactor);
+    assert.ok(dimFactor > ambientLight);
+  } finally {
+    getLightGlobal("gameTime = 0");
+  }
 });
 
 // D-10: the same open scene, but cell (4, 2) is a wall between point and light.

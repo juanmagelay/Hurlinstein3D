@@ -155,7 +155,7 @@ Requisitos que no se negocian:
 - Controles W y S (avanzar y retroceder), A y D (desplazamiento lateral), flechas izquierda y derecha (giro), mouse (giro), Space/clic izquierdo (disparo), R/clic derecho (recarga). (TDD 2.2).
 - Sin victoria, derrota, enemigos ni z-buffer (TDD 2.1).
 - Chunk según TDD 4.2: 16 por 16, sala de 4 a 8 con margen de 2, puertas fijas en la fila o columna 8, corredores de tres tramos. Conectividad por construcción, sin validación en tiempo de ejecución (TDD 4.3).
-- Cada chunk se genera una vez y persiste en la sesión; Math.random sin semilla (TDD 4.4).
+- Cada chunk se genera una vez y persiste en la sesión. El azar sale de la semilla del mundo, con una semilla propia por chunk mezclada con su clave de Cantor, así la misma semilla da el mismo mundo en cualquier orden de exploración; `Math.random` solo elige la semilla inicial (TDD 4.4).
 - Render, movimiento y minimapa según TDD 6.5, 6.6 y 6.7.
 - Invariantes de TDD 5.2: tope de distancia (columna del color de fondo), Math.floor, getCell responde cualquier coordenada, bordes macizos salvo puertas, spawn en el centro de la sala del chunk (0, 0).
 - Criterios de éxito de TDD 7.3: doble clic y arranca; recorrido fluido sin bordes ni encierros; volver a una zona muestra el mismo mapa; minimapa coincidente.

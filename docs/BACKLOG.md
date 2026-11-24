@@ -100,17 +100,17 @@ Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added i
 | D-12c | Mouse turn with pointer lock and a sensitivity setting | P1 | 4 | D-12b, D-16c1b | done |
 | D-12d | Left click fires, right click reloads | P1 | 4 | D-12c | done |
 | D-12e | A and D strafe; the left and right arrows keep turning | P1 | 4 | D-12b | done |
-| D-28a | Specify the UNAHUR at night look and the textured floor and ceiling in the TDD | P1 | 4 | D-09, D-10 | pending |
-| D-28b | UNAHUR wall textures: white plaster, louvered windows, glass, green accents | P1 | 4 | D-28a | pending |
-| D-28c | Floor and ceiling casting with floor tile and ceiling panel textures | P1 | 4 | D-28a | in progress |
-| D-28d | Night atmosphere: cold low light, darkness at distance, ceiling lamps at the room lights | P1 | 4 | D-28b, D-28c | in progress |
-| D-29a | Pick the CRT filter source and specify it in the TDD | P1 | 4 | D-16b2 | in progress |
-| D-29b | CRT post processing filter over the game, with an admin toggle | P1 | 4 | D-29a | in progress |
-| D-30a | Specify the seeded random in TDD 4.4 | P1 | 4 | D-11 | pending |
-| D-30b | Seeded random for the map: one seed per world, one derived seed per chunk | P1 | 4 | D-30a | in progress |
-| D-30c | Enemy placement and patrol from the world seed | P1 | 4 | D-30b | in progress |
+| D-28a | Specify the UNAHUR at night look and the textured floor and ceiling in the TDD | P1 | 4 | D-09, D-10 | done |
+| D-28b | UNAHUR wall textures: white plaster, louvered windows, glass, green accents | P1 | 4 | D-28a | done |
+| D-28c | Floor and ceiling casting with floor tile and ceiling panel textures | P1 | 4 | D-28a | done |
+| D-28d | Night atmosphere: cold low light, darkness at distance, ceiling lamps at the room lights | P1 | 4 | D-28b, D-28c | done |
+| D-29a | Pick the CRT filter source and specify it in the TDD | P1 | 4 | D-16b2 | done |
+| D-29b | CRT post processing filter over the game, with an admin toggle | P1 | 4 | D-29a | done |
+| D-30a | Specify the seeded random in TDD 4.4 | P1 | 4 | D-11 | done |
+| D-30b | Seeded random for the map: one seed per world, one derived seed per chunk | P1 | 4 | D-30a | done |
+| D-30c | Enemy placement and patrol from the world seed | P1 | 4 | D-30b | done |
 | D-17a | Reset a game: new world, enemies, projectiles and player | P1 | 4 | D-14b | done |
-| D-30d | World seed in the admin panel: see it, type one, start a new world | P1 | 4 | D-30c, D-17a | in progress |
+| D-30d | World seed in the admin panel: see it, type one, start a new world | P1 | 4 | D-30c, D-17a | done |
 | D-17b | Game state machine: menu, playing, victory, defeat | P1 | 4 | D-17a | done |
 | D-18a | Main menu: title, start game, controls, credits | P1 | 4 | D-16a3, D-17b | done |
 | D-18b | Controls and credits screens | P1 | 4 | D-18a | done |
@@ -118,16 +118,16 @@ Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added i
 | D-19a | Kill counter and KILLS label on the HUD | P2 | 4 | D-15b, D-17a | done |
 | D-19b | Enemy hit points, one for regular enemies | P2 | 4 | D-19a | done |
 | D-19c | Boss appears after the kill target | P2 | 4 | D-19b | done |
-| D-16c2 | Admin settings for the boss flow: enemy and boss hit points, spawn boss | P2 | 4 | D-16c1e, D-19c | in progress |
+| D-16c2 | Admin settings for the boss flow: enemy and boss hit points, spawn boss | P2 | 4 | D-16c1e, D-19c | done |
 | D-19d | Victory when the boss dies, victory screen | P2 | 4 | D-19c, D-20a | done |
 | D-20b | Score and remote ranking via the API | P2 | 4 | D-19d | done |
 | D-20c | Ranking on the victory and defeat screens | P2 | 4 | D-20b | done |
 | D-21a | Pick a licensed enemy sprite and embed it as a data URI | P2 | 4 | D-14b | done |
 | D-21b | Textured enemies with z-buffer occlusion | P2 | 4 | D-21a | done |
 | D-26 | Logomark and favicon from the enemy sprite's head | P2 | 4 | D-21a | done |
-| D-21c | Boss as a tinted, larger enemy sprite | P2 | 4 | D-21b, D-19c | pending |
-| D-16d | Admin render toggles: textures, lighting, flat color | P2 | 4 | D-16b2 | in progress |
-| D-27e | Enemies keep body distance from each other, optional | P2 | 4 | D-27b | in progress |
+| D-21c | Boss as a tinted, larger enemy sprite | P2 | 4 | D-21b, D-19c | done |
+| D-16d | Admin render toggles: textures, lighting, flat color | P2 | 4 | D-16b2 | done |
+| D-27e | Enemies keep body distance from each other, optional | P2 | 4 | D-27b | done |
 | D-22 | Player initials for the ranking | P3 | 4 | D-20c | done |
 | D-31 | Instant center ray shot instead of the projectile (reverts D-13a to D-13d) | P0 | 4 | D-13d | done |
 | D-32 | Remote ranking via the API (TDD, CLAUDE.md and code) | P0 | 4 | D-19d | done |
@@ -1374,6 +1374,9 @@ Acceptance criteria:
 - Two enemies never get closer than their bodies: an enemy's move on each axis is refused when it would overlap another enemy, checked through the per cell registry.
 - Several chasing enemies stand around the player instead of on top of each other.
 
+Decisions:
+- `canEnemyKeepDistance` checks each axis move against the enemies registered in the cells around, with `bossWidth` in the search radius so a nearby boss is found. Covered by `tests/body-distance.test.js`; TDD 2.3.2 describes it since 2026-11-24.
+
 ## D-12: Arrow keys and mouse (split from D-12)
 
 Request (2026-11-22, Juanma): turn with the mouse left and right, fire with the left click, reload with the right click, and let the arrow keys work too. Strafing was not requested and stayed optional as D-12e, until Juanma asked for it the same day, before validating D-12a to D-12d.
@@ -1489,6 +1492,11 @@ Acceptance criteria:
 
 Files: `docs/TDD.md`, `docs/BACKLOG.md`.
 
+Decisions:
+- Alejo's commit 77aff04 (2026-11-23) wrote this text as an annex inside chapter 8, between its title and the references, and left TDD 4.4 saying that the generator used `Math.random`. On 2026-11-24 the text moved into the sections the criteria name: 1.3, a new 2.3.6 (art direction, lights, flickering lamps, CRT), 6.4, 6.5 (floor casting) and 7.2. Chapter 8 lists only references again, plus Lode's part II and pixi-filters.
+- The open questions of D-28, settled by the code: the chunk color still tints the textures, the floor casting is Lode's per row, and one lamp in five flickers.
+- Juanma asked to apply it directly (2026-11-24, "hacé todo"), without a stop to approve the text.
+
 ## D-28b: UNAHUR wall textures
 
 Acceptance criteria:
@@ -1499,6 +1507,11 @@ Acceptance criteria:
 - Tests: the variant of a cell is stable and covers all three, including negative coordinates.
 
 Files: `js/renderer.js`, `js/config.js`, `tests/renderer.test.js`.
+
+Decisions:
+- The variant of a wall cell is `getCellHash(mapX, mapY) % 3`; the same hash picks the flickering lamps (D-28d).
+- The unused brick constants left from D-09 were removed, and the comment describes the three variants.
+- The art stays subject to Juanma's review in the game, as the 77aff04 message says.
 
 ## D-28c: Floor and ceiling casting
 
@@ -1511,6 +1524,13 @@ Acceptance criteria:
 
 Files: `js/renderer.js`, `js/main.js`, `js/config.js`, `tests/renderer.test.js`.
 
+Decisions:
+- 77aff04 sampled once per strip and row, but wrote every pixel of a 1680 by 720 canvas, created an object and an array per sample (about 920,000 per frame at 2 px strips) and uploaded the whole canvas. Measured in Node (JS work only, 1280 by 720): 18.35 ms per frame at 2 px strips, more than the 16.6 ms of a 60 FPS frame on its own.
+- Rewritten on 2026-11-24 as Lode's per-row floor casting: one `rowDistance` per row, the first floor point from `getFloorWorldPoint` and then a constant step. Samples are squares of the strip width, one canvas pixel each; only that corner is written (dirty rectangle of `putImageData`) and the sprite is scaled `stripWidth` times, so sample i sits under wall strip i. `getFloorTextureColor` returns a packed 0xRRGGBB number. Same measurement, before D-28d lit the floor: 2.48 ms at 2 px, 0.63 ms at 4 px, 0.17 ms at 8 px and 9.68 ms at 1 px.
+- Rows past `maxRayDistance` are the background color, like a ray without a hit (TDD 5.2). Only ceiling samples look up the lights.
+- The floor casting follows the Textures toggle as well as flat colors (D-16d). The admin label changed from Wall textures to Textures.
+- Tests: `rowDistance` against a hand value, every stepped sample equals `getFloorWorldPoint` for its strip center, the sample count, dirty rectangle and sprite scale, and background rows past the cap.
+
 ## D-28d: Night atmosphere
 
 Acceptance criteria:
@@ -1521,6 +1541,13 @@ Acceptance criteria:
 
 Files: `js/config.js`, `js/renderer.js`, `tests/renderer.test.js`.
 
+Decisions:
+- Night palette from 77aff04: background 0x050b13, ambient light 0.12 (0.22 since 2026-11-24, see below), distance bands 1, 0.75, 0.4 and 0.08, a cold tint on the ceiling. Each room light shows as a bright 0.96 by 0.32 cell panel on the ceiling.
+- The optional flicker was added on 2026-11-24: one lamp in five (`lampFlickerShare`), picked by the hash of its cell, blinks twice at 0.2 brightness every 4 seconds, shifted by its hash so lamps never blink together. The same factor dims the panel and its light on the walls, so the source and the light blink together. It runs on the game time, so it stops with the game.
+- With 77aff04 the floor and ceiling only used the distance bands, so they showed almost white within 6 cells while the walls, under an ambient light of 0.12, were near black. Since 2026-11-24, with lighting on, the room lights shade the floor and ceiling too (`getFloorLight`): the same falloff as the walls, without the facing test and the shadow ray, which would cost one ray per sample. With lighting off they keep the distance bands. Floor casting cost: 4.45 ms per frame at 2 px strips, 1.14 ms at 4 px, 17.4 ms at 1 px. The lights are looked up again only when the samples cross into another chunk.
+- Ambient light back to 0.22, its value before D-28 (Juanma, 2026-11-24). With 0.12, a corridor wall far from every lamp was near black (ambient times the chunk color times the texture), and facing one up close turned the whole view black. 0.22 keeps those walls dim but readable.
+- Tests: steady lamps never dim, a flickering lamp blinks twice per period and stays dim under 10% of the time, about one lamp in five flickers, and a blinking lamp lowers the wall light. With lighting on, the light shades the floor and distance alone changes nothing; with lighting off, the bands darken it.
+
 ## D-29a: Pick the CRT filter source
 
 Acceptance criteria:
@@ -1528,6 +1555,10 @@ Acceptance criteria:
 - TDD 6.2 and 6.3 list the new file, TDD 2.3.5 the admin toggle, and the README credits the library and its license.
 
 Files: `lib/pixi-filters.js` (new), `index.html`, `docs/TDD.md`, `README.md`.
+
+Decisions:
+- Source: the official pixi-filters 6.1.5 browser bundle, MIT, copied into `lib/pixi-filters.js` with `lib/PIXIFILTERS-LICENSE.txt`; the version and SHA-256 are in the README. It loads right after `lib/pixi.min.js` and extends `PIXI.filters`.
+- TDD 6.1, 6.2, 6.3, 2.3.6 and chapter 8 describe it since 2026-11-24 (see D-28a).
 
 ## D-29b: CRT filter over the game
 
@@ -1538,6 +1569,11 @@ Acceptance criteria:
 - The FPS in the admin panel shows the cost with the toggle on and off.
 
 Files: `js/main.js`, `js/settings.js`, `index.html`, `tests/settings.test.js`.
+
+Decisions:
+- The filter sits on the game layer (ceiling, floor, walls, enemies and shotgun) instead of the whole stage, so the minimap, the HUD and the damage flash stay sharp. Options: curvature 1, line width 1, line contrast 0.15, noise 0.08, vignetting 0.25.
+- The ticker advances its time; the toggle swaps the filters array of the layer and never creates a filter.
+- The FPS with the toggle on and off is checked by hand on both team machines.
 
 ## D-30: Seeded random (split in four)
 
@@ -1555,6 +1591,9 @@ Acceptance criteria:
 
 Files: `docs/TDD.md`, `docs/BACKLOG.md`.
 
+Decisions:
+- Applied on 2026-11-24: TDD 4.4 (mulberry32, a chunk seed mixed from the world seed and the Cantor key, any exploration order gives the same world, enemies from the world seed, the Map as a cache), 5.2 (a sixth invariant, same seed same world), 2.3.5 and 6.3 (`js/random.js`). The old 4.4 sentence about `Math.random` is gone, and `CLAUDE.md` 7.1 says the same.
+
 ## D-30b: Seeded random for the map
 
 Acceptance criteria:
@@ -1565,6 +1604,11 @@ Acceptance criteria:
 
 Files: `js/random.js` (new), `js/mapgen.js`, `js/world.js`, `index.html`, `tests/mapgen.test.js`. `js/admin.js` shows the seed; split if it goes over four code files.
 
+Decisions:
+- `createRandom` is mulberry32. `getChunkSeed` mixes the world seed with the Cantor key, high part included, so keys above 2^32 still mix.
+- `generateChunk()` without a random uses a deterministic fallback seed, for the tests that call it directly.
+- Tests added on 2026-11-24 through `getCell`: exploring east first or west first gives the same chunk (1, 0), and two seeds give different worlds.
+
 ## D-30c: Enemy placement and patrol from the world seed
 
 Acceptance criteria:
@@ -1574,6 +1618,11 @@ Acceptance criteria:
 - Tests: the same seed places the same enemies in the same cells.
 
 Files: `js/world.js`, `js/enemies.js`, `tests/enemies.test.js`, `tests/world.test.js`.
+
+Decisions:
+- `gameRandom = createRandom(worldSeed)` drives the enemy placement, the boss cell and the patrol choices. `Math.random` only appears in `createWorldSeed`.
+- The line of sight tests stubbed `Math.random`; since 2026-11-24 they stub `gameRandom`, like the other enemy tests.
+- The placement repeats at the start of a game with the same seed. Later picks depend on what happened in the game, since every pick uses the same sequence.
 
 ## D-17a: Reset a game
 
@@ -1602,6 +1651,11 @@ Acceptance criteria:
 Files: `index.html`, `js/admin.js`, `js/world.js`, `tests/reset.test.js`.
 
 Note: placed after D-17a because it needs `resetGame()`.
+
+Decisions:
+- The seed shows in the live info and, after New world, in the field, so it can be shared. With the field empty, New world picks a random seed.
+- Since 2026-11-24 the seed field and New world are disabled outside `playing`, like the Game box. From the defeat screen, New world brought the health back and the state jumped to `playing` without the menu.
+- A typed seed lasts one game: Start game and Play again pick a new random seed.
 
 ## D-17b: Game state machine
 
@@ -1749,6 +1803,9 @@ Acceptance criteria:
 
 Files: `index.html`, `js/admin.js`, `js/enemies.js`, `js/main.js`.
 
+Decisions:
+- `enemyHealth` (1 to 10) and `bossHealth` (1 to 50) are settings; a change also sets the health of the live enemies or the live boss. Spawn boss sits in the Game box, disabled outside `playing`.
+
 ## D-19b: Enemy hit points
 
 Acceptance criteria:
@@ -1870,6 +1927,9 @@ Acceptance criteria:
 
 Files: `js/renderer.js`.
 
+Decisions:
+- `drawTexturedEnemies` tints the boss sprite with `bossColor` before the distance shading, and `getEnemySpriteWorldWidth` sizes it from the boss height (0.9 cells).
+
 ## D-16d: Admin render toggles
 
 Acceptance criteria:
@@ -1877,6 +1937,9 @@ Acceptance criteria:
 - `useWallTextures` and `useLighting` become runtime settings; the wall strip sprites are created once and hidden when textures are off.
 
 Files: `js/config.js`, `js/renderer.js`, `js/main.js`, `js/admin.js`.
+
+Decisions:
+- `useWallTextures` and `useLighting` are runtime settings, applied by `applySetting`; `flatColors` and `crtFilter` are read every frame. Since 2026-11-24 Textures also turns the floor casting on and off.
 
 ## D-22: Player initials in the ranking (optional)
 
@@ -2068,6 +2131,17 @@ Decisions:
 
 - `.github/workflows/static.yml` (333c9c7, added straight to `main` on 2026-11-23) deployed the repo to GitHub Pages and failed on every push to `main`, since Pages is not enabled for this repo. Decision (Juanma): the game is only published on the portfolio, at juanmagelay.github.io/games/hurlinstein3d/, so this repo gets no Pages site and the workflow is removed.
 - `main` was merged into `develop` (fast forward) before removing it, so `develop` contains `main` again and the passes to `main` are fast forward as in `CLAUDE.md` 10.3.
+
+## Review of 77aff04 (2026-11-24)
+
+Alejo's commit 77aff04 (2026-11-23) implemented D-16c2, D-16d, D-21c, D-27e, D-28a to D-28d, D-29a, D-29b and D-30a to D-30d outside the story flow and left them pending or in progress. Checked on 2026-11-24 against each story's criteria; the fixes are in each story's decisions:
+- TDD: the annex inside chapter 8 moved into its sections, and 4.4 no longer contradicts the seed. The 6.3 table also said the ranking used localStorage (wrong since D-32) and lacked `js/random.js` and `lib/pixi-filters.js`.
+- Floor casting: 18.35 ms per frame down to 2.48 ms at the default strip width (D-28c), 4.45 ms once the room lights also shade the floor (D-28d).
+- New world worked from the end screens and broke the state machine (D-30d).
+- Flickering lamps, the optional criterion of D-28d, added, and the room lights now shade the floor and ceiling too.
+- Ambient light back to 0.22, so corridor walls far from every lamp stay readable (D-28d decisions).
+- README: project map rows for `js/random.js`, `js/game-state.js`, `js/screens.js` and `js/ranking.js`, and the new admin settings.
+- Tests: 102 at the 2026-11-20 review, 262 after 77aff04, 270 now (`node --test "tests/*.test.js"`).
 
 ## Desirables
 
