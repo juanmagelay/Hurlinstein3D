@@ -2064,6 +2064,11 @@ Decisions:
 - If the four door neighbors are full, the boss takes a hidden cell of the rings around them, so the button never fails.
 - Checked with headless Chrome on `file://`: the button put the boss 18 cells away in the north neighbor's room, hidden; a second click kept one boss; standing 3.6 cells away it is drawn crimson and larger than the regular enemies, and it shows on the minimap.
 
+## Repo: no GitHub Pages workflow (2026-11-24)
+
+- `.github/workflows/static.yml` (333c9c7, added straight to `main` on 2026-11-23) deployed the repo to GitHub Pages and failed on every push to `main`, since Pages is not enabled for this repo. Decision (Juanma): the game is only published on the portfolio, at juanmagelay.github.io/games/hurlinstein3d/, so this repo gets no Pages site and the workflow is removed.
+- `main` was merged into `develop` (fast forward) before removing it, so `develop` contains `main` again and the passes to `main` are fast forward as in `CLAUDE.md` 10.3.
+
 ## Desirables
 
 Open questions to settle before each story:
