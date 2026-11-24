@@ -22,7 +22,7 @@ Open `index.html` directly in Chrome. No installation, network access or develop
 | Esc | Release the mouse |
 | P | Open or close the admin panel |
 
-The arrows alone move and turn, like the raycasting games of the nineties; W, A, S and D with the mouse is the later first-person scheme. The first click on the game fires and also captures the mouse (pointer lock), so moving it turns the camera. Esc or opening the admin panel releases it, and the next click on the game fires and captures it again. Clicks on the admin panel never fire or reload.
+The arrows alone move and turn, like the raycasting games of the nineties; W, A, S and D with the mouse is the later first-person scheme. The first click on the game fires and also captures the mouse (pointer lock), so moving it turns the camera. Esc or opening the admin panel releases it, and the next click on the game fires and captures it again. Clicks on the admin panel never fire or reload, and clicks on the menu, victory and defeat screens never capture the mouse, fire or reload. While playing with the mouse free, a hint at the top of the view says that a click captures it. Once captured, the browser shows its own Esc notice, which the page cannot hide.
 
 The player collides with walls and slides along them. Life and ammo are in the upper-left corner and the minimap in the upper-right corner.
 
@@ -33,16 +33,16 @@ The game fills the browser window on any screen between 4:3 and 21:9, and adapts
 | File | Responsibility | TDD |
 |---|---|---|
 | `lib/pixi.min.js` | Local PixiJS 8.21.0 browser bundle | 6.1, 6.2 |
+| `lib/pixi-filters.js` | pixi-filters 6.1.5 browser bundle, MIT, SHA-256 `3bb1830fe730687c9aa24b331b51f8f2263023ac7c91885e50cf9f339cff36ef` | 6.2 |
 | `js/config.js` | 720 px tall canvas whose width follows the window in 8 px steps, movement and rendering constants, texture and lighting toggles | 6.3, 6.5 |
 | `js/settings.js` | Admin settings: defaults, ranges, clamping and localStorage, with blocked storage falling back to the defaults | 2.3.5 |
 | `js/mapgen.js` | Generates a connected room (and often a second one) plus four corridors in each chunk | 4.2, 4.3 |
 | `js/world.js` | Cantor-keyed chunk storage, `getCell`, room lights, the game's enemies placed around the player, and the per-chunk and per-cell enemy registries | 2.3.2, 5.1, 5.2, 6.8 |
 | `js/player.js` | Camera state, keyboard and mouse input with pointer lock, movement and strafing, collisions against walls and enemies, health in hit points, ammo and reloads | 2.2, 2.3.1, 3.2, 6.6 |
 | `js/raycaster.js` | Camera rays and grid DDA | 3.2, 3.3, 3.4 |
-| `js/renderer.js` | Ceiling, floor, wall strips of any strip width, fisheye mode, procedural wall textures, point lights, enemy sprites standing on the floor with wall occlusion, and projectiles | 2.3.1, 2.3.2, 3.4, 6.4, 6.5 |
-| `js/enemies.js` | Active area around the player, far enemies brought back near the player, enemy state machine (idle, patrol, chase), DDA line of sight, wall sliding, a chase that stops in front of the player, and contact hits once per second | 2.3.1, 2.3.2 |
-| `js/projectiles.js` | Shotgun projectiles: range from the center ray DDA, flight, and enemy hits through the per-cell registry | 2.3.1 |
-| `js/minimap.js` | 21 by 21 cell minimap, player position and direction, enemies, projectiles, and optional rays and chunk borders | 2.3.5, 6.7 |
+| `js/renderer.js` | Procedural floor and ceiling casting, wall strips of any strip width, fisheye mode, procedural wall textures, point lights, enemy sprites standing on the floor with wall occlusion | 2.3.1, 2.3.2, 3.4, 6.4, 6.5 |
+| `js/enemies.js` | Active area around the player, far enemies brought back near the player, enemy state machine (idle, patrol, chase), DDA line of sight, wall sliding, a chase that stops in front of the player, contact hits once per second, and the center ray shot | 2.3.1, 2.3.2 |
+| `js/minimap.js` | 21 by 21 cell minimap, player position and direction, enemies, and optional rays and chunk borders | 2.3.5, 6.7 |
 | `js/hud.js` | Center crosshair, LIFE and AMMO labels with their bars, reloads left when limited, red damage flash, defeat overlay | 2.3.3, 6.4 |
 | `js/weapon.js` | Shotgun aimed at the crosshair, idle, firing and reload animation | 2.3.1, 2.3.3, 6.4 |
 | `js/enemy-sheet.js` | Embedded enemy sprite, a copy of `assets/enemy-sprites/ZOMBA1.png` | 2.3.2, 6.2 |
@@ -52,7 +52,7 @@ The game fills the browser window on any screen between 4:3 and 21:9, and adapts
 | `assets/icons/LICENSE` | License of the Lucide icons embedded in `index.html` | 2.3.5 |
 | `assets/enemy-sprites/` | Original enemy sprite and its source and license | 2.3.2 |
 | `assets/logo/` | Logomark (512 px) and favicon (32 px), cut from the enemy's head; the favicon is embedded in `index.html` | 6.2 |
-| `tests/` | Node tests for world generation, DDA, movement, projection, enemies, projectiles, HUD, weapon and admin settings | 8.7 |
+| `tests/` | Node tests for world generation, DDA, movement, projection, enemies, shooting, HUD, weapon and admin settings | 8.7 |
 
 ## Verification
 
@@ -77,8 +77,11 @@ The game fills the browser window on any screen between 4:3 and 21:9, and adapts
 ## Credits
 
 - [PixiJS](https://pixijs.com) 8.21.0, MIT license.
+- [pixi-filters](https://github.com/pixijs/filters) 6.1.5 browser bundle, MIT license. `lib/pixi-filters.js`, SHA-256 `3bb1830fe730687c9aa24b331b51f8f2263023ac7c91885e50cf9f339cff36ef`. The bundle extends the PixiJS v8 global at `PIXI.filters`.
 - [Lucide](https://lucide.dev) icons 1.77.0, ISC license (chevron-down, chevron-up and x derive from Feather, MIT). See `assets/icons/LICENSE`.
 - [Husk Mutant](https://opengameart.org/content/husk-mutant) enemy sprite by HorrorMovieRei, CC0. The logomark and favicon are cropped from it. See `assets/enemy-sprites/LICENSE.md`.
+- [FPS Gun Sprites](https://rekkimaru.itch.io/fps-gun-sprites) by Rekkimaru, free for any use (no attribution required).
+- [UI BARS](https://guilemus.itch.io/ui-bars) by guilemus, free for commercial use (no redistribution).
 
 ## Course
 

@@ -2,7 +2,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const { loadScripts } = require("./load-scripts.js");
 
-// D-07a: the fire input. The hit itself is tested in projectiles.test.js (D-13b).
+// D-07a: the fire input. The hit itself is tested in shoot.test.js.
 const getGlobal = loadScripts();
 const createFireInput = getGlobal("createFireInput");
 const createMouseTurnInput = getGlobal("createMouseTurnInput");
@@ -38,6 +38,24 @@ test("space fires once per press and ignores key repeat", () => {
   assert.equal(fireInput.consumeShot(), false);
 
   target.dispatch("keydown", spaceRepeat);
+  assert.equal(fireInput.consumeShot(), false);
+});
+
+test("space on a full-screen menu does not fire or prevent button activation", () => {
+  const target = createFakeTarget();
+  const fireInput = createFireInput(target, createFakeTarget());
+  let prevented = false;
+
+  target.dispatch("keydown", {
+    key: " ",
+    repeat: false,
+    target: { closest: () => ({}) },
+    preventDefault() {
+      prevented = true;
+    },
+  });
+
+  assert.equal(prevented, false);
   assert.equal(fireInput.consumeShot(), false);
 });
 
@@ -105,4 +123,21 @@ test("a click on the admin panel does not fire", () => {
 
   windowTarget.dispatch("mousedown", leftClick);
   assert.equal(fireInput.consumeShot(), false);
+});
+
+// D-36a: the menu screens live inside the game frame, so their clicks reach it
+test("a click on a menu screen neither fires nor asks for the capture", () => {
+  const page = { pointerLockElement: null };
+  const gameTarget = createFakeTarget();
+  let captureRequests = 0;
+  gameTarget.requestPointerLock = () => {
+    captureRequests += 1;
+  };
+  createMouseTurnInput(page, gameTarget);
+  const fireInput = createFireInput(createFakeTarget(), gameTarget);
+  const onMenuScreen = { closest: (selector) => (selector === "#game-frame .screen" ? {} : null) };
+
+  gameTarget.dispatch("mousedown", { button: 0, target: onMenuScreen });
+  assert.equal(fireInput.consumeShot(), false);
+  assert.equal(captureRequests, 0);
 });

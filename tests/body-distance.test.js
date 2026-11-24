@@ -22,6 +22,7 @@ function addEnemy(world, posX, posY, state) {
     chunkY: 0,
     width: 0.3,
     height: 0.6,
+    contactDamage: 1,
     state,
     stateTime: 0,
     hitWait: 0,
@@ -53,6 +54,35 @@ test("the stop distance leaves space between the two bodies", () => {
   assert.ok(world("enemyStopDistance") > bodies);
   // Stopped there, the enemy is in contact and can hit
   assert.ok(world("enemyStopDistance") < world("contactDistance"));
+});
+
+test("D-27e: a move that would overlap another registered enemy is refused", () => {
+  const world = createOpenWorld();
+  const first = addEnemy(world, 5.5, 5.5, "chase");
+  const second = {
+    id: 2, posX: 6.05, posY: 5.5, cellX: 6, cellY: 5, chunkX: 0, chunkY: 0,
+    width: 0.3, height: 0.6, state: "chase", stateTime: 0, hitWait: 0,
+  };
+  world("enemiesByChunk").get(world("getChunkKey")(0, 0)).push(second);
+  world("registerEnemyAtCell")(second);
+  assert.equal(world("canEnemyKeepDistance")(first, 5.8, 5.5), false);
+  assert.equal(world("canEnemyKeepDistance")(first, 5.0, 5.5), true);
+});
+
+test("D-27e: overlapping enemy bodies across a cell boundary block movement", () => {
+  const world = createOpenWorld();
+  const moving = addEnemy(world, 0.75, 0.5, "chase");
+  const neighbor = {
+    id: 2, posX: 1.04, posY: 0.5, cellX: 1, cellY: 0, chunkX: 0, chunkY: 0,
+    width: 0.3, height: 0.6, state: "idle", stateTime: 0, hitWait: 0,
+  };
+  world("enemiesByChunk").get(world("getChunkKey")(0, 0)).push(neighbor);
+  world("registerEnemyAtCell")(neighbor);
+
+  assert.equal(world("canEnemyKeepDistance")(moving, 0.75, 0.5), false);
+  world("moveEnemyToward")(moving, { x: 1.5, y: 0.5 }, 0.1);
+  assert.equal(moving.posX, 0.75);
+  assert.equal(moving.posY, 0.5);
 });
 
 test("a chasing enemy stops in front of the player at the stop distance", () => {

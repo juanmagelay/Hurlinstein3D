@@ -22,6 +22,12 @@ function plain(object) {
 const defaults = {
   enemiesPerGame: 20,
   activeAreaOnly: true,
+  enemyHealth: 1,
+  bossHealth: 5,
+  useWallTextures: true,
+  useLighting: true,
+  flatColors: false,
+  crtFilter: true,
   playerHitPoints: 10,
   magazineSize: 6,
   unlimitedReloads: true,
@@ -85,6 +91,22 @@ test("flags only take true or false", () => {
   assert.equal(normalizeSetting("godMode", true), true);
   assert.equal(normalizeSetting("godMode", "true"), false);
   assert.equal(normalizeSetting("unlimitedReloads", 0), true);
+});
+
+test("D-16d and D-29b render toggles normalize and persist", () => {
+  const settings = getDefaultSettings();
+  for (const key of ["useWallTextures", "useLighting", "flatColors", "crtFilter"]) {
+    settings[key] = false;
+    assert.equal(normalizeSetting(key, false), false);
+    assert.equal(normalizeSetting(key, true), true);
+  }
+  const storage = createMemoryStorage();
+  saveSettings(storage, settings);
+  const loaded = loadSettings(storage);
+  assert.equal(loaded.useWallTextures, false);
+  assert.equal(loaded.useLighting, false);
+  assert.equal(loaded.flatColors, false);
+  assert.equal(loaded.crtFilter, false);
 });
 
 test("the range text is the one shown next to each field", () => {

@@ -7,9 +7,15 @@ const enemiesByChunk = new Map();
 const enemiesByCell = new Map();
 let spawnRoomCenter = null;
 let nextEnemyId = 1;
+let bossSpawned = false;
 // D-24 / TDD 2.3.2: the enemies of the game are placed in the chunks this
 // close to the player's chunk, the 8 neighbors. The player's chunk stays empty.
 const enemyPlacementRadius = 1;
+function createWorldSeed() {
+  return (Math.random() * 4294967296) >>> 0;
+}
+let worldSeed = createWorldSeed();
+let gameRandom = createRandom(worldSeed);
 
 // TDD 6.8: map signed chunk coordinates to non-negative integers, then pair them.
 function getChunkKey(cx, cy) {
@@ -22,7 +28,7 @@ function getChunkKey(cx, cy) {
 function getChunkCells(cx, cy) {
   const key = getChunkKey(cx, cy);
   if (!generatedChunks.has(key)) {
-    const generatedChunk = generateChunk();
+    const generatedChunk = generateChunk(createRandom(getChunkSeed(worldSeed, cx, cy)));
     generatedChunks.set(key, generatedChunk.cells);
     lightsByChunk.set(key, createChunkLights(generatedChunk, cx, cy));
     if (cx === 0 && cy === 0) {
@@ -69,7 +75,7 @@ function placeGameEnemies(player, count) {
 // index 0, 1, 2... no cell is picked twice and every pick costs the same, even
 // with 100,000 enemies.
 function pickRandomCell(cells, index) {
-  const pick = index + Math.floor(Math.random() * (cells.length - index));
+  const pick = index + Math.floor(gameRandom() * (cells.length - index));
   const cell = cells[pick];
   cells[pick] = cells[index];
   cells[index] = cell;
@@ -79,6 +85,28 @@ function pickRandomCell(cells, index) {
 function removeAllEnemies() {
   enemiesByChunk.clear();
   enemiesByCell.clear();
+}
+
+// D-17a / TDD 2.3.4: a new game discards the whole world (chunks, lights,
+// enemies and their per-cell registry), then puts the player back at a fresh
+// spawn. A new game is a new session, so the next chunk (0, 0) is generated
+// again with a brand new map.
+function resetGame(seed) {
+  if (seed !== undefined && seed !== null && seed !== "") {
+    worldSeed = Number(seed) >>> 0;
+  } else {
+    worldSeed = createWorldSeed();
+  }
+  gameRandom = createRandom(worldSeed);
+  generatedChunks.clear();
+  lightsByChunk.clear();
+  removeAllEnemies();
+  spawnRoomCenter = null;
+  nextEnemyId = 1;
+  bossSpawned = false;
+  resetKillCount();
+  resetGameTime();
+  resetPlayer();
 }
 
 // The air cells of the 8 chunks around the player's chunk. TDD 2.3.2 allows
@@ -134,6 +162,8 @@ function addEnemyAtCell(cellX, cellY) {
     width: enemyWidth,
     height: enemyHeight,
     color: enemyColor,
+    health: gameSettings.enemyHealth,
+    contactDamage: enemyContactDamage,
     state: "idle",
     stateTime: 0,
     // D-27c: ticker units until the next contact hit; 0 hits on first contact
@@ -143,6 +173,51 @@ function addEnemyAtCell(cellX, cellY) {
   addEnemyToChunk(enemy);
   registerEnemyAtCell(enemy);
   return enemy;
+}
+
+// D-19c / TDD 2.3.2: one boss per game, at the room center of a chunk next to
+// the player's. The room lights (D-10) mark each room center, so the first
+// light of a random cardinal neighbour gives the spawn point.
+function spawnBoss(player) {
+  if (bossSpawned) {
+    return null;
+  }
+  const playerChunkX = Math.floor(player.posX / chunkSize);
+  const playerChunkY = Math.floor(player.posY / chunkSize);
+  const offsets = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  const [offsetX, offsetY] = offsets[Math.floor(gameRandom() * offsets.length)];
+  const cx = playerChunkX + offsetX;
+  const cy = playerChunkY + offsetY;
+  getChunkCells(cx, cy);
+  const lights = lightsByChunk.get(getChunkKey(cx, cy)) || [];
+  if (lights.length === 0) {
+    return null;
+  }
+  const cellX = Math.floor(lights[0].x);
+  const cellY = Math.floor(lights[0].y);
+  const boss = {
+    id: nextEnemyId,
+    posX: cellX + 0.5,
+    posY: cellY + 0.5,
+    cellX,
+    cellY,
+    chunkX: Math.floor(cellX / chunkSize),
+    chunkY: Math.floor(cellY / chunkSize),
+    width: bossWidth,
+    height: bossHeight,
+    color: bossColor,
+    health: gameSettings.bossHealth,
+    contactDamage: bossContactDamage,
+    isBoss: true,
+    state: "idle",
+    stateTime: 0,
+    hitWait: 0,
+  };
+  nextEnemyId += 1;
+  addEnemyToChunk(boss);
+  registerEnemyAtCell(boss);
+  bossSpawned = true;
+  return boss;
 }
 
 function addEnemyToChunk(enemy) {

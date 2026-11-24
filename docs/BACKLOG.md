@@ -102,33 +102,44 @@ Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added i
 | D-12e | A and D strafe; the left and right arrows keep turning | P1 | 4 | D-12b | done |
 | D-28a | Specify the UNAHUR at night look and the textured floor and ceiling in the TDD | P1 | 4 | D-09, D-10 | pending |
 | D-28b | UNAHUR wall textures: white plaster, louvered windows, glass, green accents | P1 | 4 | D-28a | pending |
-| D-28c | Floor and ceiling casting with floor tile and ceiling panel textures | P1 | 4 | D-28a | pending |
-| D-28d | Night atmosphere: cold low light, darkness at distance, ceiling lamps at the room lights | P1 | 4 | D-28b, D-28c | pending |
-| D-29a | Pick the CRT filter source and specify it in the TDD | P1 | 4 | D-16b2 | pending |
-| D-29b | CRT post processing filter over the game, with an admin toggle | P1 | 4 | D-29a | pending |
+| D-28c | Floor and ceiling casting with floor tile and ceiling panel textures | P1 | 4 | D-28a | in progress |
+| D-28d | Night atmosphere: cold low light, darkness at distance, ceiling lamps at the room lights | P1 | 4 | D-28b, D-28c | in progress |
+| D-29a | Pick the CRT filter source and specify it in the TDD | P1 | 4 | D-16b2 | in progress |
+| D-29b | CRT post processing filter over the game, with an admin toggle | P1 | 4 | D-29a | in progress |
 | D-30a | Specify the seeded random in TDD 4.4 | P1 | 4 | D-11 | pending |
-| D-30b | Seeded random for the map: one seed per world, one derived seed per chunk | P1 | 4 | D-30a | pending |
-| D-30c | Enemy placement and patrol from the world seed | P1 | 4 | D-30b | pending |
-| D-17a | Reset a game: new world, enemies, projectiles and player | P1 | 4 | D-14b | pending |
-| D-30d | World seed in the admin panel: see it, type one, start a new world | P1 | 4 | D-30c, D-17a | pending |
-| D-17b | Game state machine: menu, playing, victory, defeat | P1 | 4 | D-17a | pending |
-| D-18a | Main menu: title, start game, controls, credits | P1 | 4 | D-16a3, D-17b | pending |
-| D-18b | Controls and credits screens | P1 | 4 | D-18a | pending |
-| D-20a | Defeat screen with play again and main menu | P1 | 4 | D-18a | pending |
-| D-19a | Kill counter and KILLS label on the HUD | P2 | 4 | D-15b, D-17a | pending |
-| D-19b | Enemy hit points, one for regular enemies | P2 | 4 | D-19a | pending |
-| D-19c | Boss appears after the kill target | P2 | 4 | D-19b | pending |
-| D-16c2 | Admin settings for the boss flow: enemy and boss hit points, spawn boss | P2 | 4 | D-16c1e, D-19c | pending |
-| D-19d | Victory when the boss dies, victory screen | P2 | 4 | D-19c, D-20a | pending |
-| D-20b | Score and local ranking storage | P2 | 4 | D-19d | pending |
-| D-20c | Ranking on the victory and defeat screens | P2 | 4 | D-20b | pending |
+| D-30b | Seeded random for the map: one seed per world, one derived seed per chunk | P1 | 4 | D-30a | in progress |
+| D-30c | Enemy placement and patrol from the world seed | P1 | 4 | D-30b | in progress |
+| D-17a | Reset a game: new world, enemies, projectiles and player | P1 | 4 | D-14b | done |
+| D-30d | World seed in the admin panel: see it, type one, start a new world | P1 | 4 | D-30c, D-17a | in progress |
+| D-17b | Game state machine: menu, playing, victory, defeat | P1 | 4 | D-17a | done |
+| D-18a | Main menu: title, start game, controls, credits | P1 | 4 | D-16a3, D-17b | done |
+| D-18b | Controls and credits screens | P1 | 4 | D-18a | done |
+| D-20a | Defeat screen with play again and main menu | P1 | 4 | D-18a | done |
+| D-19a | Kill counter and KILLS label on the HUD | P2 | 4 | D-15b, D-17a | done |
+| D-19b | Enemy hit points, one for regular enemies | P2 | 4 | D-19a | done |
+| D-19c | Boss appears after the kill target | P2 | 4 | D-19b | done |
+| D-16c2 | Admin settings for the boss flow: enemy and boss hit points, spawn boss | P2 | 4 | D-16c1e, D-19c | in progress |
+| D-19d | Victory when the boss dies, victory screen | P2 | 4 | D-19c, D-20a | done |
+| D-20b | Score and remote ranking via the API | P2 | 4 | D-19d | done |
+| D-20c | Ranking on the victory and defeat screens | P2 | 4 | D-20b | done |
 | D-21a | Pick a licensed enemy sprite and embed it as a data URI | P2 | 4 | D-14b | done |
 | D-21b | Textured enemies with z-buffer occlusion | P2 | 4 | D-21a | done |
 | D-26 | Logomark and favicon from the enemy sprite's head | P2 | 4 | D-21a | done |
 | D-21c | Boss as a tinted, larger enemy sprite | P2 | 4 | D-21b, D-19c | pending |
-| D-16d | Admin render toggles: textures, lighting, flat color | P2 | 4 | D-16b2 | pending |
-| D-27e | Enemies keep body distance from each other, optional | P2 | 4 | D-27b | pending |
-| D-22 | Player initials in the ranking, optional | P3 | 4 | D-20c | pending |
+| D-16d | Admin render toggles: textures, lighting, flat color | P2 | 4 | D-16b2 | in progress |
+| D-27e | Enemies keep body distance from each other, optional | P2 | 4 | D-27b | in progress |
+| D-22 | Player initials for the ranking | P3 | 4 | D-20c | done |
+| D-31 | Instant center ray shot instead of the projectile (reverts D-13a to D-13d) | P0 | 4 | D-13d | done |
+| D-32 | Remote ranking via the API (TDD, CLAUDE.md and code) | P0 | 4 | D-19d | done |
+| D-33 | Show the current score on victory and defeat screens | P2 | 4 | D-32 | done |
+| D-34a | Keyboard navigation for full-screen menus | P2 | 4 | D-18a, D-18b, D-20a | done |
+| D-34b | Document keyboard navigation for full-screen menus | P2 | 4 | D-34a | done |
+| D-34c | Preserve native Space activation in menus | P2 | 4 | D-34a | done |
+| D-34d | Keep the focused menu button visibly highlighted | P2 | 4 | D-34a | done |
+| D-35a | Add a one-second cooldown between successful shots | P2 | 4 | D-08a, D-17a | done |
+| D-35b | Document the shot cooldown in the TDD | P2 | 4 | D-35a | done |
+| D-36a | Clicks on the menu screens never capture the mouse, fire or reload | P0 | 4 | D-12d, D-18a | done |
+| D-36b | In-game hint that a click on the view captures the mouse | P0 | 4 | D-36a | done |
 
 ## Backlog review (2026-11-20)
 
@@ -803,6 +814,8 @@ Decisions:
 
 ## D-13d: Projectiles on the minimap, retire the instant hit
 
+Note: reverted by D-31 (2026-11-23); the instant center ray shot is back and the projectile is gone.
+
 Acceptance criteria:
 - Each projectile inside the 21 by 21 window shows as a small dot with the projectile color.
 - `shootCenterRay` is gone; `removeEnemy` stays, used by the projectiles.
@@ -811,6 +824,122 @@ Acceptance criteria:
 Decisions:
 - `isInsideMinimapWindow` keeps dots of projectiles outside the window from being drawn over the rest of the screen.
 - The dots are accumulated and painted with a single `fill()`, like the walls and the enemy markers.
+
+## D-31: Instant center ray shot instead of the projectile
+
+Request (2026-11-23, Juanma): the shot should be a raycast, not a visible projectile. D-13a to D-13d replaced the D-07a instant hit with a traveling projectile; this story brings the instant hit back and removes the projectile.
+
+Acceptance criteria:
+- `shootCenterRay(player)` in `js/enemies.js` casts the center ray DDA once and removes the nearest enemy whose body crosses the ray, closer than the first wall (or `maxRayDistance` with no wall).
+- The projectile is gone: `js/projectiles.js`, `drawProjectiles` (`js/renderer.js`), the minimap dots (`js/minimap.js`) and `clearProjectiles` are removed; `resetGame()` no longer clears projectiles.
+- TDD 2.3.1 describes the instant hit, and 2.3.4 no longer mentions projectiles.
+- `tests/shoot.test.js` covers a direct hit, a blocked shot, a lateral miss, an enemy behind, the nearest of two, no wall up to the max distance, and negative coordinates. `tests/projectiles.test.js` is removed.
+
+Decisions:
+- The hit keeps the current rectangle: lateral within `enemy.width / 2` (half the 0.3 cell width), as the projectile did, not the old `enemy.size / 2` circle of D-07a.
+- `shootCenterRay` walks every enemy of `enemiesByChunk`, like D-07a; a shot is rare, so the per-frame cost stays in the D-23 active area.
+- The muzzle flash and the shotgun animation play on every shot, hit or miss.
+
+## D-32: Remote ranking via the API
+
+Request (2026-11-23, Juanma): the ranking moves out of localStorage and into the external scores API, so the top scores are shared.
+
+Acceptance criteria:
+- TDD 2.3.4: the ranking is the top 5 from the API; the player enters three initials at the end; the score is 100 per regular enemy plus 1000 for the boss; nothing is saved in the browser; an unreachable API shows its error.
+- CLAUDE.md 8.1: the fetch exception for `js/ranking.js`.
+- `js/ranking.js`: fetch `GET /top-puntuaciones` and `POST /all-puntuaciones`, checking `res.ok` and the 400/500/502 errors.
+- The initials screen before the submit (D-22 becomes required), and the victory/defeat screens show the top 5 (rewrites D-20b and D-20c).
+
+Decisions (backend answers, 2026-11-23):
+- CORS is open (`Access-Control-Allow-Origin: *`) and the preflight is handled; `top-puntuaciones` already comes sorted descending, so the frontend does not re-sort.
+- `nombre` is normalized in the frontend (trim, uppercase, remove spaces, cut to 3) because the backend returns 400 on spaces.
+- One optional retry at ~500 ms for the POST covers Vercel cold starts; an unreachable API shows its error body or a generic message.
+
+Implementation (done):
+- `js/ranking.js`: `getScore`, `normalizeInitials`, `formatScoreDate`, `requestRanking`, `fetchTopScores`, `submitScore`.
+- `index.html`: the initials input and the top 5 on both end screens, plus the score styles.
+- `js/main.js`: `wireScoreSubmit` and `renderRanking`, and the defeat screen now shows kills and time too.
+- `tests/ranking.test.js`: the pure functions.
+- Folds in D-20b (submit + read), D-20c (top 5 on the end screens) and D-22 (initials).
+
+## D-33: Show the current score on end screens
+
+Request (2026-11-23, Juanma): show the score on both victory and defeat screens.
+
+Acceptance criteria:
+- Both end screens display the score before the player submits initials.
+- The displayed score uses the same formula and outcome as the score sent to the API.
+
+Decisions:
+- Victory includes the 1000-point boss bonus; defeat does not.
+
+Implementation (done):
+- `index.html` adds a score row to both end screens.
+- `js/main.js` fills the score using the existing `getScore` function.
+- `docs/TDD.md` documents the visible score on end screens.
+
+## D-34a: Keyboard navigation for full-screen menus
+
+Request (2026-11-23, Juanma): navigate menus without relying on the mouse cursor.
+
+Acceptance criteria:
+- Arrow Up/Down and W/S cycle through enabled buttons on the main menu, controls, credits, victory and defeat screens; W/Arrow Up move up and S/Arrow Down move down.
+- Enter and Space activate the focused native button.
+- Opening a screen focuses its first enabled button and releases pointer lock.
+- Keyboard navigation does not intercept input while the initials field is focused; the admin panel remains unchanged.
+
+Implementation (done):
+- `js/screens.js` manages menu focus, keyboard navigation and pointer-lock release.
+- `js/main.js` registers the menu keyboard handler once.
+- `tests/screen.test.js` covers key mapping and cyclic button indices.
+
+## D-34b: Document keyboard navigation for full-screen menus
+
+Acceptance criteria:
+- `docs/TDD.md` describes menu navigation and the behavior of focused initial fields.
+
+Implementation (done):
+- `docs/TDD.md` documents the menu controls and pointer-lock release.
+
+## D-34c: Preserve native Space activation in menus
+
+Acceptance criteria:
+- Space on a focused menu button is not consumed by the gameplay fire input.
+
+Implementation (done):
+- `js/player.js` ignores Space events originating inside full-screen menus.
+- `tests/weapon.test.js` verifies menu Space is not prevented and does not fire.
+
+## D-34d: Keep the focused menu button visibly highlighted
+
+Acceptance criteria:
+- The currently focused menu button has a visible outline even when focus was set programmatically after mouse input.
+
+Implementation (done):
+- `index.html` shows the focus outline for every focused menu button.
+
+## D-35a: Add a one-second cooldown between successful shots
+
+Request (2026-11-23, Juanma): add a one-second cooldown to firing.
+
+Acceptance criteria:
+- The first shot is immediate; a successful shot blocks another for one second.
+- Attempts during cooldown are discarded, not queued.
+- Starting a new game resets the cooldown so firing is immediately available.
+
+Implementation (done):
+- `js/player.js` tracks and updates `shotCooldown`; `tryFire` starts it only after a successful shot.
+- `js/main.js` advances the cooldown using ticker delta time.
+- `tests/ammo.test.js` verifies the interval and that blocked attempts do not spend ammunition.
+- `tests/reset.test.js` verifies reset clears the cooldown.
+
+## D-35b: Document the shot cooldown in the TDD
+
+Acceptance criteria:
+- TDD 2.3.1 specifies the one-second delay and that attempts during it are not queued.
+
+Implementation (done):
+- `docs/TDD.md` documents the firing cadence.
 
 ## D-14a: Sync the docs with the code
 
@@ -1440,12 +1569,20 @@ Files: `js/world.js`, `js/enemies.js`, `tests/enemies.test.js`, `tests/world.tes
 
 ## D-17a: Reset a game
 
+Note: D-31 removed the projectiles, so `resetGame()` no longer clears them.
+
 Acceptance criteria:
 - `resetGame()` clears the chunk, light and enemy Maps, the per-cell registry and the projectiles, and puts the player at the room center of a newly generated chunk (0, 0) with full health, a full magazine and no reload.
 - Within a game, chunks still persist (TDD 4.4). A new game is a new session with a new map.
 - Tests: after a reset the old chunk is gone, no enemies or projectiles are left, and the player stands on an air cell with 100 health and 6 rounds.
 
 Files: `js/world.js`, `js/player.js`, `js/projectiles.js`, `tests/reset.test.js` (new).
+
+Decisions:
+- `resetGame()` lives in `js/world.js` and coordinates `clearProjectiles()` (`js/projectiles.js`) and `resetPlayer()` (`js/player.js`).
+- It does not place enemies; that stays `placeGameEnemies`, called at startup and later by D-18a Start game and D-20a Play again.
+- `nextEnemyId` resets to 1, so a new game also starts ids over.
+- "100 health" in the criteria means full health (`gameSettings.playerHitPoints`, 10 by default). The text stays as is, by team decision.
 
 ## D-30d: World seed in the admin panel
 
@@ -1468,6 +1605,11 @@ Acceptance criteria:
 
 Files: `js/game-state.js` (new), `js/main.js`, `index.html`, `tests/game-state.test.js` (new).
 
+Decisions:
+- The state machine lives in `js/game-state.js` with a transition map; `setGameState` rejects edges not in the map.
+- The criteria said "player, enemies, projectiles, reload and weapon"; D-31 removed the projectiles, so it is "player, enemies, reload and weapon".
+- D-16c1's bring-back stays: from `defeat`, restoring health from the admin panel goes back to `playing` through the `defeat -> playing` edge.
+
 ## D-18a: Main menu
 
 Acceptance criteria:
@@ -1476,6 +1618,11 @@ Acceptance criteria:
 - The menu lives inside `#game-frame` and scales with it.
 
 Files: `index.html`, `js/screens.js` (new), `js/main.js`.
+
+Decisions:
+- The game now starts in `menu`, so D-18a also changes the initial state in `js/game-state.js` and its test.
+- Start game calls `resetGame()`, then `placeGameEnemies`, then `setGameState(playing)` and hides the menu; `placeGameEnemies` moved out of startup.
+- Controls and Credits buttons exist but are wired in D-18b.
 
 ## D-18b: Controls and credits screens
 
@@ -1488,6 +1635,11 @@ Files: `index.html`, `js/screens.js`.
 
 Open question: where `Sgun.png` and the UI bar sheet come from, and under which license.
 
+Decisions:
+- Controls lists the full current scheme (D-12): W/S, A/D strafe, arrows, mouse, Space/click fire, R/right click reload, Esc and P. The criteria's shorter list predates D-12.
+- The sub-screens are wired in `js/main.js` (not `js/screens.js`), and `syncScreenToState` gained a `syncedState` guard so it only forces the screen on a state change, leaving Controls and Credits open while in menu.
+- Sprite licenses settled: FPS Gun Sprites by Rekkimaru (free for any use, no attribution required) and UI BARS by guilemus (free for commercial use, no redistribution). Both are credited in `index.html` and `README.md`.
+
 ## D-20a: Defeat screen with play again
 
 Acceptance criteria:
@@ -1497,15 +1649,25 @@ Acceptance criteria:
 
 Files: `index.html`, `js/screens.js`, `js/main.js`, `js/hud.js`.
 
+Decisions:
+- The defeat screen is an HTML overlay (like the menu), shown by `syncScreenToState()` in the ticker, which maps menu/defeat to their screens and hides everything while playing.
+- Play again reuses `startNewGame()`; Main menu goes back to menu through the `defeat -> menu` edge.
+- `createDefeatOverlay` and `drawDefeatOverlay` are removed from `js/hud.js`; the HTML screen replaces them.
+
 ## D-19a: Kill counter
 
 Acceptance criteria:
-- Each enemy a projectile kills adds one to the kill count; `resetGame()` sets it back to 0.
+- Each enemy the shot kills adds one to the kill count; `resetGame()` sets it back to 0.
 - The target is the enemies per game setting (D-16c1e), 20 by default.
 - The HUD shows "KILLS 3 / 20" under AMMO. The `Text` object is created once and its text changes only when the count changes.
 - Tests: a kill adds one, a miss adds nothing, a reset clears the count.
 
-Files: `js/game-state.js`, `js/projectiles.js`, `js/hud.js`, `tests/projectiles.test.js`. `js/main.js` adds the label to the stage; split the story if it goes over four files.
+Files: `js/game-state.js`, `js/enemies.js`, `js/world.js`, `js/hud.js`, `js/main.js`, `tests/shoot.test.js`, `tests/reset.test.js`, `tests/hud.test.js`.
+
+Decisions:
+- The kill count lives in `js/game-state.js`; the shot increments it in `js/enemies.js`, and `resetGame()` clears it in `js/world.js`.
+- The label is a PixiJS Text at HUD row 2 (under AMMO), created once and updated in the ticker's `updateHudBars`.
+- Kept as one story despite touching five code files: each change is a few lines and it validates in one shot.
 
 ## D-23: Update and draw only the enemies near the player
 
@@ -1582,11 +1744,15 @@ Files: `index.html`, `js/admin.js`, `js/enemies.js`, `js/main.js`.
 ## D-19b: Enemy hit points
 
 Acceptance criteria:
-- Every enemy has `health`. Regular enemies have 1, so one projectile still kills them and nothing visible changes.
-- A projectile that reaches an enemy takes one point; at zero the enemy is removed and counted.
-- Tests: an enemy with 2 points survives one hit and dies on the second, and the projectile always disappears on contact.
+- Every enemy has `health`. Regular enemies have 1, so one shot still kills them and nothing visible changes.
+- A shot that hits an enemy takes one point; at zero the enemy is removed and counted.
+- Tests: an enemy with 2 points survives one hit and dies on the second.
 
-Files: `js/world.js`, `js/projectiles.js`, `tests/projectiles.test.js`.
+Files: `js/config.js`, `js/world.js`, `js/enemies.js`, `tests/shoot.test.js`.
+
+Decisions:
+- `enemyHealth = 1` lives in `js/config.js` next to the other enemy constants; D-16c2 will turn it into an admin setting.
+- The kill counter only increments when the enemy reaches zero health, so a shot that wounds (2 -> 1) does not count.
 
 ## D-19c: Boss appears after the kill target
 
@@ -1597,7 +1763,14 @@ Acceptance criteria:
 - The admin panel gets a Spawn boss button for quick validation.
 - Tests: no boss before the target, exactly one at the target, on an air cell, with its hit points.
 
-Files: `js/enemies.js`, `js/renderer.js`, `js/minimap.js`, `tests/boss.test.js` (new).
+Files: `js/config.js`, `js/world.js`, `js/enemies.js`, `js/renderer.js`, `js/minimap.js`, `js/admin.js`, `index.html`, `tests/boss.test.js` (new), `tests/health.test.js`.
+
+Decisions:
+- Boss constants live in `js/config.js`: 1.5x size (0.45 by 0.9), crimson `0xdc143c`, 5 hit points, 2 contact damage.
+- `spawnBoss` lives in `js/world.js`; it reuses the room lights (D-10) to get the room center of a random cardinal neighbour chunk. `bossSpawned` keeps it to one per game and `resetGame` clears it.
+- Contact damage became per enemy (`enemy.contactDamage`): regular 1, boss 2. The D-27 `contactHitPoints` constant was removed.
+- The renderer and minimap now group by `enemy.color`, so the boss draws crimson in flat color mode; the sprite mode stays D-21c.
+- The trigger is in `shootCenterRay`: after a kill, when `getKillCount()` reaches `enemiesPerGame`, `spawnBoss` runs (guarded to once).
 
 ## D-19d: Victory when the boss dies
 
@@ -1606,7 +1779,12 @@ Acceptance criteria:
 - The victory screen shows a title, the kills and the game time, with the buttons Play again and Main menu. It is the defeat screen with another title.
 - Tests: killing the boss sets `victory`; killing a regular enemy does not.
 
-Files: `js/game-state.js`, `js/screens.js`, `index.html`, `tests/game-state.test.js`.
+Files: `js/enemies.js`, `js/game-state.js`, `js/hud.js`, `js/world.js`, `js/main.js`, `index.html`, `tests/boss.test.js`, `tests/hud.test.js`.
+
+Decisions:
+- `shootCenterRay` switches to `victory` when the killed enemy `isBoss`; the boss does not increment the regular kill count.
+- The game time lives in `js/game-state.js` (`gameTime`, `addGameTime`, `resetGameTime`), advances only while playing, and is reset by `resetGame`. `formatGameTime` (hud.js) shows it as m:ss.
+- The victory screen is HTML like the defeat screen, with Kills and Time spans filled by `updateVictoryStats` when the state changes to victory; `syncScreenToState` gained the victory branch.
 
 ## D-20b: Score and local ranking storage
 
@@ -1696,6 +1874,40 @@ Files: `js/config.js`, `js/renderer.js`, `js/main.js`, `js/admin.js`.
 
 Acceptance criteria:
 - At the end of a game the player can type three initials, stored with the record and shown in the ranking.
+
+## D-36a: Menu clicks do not capture the mouse
+
+Bug (2026-11-24, Juanma): on the main menu, the first click on a button showed Chrome's "file:/// To show your cursor, press Esc" notice. The menu screens (D-18a) live inside `#game-frame`, and D-12c asks for the pointer lock on any mousedown on the frame. The same mousedown also left a pending shot (D-12d), so Start game and Play again fired on the first frame of the game.
+
+Acceptance criteria:
+- Clicks on the menu, Controls, Credits, victory and defeat screens never capture the mouse, fire or reload. Chrome shows no capture notice while in the menus.
+- During the game, a click on the view still fires and captures, as TDD 2.2 says.
+- Tests: a click on a menu screen asks for no capture and fires no shot; a right click there does not reload.
+
+Files: `js/player.js`, `tests/player.test.js`, `tests/weapon.test.js`, `tests/ammo.test.js`.
+
+Decisions:
+- `isOnGameScreen(event)` checks `event.target.closest("#game-frame .screen")`. The three mousedown listeners (capture, fire, reload) and the Space listener use it; Space already had the same check inline (D-34c).
+- The screens cover the whole frame (`inset: 0`), so every click while one is visible lands on it.
+- The contextmenu stays cancelled on the whole frame, menus included.
+
+## D-36b: Mouse capture hint inside the game
+
+Request (2026-11-24, Juanma): any message about the mouse has to be styled and inside the player's screen.
+
+Acceptance criteria:
+- While playing with the mouse free (at the start of each game, after Esc, with the admin panel open), a pill at the top center of the view reads "Click to turn with the mouse". It hides once the mouse is captured and outside the playing state.
+- It lets clicks through to the game frame and does not cover the HUD or the minimap.
+- Tests: the hint shows while playing with the mouse free and hides when captured, in the menu, on victory and on defeat.
+
+Files: `index.html`, `js/screens.js`, `js/main.js`, `tests/screen.test.js`.
+
+Decisions:
+- Chrome's own notice ("To show your cursor, press Esc") appears every time the pointer lock starts. It is browser UI: the page cannot hide or restyle it. D-36a moves it out of the menu, so it now shows only at the first click on the view during a game.
+- The hint is HTML inside `#game-frame`, styled with the screens' tokens (panel color, accent border, system font), with the Lucide `mouse` icon (Lucide 1.77.0, ISC, already in `assets/icons/LICENSE`). `pointer-events: none`, so the click goes to the frame. A 240 ms fade in, off with reduced motion.
+- `createMouseHint(document, gameFrame, element)` returns `update(isPlaying)`; the ticker calls it after `syncScreenToState()` and it writes `hidden` only when the answer changes.
+- Top center, 64 px down: under the admin hover band and between the bars and the minimap.
+- Tests: 253 of 253 pass (`node --test "tests/*.test.js"`).
 
 ## Desirables
 

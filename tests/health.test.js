@@ -45,7 +45,7 @@ test("zero damage leaves the health as it was and reports no hit", () => {
 function setTouchingEnemies(count) {
   const enemies = [];
   for (let index = 0; index < count; index += 1) {
-    enemies.push({ posX: 0.9, posY: 0.5, hitWait: 0 });
+    enemies.push({ posX: 0.9, posY: 0.5, hitWait: 0, contactDamage: 1 });
   }
   enemiesByChunk.clear();
   enemiesByChunk.set(getChunkKey(0, 0), enemies);

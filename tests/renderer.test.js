@@ -16,6 +16,7 @@ const backgroundColor = getGlobal("backgroundColor");
 const wallPalette = getGlobal("wallPalette");
 const getChunkKey = getGlobal("getChunkKey");
 const getChunkWallColor = getGlobal("getChunkWallColor");
+const getWallVariant = getGlobal("getWallVariant");
 const getWallColor = getGlobal("getWallColor");
 const side1Brightness = getGlobal("side1Brightness");
 const getDistanceBand = getGlobal("getDistanceBand");
@@ -25,6 +26,119 @@ const wallDepthBuffer = getGlobal("wallDepthBuffer");
 const getWallDepthAtColumn = getGlobal("getWallDepthAtColumn");
 const getLitWallColor = getGlobal("getLitWallColor");
 const ambientLight = getGlobal("ambientLight");
+const getRowDistance = getGlobal("getRowDistance");
+const getFloorWorldPoint = getGlobal("getFloorWorldPoint");
+const getFloorTextureColor = getGlobal("getFloorTextureColor");
+
+test("D-28c row distance and center-column floor point match Lode's projection", () => {
+  // At y=540, rowDistance = (720 / 2) / (540 - 360) = 2.
+  assert.equal(getRowDistance(540), 2);
+  const player = { posX: 3.25, posY: -2.5, dirX: 0.6, dirY: 0.8, planeX: -0.528, planeY: 0.396 };
+  const point = getFloorWorldPoint(player, 0, 2);
+  assert.ok(Math.abs(point.x - 4.45) < 1e-12);
+  assert.ok(Math.abs(point.y + 0.9) < 1e-12);
+});
+
+test("D-28c floor casting samples once per strip and covers each surface pixel", () => {
+  const drawFloorCasting = getGlobal("drawFloorCasting");
+  const updateFloorCasting = getGlobal("updateFloorCasting");
+  const getLightsAtCell = getGlobal("getLightsAtCell");
+  const getFloorTextureColor = getGlobal("getFloorTextureColor");
+  getGlobal("floorColorCalls = 0");
+  getGlobal("getLightsAtCell = function () { return []; }");
+  getGlobal("getFloorTextureColor = function () { floorColorCalls += 1; return [11, 22, 33]; }");
+  const width = getGlobal("maxWallStripCount");
+  const height = 4;
+  const canvas = { width, height };
+  const pixels = new Uint8ClampedArray(width * height * 4);
+  const surface = {
+    canvas,
+    imageData: { data: pixels },
+    context: { putImageData() {} },
+    sprite: { visible: true, texture: { source: { update() {} } } },
+  };
+  const player = { posX: 0.5, posY: 0.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66 };
+  try {
+    gameSettings.stripWidth = 4;
+    const samplesPerFrame = getGlobal("getWallStripCount")() * height;
+    updateFloorCasting(surface, player, false);
+    assert.equal(surface.sprite.visible, false);
+    assert.equal(getGlobal("floorColorCalls"), 0);
+    updateFloorCasting(surface, player, true);
+    assert.equal(surface.sprite.visible, true);
+    assert.equal(getGlobal("floorColorCalls"), samplesPerFrame);
+    assert.ok(samplesPerFrame < width * height);
+    assert.equal(pixels.length / 4, width * height);
+    for (let index = 0; index < pixels.length; index += 4) {
+      assert.deepEqual([...pixels.slice(index, index + 4)], [11, 22, 33, 255]);
+    }
+  } finally {
+    gameSettings.stripWidth = stripWidth;
+    getGlobal(`getLightsAtCell = ${getLightsAtCell.toString()}`);
+    getGlobal(`getFloorTextureColor = ${getFloorTextureColor.toString()}`);
+  }
+});
+
+test("D-28c floor casting keeps horizon samples finite and fills the horizon with background", () => {
+  const drawFloorCasting = getGlobal("drawFloorCasting");
+  const getLightsAtCell = getGlobal("getLightsAtCell");
+  const getFloorTextureColor = getGlobal("getFloorTextureColor");
+  getGlobal("floorSamples = []");
+  getGlobal("getLightsAtCell = function () { return []; }");
+  getGlobal(`getFloorTextureColor = function (x, y, isCeiling, distance) {
+    floorSamples.push({ x, y, isCeiling, distance });
+    return isCeiling ? [11, 22, 33] : [44, 55, 66];
+  }`);
+  const width = getGlobal("maxWallStripCount");
+  const pixels = new Uint8ClampedArray(width * screenHeight * 4);
+  const surface = {
+    canvas: { width, height: screenHeight },
+    imageData: { data: pixels },
+    context: { putImageData() {} },
+    sprite: { texture: { source: { update() {} } } },
+  };
+  const player = { posX: 0.5, posY: 0.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66 };
+  try {
+    drawFloorCasting(surface, player);
+    const samples = getGlobal("floorSamples");
+    assert.ok(samples.length > 0);
+    assert.ok(samples.every((sample) =>
+      Number.isFinite(sample.x) && Number.isFinite(sample.y) &&
+      Number.isFinite(sample.distance) && sample.distance > 0
+    ));
+    assert.ok(samples.some((sample) => sample.isCeiling));
+    assert.ok(samples.some((sample) => !sample.isCeiling));
+    assert.equal(samples.length, getGlobal("getWallStripCount")() * screenHeight);
+    for (let pixelX = 0; pixelX < width; pixelX += 1) {
+      for (const [row, isCeiling] of [[screenHeight / 2 - 1, true], [screenHeight / 2, false]]) {
+        const index = (row * width + pixelX) * 4;
+        assert.deepEqual([...pixels.slice(index, index + 4)], isCeiling ? [11, 22, 33, 255] : [44, 55, 66, 255]);
+      }
+    }
+  } finally {
+    getGlobal(`getLightsAtCell = ${getLightsAtCell.toString()}`);
+    getGlobal(`getFloorTextureColor = ${getFloorTextureColor.toString()}`);
+  }
+});
+
+test("D-28d floor and ceiling colors darken with distance and room lamps are visible", () => {
+  const lights = [{ x: 2.5, y: 3.5 }];
+  const lit = getFloorTextureColor(2.5, 3.5, true, 1, lights);
+  const unlit = getFloorTextureColor(2.5, 3.5, true, maxRayDistance, []);
+  assert.ok(lit[0] > unlit[0]);
+  assert.ok(getFloorTextureColor(2.5, 3.5, false, 1, []).some((value) => value > 0));
+});
+
+test("D-28b wall variants are stable and cover all three across negative cells", () => {
+  const variants = new Set();
+  for (let x = -20; x < 20; x += 1) {
+    for (let y = -20; y < 20; y += 1) {
+      assert.equal(getWallVariant(x, y), getWallVariant(x, y));
+      variants.add(getWallVariant(x, y));
+    }
+  }
+  assert.deepEqual([...variants].sort(), [0, 1, 2]);
+});
 
 // Stands in for a PIXI.Graphics and records what drawWalls asks it to draw
 function createRecordingGraphics() {
@@ -88,13 +202,13 @@ test("distance is quantized into four six-cell brightness bands", () => {
   assert.equal(getDistanceBand(18), 3);
   assert.equal(getDistanceBand(maxRayDistance), 3);
   assert.equal(getDistanceBrightness(0), 1);
-  assert.equal(getDistanceBrightness(6), 0.8);
-  assert.equal(getDistanceBrightness(12), 0.6);
-  assert.equal(getDistanceBrightness(18), 0.4);
+  assert.equal(getDistanceBrightness(6), 0.75);
+  assert.equal(getDistanceBrightness(12), 0.4);
+  assert.equal(getDistanceBrightness(18), 0.08);
 });
 
 test("distance shading darkens colors and keeps side 1 darker", () => {
-  for (const brightness of [1, 0.8, 0.6, 0.4]) {
+    for (const brightness of [1, 0.75, 0.4, 0.08]) {
     const baseColor = wallPalette[0];
     const side0Color = shadeColor(baseColor, brightness);
     const side1Color = shadeColor(baseColor, brightness * side1Brightness);
@@ -118,7 +232,7 @@ test("wall color combines chunk, side and distance shading", () => {
 
   assert.equal(getWallColor(-1, 0, 0, 0), baseColor);
   assert.equal(getWallColor(-1, 0, 1, 0), shadeColor(baseColor, side1Brightness));
-  assert.equal(getWallColor(-1, 0, 0, 18), shadeColor(baseColor, 0.4));
+  assert.equal(getWallColor(-1, 0, 0, 18), shadeColor(baseColor, 0.08));
 });
 
 test("the canvas is 16:9 and casts 640 rays", () => {
@@ -498,7 +612,7 @@ test("D-21b: the nearer enemy takes the top sprites and the pool drops the farth
   }
   for (let index = 36; index <= 57; index += 1) {
     assert.equal(pool.sprites[index].height, 72);
-    assert.equal(pool.sprites[index].tint, 0xcccccc);
+    assert.equal(pool.sprites[index].tint, 0xbfbfbf);
   }
   for (let index = 0; index < 36; index += 1) {
     assert.equal(pool.sprites[index].visible, false);

@@ -8,7 +8,7 @@ const { loadScripts } = require("./load-scripts.js");
 // trigger the chase state, but inside the active area of D-23 (chunk (0, 2)).
 const getGlobal = loadScripts();
 getGlobal("getCell = function (x, y) { return 0; }");
-getGlobal("Math.random = function () { return 0; }");
+getGlobal("gameRandom = function () { return 0; }");
 const updateEnemies = getGlobal("updateEnemies");
 const startPatrol = getGlobal("startPatrol");
 const hasLineOfSight = getGlobal("hasLineOfSight");
@@ -87,10 +87,31 @@ test("patrol oscillates between the two route cells", () => {
   assert.equal(enemy.patrolTargetIsB, true);
 });
 
+test("D-30c: patrol choices repeat for the same world seed", () => {
+  const firstWorld = loadScripts();
+  firstWorld("getCell = function () { return 0; }");
+  firstWorld("gameRandom = createRandom(9876)");
+  firstWorld("globalThis.patrolTestEnemy = { posX: 5.5, posY: 5.5, cellX: 5, cellY: 5, state: 'idle', stateTime: 0 }");
+  firstWorld("enemiesByChunk.set(getChunkKey(0, 0), [patrolTestEnemy])");
+  firstWorld("updateEnemies")({ posX: 5.5, posY: 37.5 }, firstWorld("enemyIdleTicks"));
+  const firstChoice = firstWorld("enemiesByChunk.get(getChunkKey(0, 0))[0].patrolB");
+
+  const secondWorld = loadScripts();
+  secondWorld("getCell = function () { return 0; }");
+  secondWorld("gameRandom = createRandom(9876)");
+  secondWorld("globalThis.patrolTestEnemy = { posX: 5.5, posY: 5.5, cellX: 5, cellY: 5, state: 'idle', stateTime: 0 }");
+  secondWorld("enemiesByChunk.set(getChunkKey(0, 0), [patrolTestEnemy])");
+  secondWorld("updateEnemies")({ posX: 5.5, posY: 37.5 }, secondWorld("enemyIdleTicks"));
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(firstChoice)),
+    JSON.parse(JSON.stringify(secondWorld("enemiesByChunk.get(getChunkKey(0, 0))[0].patrolB")))
+  );
+});
+
 // A single air cell surrounded by walls: the enemy has nowhere to patrol.
 const walledGlobal = loadScripts();
 walledGlobal("getCell = function (x, y) { return (x === 5 && y === 5) ? 0 : 1; }");
-walledGlobal("Math.random = function () { return 0; }");
+walledGlobal("gameRandom = function () { return 0; }");
 const walledUpdateEnemies = walledGlobal("updateEnemies");
 const walledChunks = walledGlobal("enemiesByChunk");
 const walledChunkKey = walledGlobal("getChunkKey");

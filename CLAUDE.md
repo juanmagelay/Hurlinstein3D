@@ -152,7 +152,7 @@ Recorrer en primera persona una mazmorra infinita generada proceduralmente, con 
 
 Requisitos que no se negocian:
 
-- Controles W y S (avanzar y retroceder), A y D (rotar). Sin lateral ni mouse (TDD 2.2).
+- Controles W y S (avanzar y retroceder), A y D (desplazamiento lateral), flechas izquierda y derecha (giro), mouse (giro), Space/clic izquierdo (disparo), R/clic derecho (recarga). (TDD 2.2).
 - Sin victoria, derrota, enemigos ni z-buffer (TDD 2.1).
 - Chunk según TDD 4.2: 16 por 16, sala de 4 a 8 con margen de 2, puertas fijas en la fila o columna 8, corredores de tres tramos. Conectividad por construcción, sin validación en tiempo de ejecución (TDD 4.3).
 - Cada chunk se genera una vez y persiste en la sesión; Math.random sin semilla (TDD 4.4).
@@ -162,7 +162,7 @@ Requisitos que no se negocian:
 
 ### 7.2 Deseable (solo con el mínimo cerrado)
 
-TDD 1.3, 2.3, 4.6 y Fase 4: oscurecimiento por distancia, color de pared por chunk, texturas generadas por código en canvas oculto, HUD (mira, vida, munición), un enemigo cuadrado con máquina de estados (reposo, patrulla, persecución por línea de visión) y daño por contacto, vida y derrota, disparo con el DDA del rayo central contra enemigos registrados por celda, munición con cargador y recarga, iluminación por raycasting, segunda sala por chunk. Desplazamiento lateral y mouse solo si el equipo lo pide.
+TDD 1.3, 2.3, 4.6 y Fase 4: oscurecimiento por distancia, color de pared por chunk, texturas generadas por código en canvas oculto, HUD (mira, vida, munición), un enemigo cuadrado con máquina de estados (reposo, patrulla, persecución por línea de visión) y daño por contacto, vida y derrota, disparo con el DDA del rayo central contra enemigos registrados por celda, munición con cargador y recarga, iluminación por raycasting, segunda sala por chunk. El mouse y el desplazamiento lateral ya forman parte de los controles solicitados.
 
 ## 8. Arquitectura y reglas técnicas
 
@@ -170,7 +170,7 @@ TDD 1.3, 2.3, 4.6 y Fase 4: oscurecimiento por distancia, color de pared por chu
 
 - Doble clic en `index.html`. Sin npm, bundler ni servidor para el entregable. Navegador de referencia: Chrome.
 - Sin `type="module"`, `import` ni `export`. Funciones y constantes globales; el orden de los `<script>` resuelve dependencias, con `main.js` al final.
-- Sin `fetch`, `Assets.load` ni imágenes del disco.
+- Sin `fetch`, `Assets.load` ni imágenes del disco. Excepción: el ranking remoto usa `fetch` desde `js/ranking.js` contra la API externa de puntuaciones (base `https://backend-pixi.vercel.app/api`, `GET /top-puntuaciones`, `GET/POST /all-puntuaciones`); el resto del juego sigue sin red.
 - `lib/pixi.min.js`: bundle de navegador del paquete oficial `pixi.js` v8 (define el global `PIXI`), versión fija, copiado al repo. Podés obtenerlo en esta máquina (por ejemplo con `npm pack` del paquete y extrayendo el archivo de `dist/`); verificá que define `PIXI` antes de usarlo.
 
 ### 8.2 Estructura

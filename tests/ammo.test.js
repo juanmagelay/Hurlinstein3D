@@ -5,6 +5,7 @@ const { loadScripts } = require("./load-scripts.js");
 const getGlobal = loadScripts();
 
 const tryFire = getGlobal("tryFire");
+const updateShotCooldown = getGlobal("updateShotCooldown");
 const startReload = getGlobal("startReload");
 const updateReload = getGlobal("updateReload");
 const createReloadInput = getGlobal("createReloadInput");
@@ -16,7 +17,7 @@ const fullReload = reloadDuration * 60;
 
 function makePlayer(overrides) {
   return Object.assign(
-    { ammo: magazineSize, reloadsLeft: Infinity, reloading: false, reloadTime: 0 },
+    { ammo: magazineSize, reloadsLeft: Infinity, reloading: false, reloadTime: 0, shotCooldown: 0 },
     overrides
   );
 }
@@ -26,6 +27,22 @@ test("a shot spends one round and a full magazine can fire", () => {
 
   assert.equal(tryFire(player), true);
   assert.equal(player.ammo, magazineSize - 1);
+});
+
+test("a successful shot blocks another shot until the one-second cooldown expires", () => {
+  const player = makePlayer();
+
+  assert.equal(tryFire(player), true);
+  assert.equal(player.shotCooldown, 1);
+  assert.equal(tryFire(player), false);
+  assert.equal(player.ammo, magazineSize - 1);
+
+  updateShotCooldown(player, 59);
+  assert.equal(tryFire(player), false);
+  updateShotCooldown(player, 1);
+  assert.equal(player.shotCooldown, 0);
+  assert.equal(tryFire(player), true);
+  assert.equal(player.ammo, magazineSize - 2);
 });
 
 test("an empty magazine cannot fire and never goes negative", () => {
@@ -210,4 +227,14 @@ test("Space typed into an admin panel field does not fire", () => {
   });
   assert.equal(fireInput.consumeShot(), false);
   assert.equal(prevented, false);
+});
+
+// D-36a: a right click on a menu screen of the game frame does not reload
+test("a right click on a menu screen does not reload", () => {
+  const gameTarget = createFakeTarget();
+  const reloadInput = createReloadInput(createFakeTarget(), gameTarget);
+  const onMenuScreen = { closest: (selector) => (selector === "#game-frame .screen" ? {} : null) };
+
+  gameTarget.dispatch("mousedown", { button: 2, target: onMenuScreen });
+  assert.equal(reloadInput.consumeReload(), false);
 });

@@ -52,7 +52,7 @@ El jugador se maneja con el teclado y el mouse:
 
 - **R** o **clic derecho**: recarga (2.3.1).
 
-El mouse se captura con la Pointer Lock API del navegador: el puntero se oculta y cada evento informa cuántos píxeles se movió el mouse (movementX), aunque el puntero esté contra el borde de la pantalla. El navegador concede la captura solo como respuesta a un clic, así que el primer clic sobre el juego dispara y además la pide. Esc libera el mouse, y abrir el panel de administración (2.3.5) también, para poder usar sus campos; el clic siguiente sobre el juego vuelve a disparar y a capturarlo. Los clics sobre el panel nunca disparan ni recargan.
+El mouse se captura con la Pointer Lock API del navegador: el puntero se oculta y cada evento informa cuántos píxeles se movió el mouse (movementX), aunque el puntero esté contra el borde de la pantalla. El navegador concede la captura solo como respuesta a un clic, así que el primer clic sobre el juego dispara y además la pide. Esc libera el mouse, y abrir el panel de administración (2.3.5) también, para poder usar sus campos; el clic siguiente sobre el juego vuelve a disparar y a capturarlo. Los clics sobre el panel nunca disparan ni recargan, y los clics sobre las pantallas de menú, victoria y derrota (2.3.4) tampoco capturan el mouse, ni disparan ni recargan: el mouse se captura recién durante la partida, con un clic sobre la vista. Al capturarlo, el navegador muestra su propio aviso para liberarlo con Esc, que la página no puede ocultar ni cambiar de estilo. Mientras se juega con el mouse libre, un aviso del juego, dentro de su marco y arriba al centro, indica que un clic sobre la vista lo captura.
 
 Así quedan dos esquemas que conviven: las flechas solas, que avanzan y giran como en los juegos de raycasting de los noventa, y W, A, S y D con el mouse, el esquema de los juegos en primera persona posteriores.
 
@@ -62,7 +62,7 @@ Ninguno de los dos cambia el estado de la cámara, que sigue siendo un vector di
 ### 2.3.1 Combate y supervivencia
 - **Sistema de vida**: el jugador tiene una barra de salud. Recibir daño de un enemigo al colisionar disminuye ese valor, y si llega a cero el jugador muere y pierde la partida. La vida se cuenta en puntos, igual que la del enemigo y la del jefe: el jugador tiene 10. El daño por contacto llega en golpes enteros: un enemigo común pega un punto apenas toca al jugador y después uno por segundo mientras dure el contacto. Cada enemigo lleva su propia espera de un segundo entre golpes, así entrar y salir del contacto no suma golpes, y dos enemigos pegan el doble. En el mismo cuadro del golpe la barra baja un punto y la pantalla hace un destello rojo (2.3.3). El jugador camina más rápido de lo que persigue el enemigo, 3,1 contra 2 celdas por segundo, así que retroceder siempre lo aleja y lo saca del contacto antes del golpe siguiente.
 
-- **Armamento y disparo**: el jugador dispone de un arma de fuego que se dispara con la barra espaciadora o con el clic izquierdo (2.2), apuntando con una mira fija en el centro de la pantalla. Cada disparo lanza un proyectil visible que sale del jugador en la dirección de la mira. Como la mira está fija en el centro, esa dirección es la del rayo de la columna central: cameraX vale 0 y rayDir es igual a dir. Al disparar, ese rayo recorre la grilla celda por celda con el mismo DDA del capítulo 3 y devuelve la distancia a la primera pared, que pasa a ser el alcance del proyectil. Como las paredes no cambian durante la partida, ese alcance no se vuelve a calcular. En cada cuadro el proyectil avanza a velocidad constante y se revisa el tramo que recorrió. Cada enemigo queda registrado en la celda que ocupa, así solo se revisan los enemigos de las celdas que toca ese tramo. Si el tramo pasa contra el collider de alguno, el proyectil desaparece y el enemigo pierde un punto de vida. Un enemigo común tiene un solo punto, así que muere con un disparo, y cada muerte suma uno al contador de enemigos eliminados. Si el proyectil llega a su alcance, choca contra la pared y desaparece, y si no había pared dentro de la distancia máxima del rayo, desaparece al recorrerla. Como el impacto se decide durante el vuelo, un enemigo que se corre a tiempo esquiva el disparo.
+- **Armamento y disparo**: el jugador dispone de un arma de fuego que se dispara con la barra espaciadora o con el clic izquierdo (2.2), apuntando con una mira fija en el centro de la pantalla. Hay un segundo de espera entre disparos exitosos; los intentos durante la espera no se encolan. Como la mira está fija en el centro, la dirección del disparo es la del rayo de la columna central: cameraX vale 0 y rayDir es igual a dir. Al disparar, ese rayo recorre la grilla celda por celda con el mismo DDA del capítulo 3 y devuelve la distancia a la primera pared. Se revisa cada enemigo contra ese rayo: el más cercano cuyo cuerpo cruza el rayo, más cerca que la primera pared, muere con el disparo. Un enemigo común tiene un solo punto de vida, así que muere al instante, y cada muerte suma uno al contador de enemigos eliminados. Una pared más cerca que un enemigo bloquea el disparo.
 
 - **Gestión de munición**: el cargador tiene capacidad limitada, seis balas por defecto, así que el jugador debe recargar cada cierta cantidad de disparos. Las recargas son infinitas por defecto, para favorecer un ritmo constante. El panel de administración (2.3.5) puede limitarlas: entonces un contador junto a la munición muestra cuántas quedan, y con el cargador y las recargas agotados la escopeta deja de disparar.
 
@@ -81,7 +81,7 @@ Los estados previstos son:
 
 Cuando el jugador elimina al último enemigo común de ese total, aparece un único **jefe** en el centro de una sala de uno de los cuatro chunks vecinos al del jugador. Usa la misma máquina de estados y las mismas velocidades que un enemigo común, mide una vez y media su tamaño (0,45 por 0,9 celdas), es de color carmesí, tiene cinco puntos de vida, así que necesita cinco impactos para morir, y cada uno de sus golpes quita dos puntos, el doble que los de un enemigo común. Matar al jefe gana la partida.
 
-Vale la pena notar que la línea de visión del enemigo y el alcance del proyectil del jugador reutilizan el mismo recorrido DDA del capítulo 3. El render, la percepción de la IA y el punto donde el disparo choca contra la pared salen del mismo código con distinto propósito.
+Vale la pena notar que la línea de visión del enemigo y el disparo del jugador reutilizan el mismo recorrido DDA del capítulo 3. El render, la percepción de la IA y el punto donde el disparo choca contra la pared salen del mismo código con distinto propósito.
 
 La iluminación también puede resolverse con raycasting.
 
@@ -105,11 +105,11 @@ Las etiquetas son objetos Text de PixiJS con una fuente monoespaciada del sistem
 ### 2.3.4 Pantallas, puntaje y ranking
 Al abrir el juego se muestra el menú principal, con el nombre del juego, Hurlinstein3D, y tres botones: iniciar partida, controles y créditos. Controles lista las teclas y el mouse (W y S o las flechas arriba y abajo para avanzar y retroceder, A y D para el desplazamiento lateral, las flechas izquierda y derecha o el mouse para girar, espacio o clic izquierdo, R o clic derecho, y P para el panel de administración). Créditos nombra al equipo, la materia, la universidad, el profesor, PixiJS y el origen y la licencia de cada imagen. Las dos pantallas tienen un botón para volver al menú.
 
-Cada partida arranca con un mundo nuevo: se descartan los chunks, los enemigos y los proyectiles de la anterior, y el jugador vuelve al spawn con la vida y el cargador completos. Dentro de una partida los chunks se conservan como indica 4.4.
+Cada partida arranca con un mundo nuevo: se descartan los chunks y los enemigos de la anterior, y el jugador vuelve al spawn con la vida y el cargador completos. Dentro de una partida los chunks se conservan como indica 4.4.
 
-El juego pasa por cuatro estados: menú, en juego, victoria y derrota. El jugador, los enemigos y los proyectiles se actualizan solo en juego. En los otros estados la escena queda quieta detrás de la pantalla que corresponde.
+El juego pasa por cuatro estados: menú, en juego, victoria y derrota. El jugador y los enemigos se actualizan solo en juego. En los otros estados la escena queda quieta detrás de la pantalla que corresponde.
 
-Al ganar o al perder aparece una pantalla con el resultado, los enemigos eliminados, el tiempo de juego, el ranking y dos botones: jugar de nuevo y volver al menú. El puntaje suma 100 puntos por cada enemigo común y 1000 por el jefe. El ranking guarda las 10 mejores partidas con su fecha, ordenadas por puntaje y, a igual puntaje, por menor tiempo. Vive en localStorage, que Chrome permite usar desde file:// y que conserva los datos en ese navegador de una sesión a otra. Si el navegador lo bloquea, el ranking dura mientras la página está abierta.
+Al ganar o al perder aparece una pantalla con el resultado, los enemigos eliminados, el tiempo de juego, el puntaje obtenido, el ranking y dos botones: jugar de nuevo y volver al menú. Las pantallas completas se pueden navegar con las flechas arriba y abajo, o con W para subir y S para bajar; Enter o Space activa el botón enfocado. Al abrir una pantalla, se enfoca su primer botón y se libera la captura del mouse. Mientras el foco está en el campo de iniciales, las teclas se ingresan normalmente. El puntaje suma 100 puntos por cada enemigo común y 1000 por el jefe. Al terminar, el jugador ingresa tres iniciales y la partida se envía a una API externa; el ranking muestra las cinco mejores puntuaciones que devuelve esa API, cada una con su nombre, puntaje y fecha. La API es la única fuente del ranking: no se guarda nada en el navegador. Si la API no responde, la pantalla muestra el error y el juego sigue funcionando.
 
 Los menús y las pantallas son elementos HTML superpuestos al canvas, dentro del mismo marco que lo escala (2.3.5). Así tienen botones reales y acompañan el tamaño de la ventana.
 
@@ -294,8 +294,7 @@ El alcance deseable suma estos archivos, también como scripts clásicos cargado
 | **Archivo**  | **Responsabilidad**                                                                  |
 |--------------|--------------------------------------------------------------------------------------|
 | settings     | Configuraciones del panel: valores por defecto, rangos y guardado en localStorage     |
-| enemies      | Máquina de estados, línea de visión, deslizamiento contra paredes y daño por contacto |
-| projectiles  | Proyectiles de la escopeta: alcance, vuelo e impacto contra enemigos                  |
+| enemies      | Máquina de estados, línea de visión, deslizamiento contra paredes, daño por contacto y disparo |
 | hud          | Mira, barras de vida y munición, etiquetas y contador de enemigos eliminados          |
 | weapon-sheet | Tira de cuadros de la escopeta embebida como data URI                                |
 | weapon       | Escopeta apuntada a la mira, animación de disparo y de recarga                        |
@@ -371,6 +370,22 @@ La entrega se considera cumplida si:
 - El minimapa coincide con lo que muestra la vista en primera persona.
 
 # 8. Referencias
+
+# Anexo de decisiones, historias D-28 a D-30
+
+## Semilla del mundo (D-30)
+
+El mundo elige una semilla de 32 bits al iniciar. `createRandom(seed)` genera una secuencia determinística. Cada chunk inicializa su propio generador con una semilla derivada de la semilla del mundo y de su clave de Cantor; así, recorrer los chunks en distinto orden no cambia el mapa. La semilla organiza también las decisiones aleatorias de enemigos. Los chunks permanecen en el `Map` como caché de la sesión.
+
+## Dirección de arte nocturna (D-28)
+
+La extensión visual toma como referencia los edificios de UNAHUR de noche: revoque blanco frío, bandas de ventanas con celosías, paños vidriados con marcos oscuros, acentos verdes y celestes, piso de baldosas claras y cielorraso con luminarias fluorescentes. Las texturas se generan por código, no se incorporan fotografías.
+
+## Posprocesado CRT (D-29)
+
+El filtro CRT usa `pixi-filters` 6.1.5, bundle de navegador bajo licencia MIT, copiado en `lib/pixi-filters.js`. Su SHA-256 es `3bb1830fe730687c9aa24b331b51f8f2263023ac7c91885e50cf9f339cff36ef`. Se carga como script clásico después de PixiJS y extiende el global `PIXI.filters`; el control queda disponible en Render.
+
+El piso y el cielorraso texturados usan floor casting de Lode: por fila se calcula `rowDistance = posZ / abs(y - screenHeight / 2)`, con `posZ = screenHeight / 2`, y el punto del mundo interpola los rayos del plano de cámara. El canvas y su textura persisten; cada cuadro actualiza sus píxeles y la textura Pixi sin crear objetos dentro del ticker. Las luminarias se dibujan como paneles claros en el cielorraso en la posición de cada luz de sala.
 *Lode Vandevenne, Lode's Computer Graphics Tutorial: Raycasting*. Referencia conceptual del motor. [<u>lodev.org/cgtutor/raycasting.html</u>](http://lodev.org/cgtutor/raycasting.html)
 
 *javidx9, Super Fast Ray Casting in Tiled Worlds using DDA*. Explicación en video del recorrido DDA. [<u>youtube.com/watch?v=NbSee-XM7WA</u>](http://youtube.com/watch?v=NbSee-XM7WA)

@@ -110,6 +110,35 @@ function updateReloadCounter(counter, reloadsLeft) {
   }
 }
 
+// D-19a / TDD 2.3.3: the kill count under AMMO, as "KILLS 3 / 20".
+function formatKillsLabel(killCount, total) {
+  return `KILLS ${killCount} / ${total}`;
+}
+
+// Created once, outside the ticker (TDD 6.4)
+function createKillsLabel() {
+  const label = new PIXI.Text({
+    text: formatKillsLabel(0, gameSettings.enemiesPerGame),
+    style: hudLabelStyle,
+  });
+  label.anchor.set(0, 0.5);
+  label.position.set(hudMargin, getHudRowY(2) + barBandHeight / 2);
+  return label;
+}
+
+// Called every frame; PixiJS only redraws the Text when the text changes
+function updateKillsLabel(label, killCount) {
+  label.text = formatKillsLabel(killCount, gameSettings.enemiesPerGame);
+}
+
+// D-19d / TDD 2.3.4: the game time as "m:ss", for the victory screen.
+function formatGameTime(seconds) {
+  const total = Math.floor(seconds);
+  const minutes = Math.floor(total / 60);
+  const rest = total % 60;
+  return `${minutes}:${String(rest).padStart(2, "0")}`;
+}
+
 // D-06c: the fill width follows the health fraction, clamped to the bar.
 function getHealthBarWidth(healthFraction) {
   const clamped = Math.min(Math.max(healthFraction, 0), 1);
@@ -187,15 +216,6 @@ async function createAmmoBar() {
   return { background, fill, mask, x: barX, y: barY };
 }
 
-// D-06c: dark overlay with a red frame, hidden until the player is defeated.
-function createDefeatOverlay() {
-  const overlay = new PIXI.Graphics();
-  drawDefeatOverlay(overlay);
-  overlay.alpha = 0.65;
-  overlay.visible = false;
-  return overlay;
-}
-
 // D-27d / TDD 2.3.3: non diegetic damage flash. Red at the screen edges and
 // transparent toward the center, one pulse per hit that fades in 0.4 s.
 const damageFlashDuration = 0.4; // seconds
@@ -254,13 +274,4 @@ function updateDamageFlash(flash, deltaTime) {
   }
   flash.time += deltaTime / 60;
   flash.sprite.alpha = getDamageFlashAlpha(flash.time);
-}
-
-// D-16a: drawn again, not created again, when the canvas width changes
-function drawDefeatOverlay(overlay) {
-  overlay.clear();
-  overlay.rect(0, 0, screenWidth, screenHeight).fill(0x000000);
-  overlay
-    .rect(screenWidth / 2 - 220, screenHeight / 2 - 50, 440, 100)
-    .stroke({ color: 0xff3b3b, width: 6 });
 }

@@ -15,9 +15,8 @@ const enemyCollisionRadius = enemyWidth / 2;
 
 // D-27c / TDD 2.3.1: contact damage comes in whole hit points. An enemy closer
 // than contactDistance hits once as soon as its wait is over, then waits a
-// second. A chasing enemy stops at enemyStopDistance (0.5), inside this range.
+// second. D-19c: the amount is per enemy, one for a regular, two for the boss.
 const contactDistance = 0.6;
-const contactHitPoints = 1;
 const contactHitWaitTicks = ticksPerSecond;
 
 // D-23 / TDD 3.6: only the chunks this close to the player's chunk are active.
@@ -135,7 +134,7 @@ function updateContactHit(enemy, player, deltaTime) {
     return 0;
   }
   enemy.hitWait = contactHitWaitTicks;
-  return contactHitPoints;
+  return enemy.contactDamage;
 }
 
 // D-23: only the active enemies move. An enemy that crossed into another chunk
@@ -232,7 +231,7 @@ function choosePatrolNeighbour(enemy) {
   if (options.length === 0) {
     return null;
   }
-  return options[Math.floor(Math.random() * options.length)];
+  return options[Math.floor(gameRandom() * options.length)];
 }
 
 function updatePatrol(enemy, player, deltaTime) {
@@ -264,12 +263,37 @@ function moveEnemyToward(enemy, target, distance) {
 
   // Slide by axis against the walls, like the player, so the enemy never walks
   // into a wall it is chasing past
-  if (canEnemyStandAt(enemy.posX + moveX, enemy.posY)) {
+  if (canEnemyStandAt(enemy.posX + moveX, enemy.posY) &&
+      canEnemyKeepDistance(enemy, enemy.posX + moveX, enemy.posY)) {
     enemy.posX += moveX;
   }
-  if (canEnemyStandAt(enemy.posX, enemy.posY + moveY)) {
+  if (canEnemyStandAt(enemy.posX, enemy.posY + moveY) &&
+      canEnemyKeepDistance(enemy, enemy.posX, enemy.posY + moveY)) {
     enemy.posY += moveY;
   }
+}
+
+// D-27e: check nearby registered enemies before accepting either axis.
+function canEnemyKeepDistance(enemy, posX, posY) {
+  const radius = enemy.width / 2;
+  // Include every cell that could contain a colliding regular enemy or boss.
+  const searchRadius = radius + bossWidth / 2;
+  const minX = Math.floor(posX - searchRadius);
+  const maxX = Math.floor(posX + searchRadius);
+  const minY = Math.floor(posY - searchRadius);
+  const maxY = Math.floor(posY + searchRadius);
+  for (let x = minX; x <= maxX; x += 1) {
+    for (let y = minY; y <= maxY; y += 1) {
+      for (const other of getEnemiesAtCell(x, y)) {
+        if (other === enemy) continue;
+        const minDistance = radius + other.width / 2;
+        const dx = posX - other.posX;
+        const dy = posY - other.posY;
+        if (dx * dx + dy * dy < minDistance * minDistance) return false;
+      }
+    }
+  }
+  return true;
 }
 
 // TDD 6.6: a square footprint, side 2 * enemyCollisionRadius, must not touch a
@@ -344,8 +368,54 @@ function removeEnemyFromChunk(enemy) {
   }
 }
 
-// D-13b: a projectile that reaches an enemy removes it from its cell and its
-// chunk. D-13d retired the instant center ray shot of D-07a that used to live here.
+// TDD 2.3.1 / D-07a: the shot is the center ray (cameraX 0, rayDir equal to dir).
+// The DDA gives the distance to the first wall once; the nearest enemy whose body
+// crosses the ray, closer than that wall, dies instantly. No projectile flies.
+function shootCenterRay(player) {
+  const ray = castRay(player.posX, player.posY, player.dirX, player.dirY);
+  const wallDistance = ray.hit ? ray.perpWallDist : maxRayDistance;
+
+  let target = null;
+  let targetDistance = Infinity;
+  for (const enemies of enemiesByChunk.values()) {
+    for (const enemy of enemies) {
+      const offsetX = enemy.posX - player.posX;
+      const offsetY = enemy.posY - player.posY;
+      const along = offsetX * player.dirX + offsetY * player.dirY;
+      if (along <= 0 || along >= wallDistance || along >= targetDistance) {
+        continue;
+      }
+      const lateral = Math.hypot(
+        offsetX - along * player.dirX,
+        offsetY - along * player.dirY,
+      );
+      if (lateral <= enemy.width / 2) {
+        target = enemy;
+        targetDistance = along;
+      }
+    }
+  }
+
+  if (target !== null) {
+    target.health -= 1;
+    if (target.health <= 0) {
+      removeEnemy(target);
+      if (target.isBoss) {
+        // D-19d: killing the boss wins the game
+        setGameState(gameStateVictory);
+      } else {
+        addKill();
+        // D-19c: the last regular enemy spawns the boss, once per game
+        if (getKillCount() >= gameSettings.enemiesPerGame) {
+          spawnBoss(player);
+        }
+      }
+    }
+  }
+  return target;
+}
+
+// A hit removes the enemy from its cell and its chunk.
 function removeEnemy(enemy) {
   removeEnemyFromCell(enemy);
   removeEnemyFromChunk(enemy);
