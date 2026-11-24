@@ -43,7 +43,7 @@ The game fills the browser window on any screen between 4:3 and 21:9, and adapts
 | `js/renderer.js` | Procedural floor and ceiling casting, wall strips of any strip width, fisheye mode, procedural wall textures, point lights, enemy sprites standing on the floor with wall occlusion | 2.3.1, 2.3.2, 3.4, 6.4, 6.5 |
 | `js/enemies.js` | Active area around the player, far enemies brought back near the player, enemy state machine (idle, patrol, chase), DDA line of sight, wall sliding, a chase that stops in front of the player, contact hits once per second, and the center ray shot | 2.3.1, 2.3.2 |
 | `js/minimap.js` | 21 by 21 cell minimap, player position and direction, enemies, and optional rays and chunk borders | 2.3.5, 6.7 |
-| `js/hud.js` | Center crosshair, LIFE and AMMO labels with their bars, reloads left when limited, red damage flash, defeat overlay | 2.3.3, 6.4 |
+| `js/hud.js` | Center crosshair, LIFE and AMMO labels with their bars, reloads left when limited, bevel frames for the HUD block and the minimap, red damage flash, defeat overlay | 2.3.3, 6.4 |
 | `js/weapon.js` | Shotgun aimed at the crosshair, idle, firing and reload animation | 2.3.1, 2.3.3, 6.4 |
 | `js/enemy-sheet.js` | Embedded enemy sprite, a copy of `assets/enemy-sprites/ZOMBA1.png` | 2.3.2, 6.2 |
 | `js/weapon-sheet.js` | Embedded shotgun strip generated from `assets/gun-sprites/Sgun.png` | 6.1 |

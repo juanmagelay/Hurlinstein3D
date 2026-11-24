@@ -12,7 +12,8 @@ function getMinimapX() {
 }
 const minimapBackgroundColor = 0x0d1117;
 const minimapWallColor = 0x2c4a7c;
-const minimapPlayerColor = 0x4de1bd;
+// D-37b: cyan, like the crosshair and the live values of the retro UI
+const minimapPlayerColor = 0x00e5ff;
 // D-16e3: every eighth ray of the wall pass, faint, so the fan reads clearly
 const minimapRayStep = 8;
 const minimapRayAlpha = 0.35;

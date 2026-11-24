@@ -140,6 +140,10 @@ Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added i
 | D-35b | Document the shot cooldown in the TDD | P2 | 4 | D-35a | done |
 | D-36a | Clicks on the menu screens never capture the mouse, fire or reload | P0 | 4 | D-12d, D-18a | done |
 | D-36b | In-game hint that a click on the view captures the mouse | P0 | 4 | D-36a | done |
+| D-37a | Retro UI theme for the menu, Controls, Credits and end screens | P2 | 4 | D-36b | done |
+| D-37b | Retro bevel frames for the HUD block and the minimap | P2 | 4 | D-37a | done |
+| D-37c | Admin panel as a retro technical console | P2 | 4 | D-37a | done |
+| D-37d | Team logo on the main menu | P2 | 4 | D-37a | pending |
 
 ## Backlog review (2026-11-20)
 
@@ -1908,6 +1912,64 @@ Decisions:
 - `createMouseHint(document, gameFrame, element)` returns `update(isPlaying)`; the ticker calls it after `syncScreenToState()` and it writes `hidden` only when the answer changes.
 - Top center, 64 px down: under the admin hover band and between the bars and the minimap.
 - Tests: 253 of 253 pass (`node --test "tests/*.test.js"`).
+
+## D-37: Retro UI (split in four)
+
+Request (2026-11-24, Juanma): restyle the whole UI as a 90s shooter (Wolfenstein 3D, DOOM) with a military retro look, keeping every screen, value, control and id. Split by area so each part can be checked on its own; D-37d waits for the logo file from the team.
+
+## D-37a: Retro theme for the screens
+
+Acceptance criteria:
+- Tokens on `:root`: steel grays, blood red (selected action), amber (titles and labels), cyan (text fields and live values). System fonts only: Impact for titles, Arial Black for buttons, a monospace stack for text. No network (TDD 6.2).
+- Main menu: the name as a wordmark (HURLINSTEIN in amber, 3D in red) over a raised steel plate with Start game, Controls and Credits.
+- Buttons with hard bevels and shadows. The focused button is the selected item: red plate and an amber cursor, so keyboard navigation (D-34a, D-34d) always shows where it is. Pressed buttons sink.
+- Controls: keys as keycaps on the left, actions on the right. Credits: the team first, the asset licenses apart under a rule. Same lines as before.
+- End screens: YOU DIED in red over a red vignette, YOU WON in amber. Kills, Time and Score as three display cells; initials field, Submit score, the top 5 as a high score table (rank, initials, score, date), Play again and Main menu.
+- The mouse hint (D-36b) uses the same bevel look.
+
+Files: `index.html`, `js/main.js`.
+
+Decisions:
+- `#game-frame` is a size container, so the titles scale with `cqh` and keep their proportion inside the portfolio iframe. `.screen` scrolls when its content is taller than the frame (`justify-content: safe center`).
+- Scanlines and the vignette are static CSS gradients; nothing animates and nothing blurs, so the screens cost nothing while the game renders behind them.
+- `renderRanking` writes one span per column instead of one text with dashes, so the CSS can line the columns up.
+- Bug fixed: `.score-submit { display: flex }` won over the `hidden` attribute, so the initials form stayed on screen after a successful submit. A global `[hidden] { display: none !important }` makes `hidden` always win.
+- The initials field has `aria-label="Your initials"`; it only had the ABC placeholder.
+
+## D-37b: Retro bevel frames for the HUD and the minimap
+
+Acceptance criteria:
+- A steel plate with a bevel and a hard shadow behind LIFE, AMMO and KILLS, and a bevel ring around the minimap, both in the colors of the HTML screens.
+- Labels in amber with the same monospace stack as the screens. Crosshair and minimap player in cyan.
+- The bar, label and minimap positions do not change (`tests/hud.test.js`, `tests/minimap.test.js`).
+
+Files: `js/hud.js`, `js/minimap.js`, `README.md`.
+
+Decisions:
+- The frames go in the `hud` Graphics, next to the crosshair: drawn once and again only on resize (TDD 6.4), nothing per frame. That Graphics sits above the minimap and under the bars and labels, so the plate shows behind the bars and the ring is drawn only outside the map window.
+- The hard shadow is an L (right and bottom strips), so it never covers the minimap.
+- One `fill()` per color across both frames (CLAUDE.md 8.4).
+- The plate is 208 px wide: the bars plus a reload counter up to x99. With an Enemies per game in the tens of thousands, the KILLS label goes past the plate; it stays readable.
+
+## D-37c: Admin panel as a retro console
+
+Acceptance criteria:
+- Header with a red pilot lamp, ADMIN PANEL in amber and a bevel X. Reset settings in red, apart from the other buttons.
+- Live info: each value in a sunken display cell, small label on top and the value in cyan below.
+- Settings: each group in a sunken box with an amber legend chip. Number fields and the list sunken with cyan values; checkboxes as square lamps, amber when on; Spawn boss, Refill ammo and New world as bevel buttons.
+- Every section, field, value and button from before is kept, with the same `data-` attributes.
+
+Files: `index.html`.
+
+Decisions:
+- The panel is opaque and unblurred: the old `backdrop-filter` re-blurred the live game every frame, and a translucent panel let the HUD show through the text.
+- A faint grid on the panel and a hazard stripe (amber and black) along its bottom edge mark it as a tool layer over the game.
+- The Game group, which admin.js locks outside a game, dims to half opacity.
+- Focus rings in cyan on every field and button; clicks and keys behave as before (`onAdminButton` and `isTypingInField` untouched).
+
+## D-37d: Team logo on the main menu
+
+Pending: the team sends the logo file. It replaces or joins the wordmark of D-37a and goes into `index.html` inline (SVG) or as a data URI, so `file://` loads no extra file (TDD 6.2).
 
 ## Desirables
 
