@@ -88,7 +88,7 @@
       background: var(--accent-hover);
     }
 
-    .menu-button:focus-visible {
+    .menu-button:focus {
       outline: 2px solid var(--accent-color);
       outline-offset: 2px;
     }
@@ -439,6 +439,7 @@
       <h1 class="menu-title">You died</h1>
       <p class="screen-stat">Kills: <span id="defeat-kills">0</span></p>
       <p class="screen-stat">Time: <span id="defeat-time">0:00</span></p>
+      <p class="screen-stat">Score: <span id="defeat-score">0</span></p>
       <div id="defeat-submit" class="score-submit">
         <input id="defeat-initials" class="score-input" type="text" maxlength="3" placeholder="ABC" autocomplete="off">
         <button id="defeat-submit-button" class="menu-button" type="button">Submit score</button>
@@ -454,6 +455,7 @@
       <h1 class="menu-title">You won</h1>
       <p class="screen-stat">Kills: <span id="victory-kills">0</span></p>
       <p class="screen-stat">Time: <span id="victory-time">0:00</span></p>
+      <p class="screen-stat">Score: <span id="victory-score">0</span></p>
       <div id="victory-submit" class="score-submit">
         <input id="victory-initials" class="score-input" type="text" maxlength="3" placeholder="ABC" autocomplete="off">
         <button id="victory-submit-button" class="menu-button" type="button">Submit score</button>
@@ -522,6 +524,7 @@
       <div><dt>Enemies alive</dt><dd data-admin-value="enemies">0</dd></div>
       <div><dt>Enemies active</dt><dd data-admin-value="active">0</dd></div>
       <div><dt>Chunks loaded</dt><dd data-admin-value="chunks">0</dd></div>
+      <div><dt>World seed</dt><dd data-admin-value="seed">0</dd></div>
     </dl>
     <!-- D-16c1: js/admin.js fills each field and its range from js/settings.js -->
     <div class="admin-section-header">
@@ -546,6 +549,15 @@
           <small data-setting-range="playerHitPoints"></small>
         </label>
         <button class="admin-button" type="button" data-admin-action="spawn-boss">Spawn boss</button>
+        <label class="admin-field"><span>Enemy hit points</span><input type="number" data-setting="enemyHealth"><small data-setting-range="enemyHealth"></small></label>
+        <label class="admin-field"><span>Boss hit points</span><input type="number" data-setting="bossHealth"><small data-setting-range="bossHealth"></small></label>
+      </fieldset>
+      <fieldset class="admin-group">
+        <legend>Render</legend>
+        <label class="admin-check"><input type="checkbox" data-setting="useWallTextures"> Wall textures</label>
+        <label class="admin-check"><input type="checkbox" data-setting="useLighting"> Lighting</label>
+        <label class="admin-check"><input type="checkbox" data-setting="flatColors"> Flat colors</label>
+        <label class="admin-check"><input type="checkbox" data-setting="crtFilter"> CRT filter</label>
       </fieldset>
       <fieldset class="admin-group">
         <legend>Weapon</legend>
@@ -605,6 +617,8 @@
       </fieldset>
       <fieldset class="admin-group">
         <legend>Procedural generation</legend>
+        <label class="admin-field"><span>World seed</span><input type="number" data-world-seed></label>
+        <button class="admin-button" type="button" data-admin-action="new-world">New world</button>
         <label class="admin-check">
           <input type="checkbox" data-setting="chunkBorders">
           Chunk borders on the minimap
@@ -621,8 +635,10 @@
 
   <!-- TDD 6.1 and 6.2: classic scripts in dependency order, main.js last -->
   <script src="lib/pixi.min.js"></script>
+  <script src="lib/pixi-filters.js"></script>
   <script src="js/config.js"></script>
   <script src="js/settings.js"></script>
+  <script src="js/random.js"></script>
   <script src="js/mapgen.js"></script>
   <script src="js/world.js"></script>
   <script src="js/player.js"></script>

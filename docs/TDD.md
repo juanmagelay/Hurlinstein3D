@@ -62,7 +62,7 @@ Ninguno de los dos cambia el estado de la cámara, que sigue siendo un vector di
 ### 2.3.1 Combate y supervivencia
 - **Sistema de vida**: el jugador tiene una barra de salud. Recibir daño de un enemigo al colisionar disminuye ese valor, y si llega a cero el jugador muere y pierde la partida. La vida se cuenta en puntos, igual que la del enemigo y la del jefe: el jugador tiene 10. El daño por contacto llega en golpes enteros: un enemigo común pega un punto apenas toca al jugador y después uno por segundo mientras dure el contacto. Cada enemigo lleva su propia espera de un segundo entre golpes, así entrar y salir del contacto no suma golpes, y dos enemigos pegan el doble. En el mismo cuadro del golpe la barra baja un punto y la pantalla hace un destello rojo (2.3.3). El jugador camina más rápido de lo que persigue el enemigo, 3,1 contra 2 celdas por segundo, así que retroceder siempre lo aleja y lo saca del contacto antes del golpe siguiente.
 
-- **Armamento y disparo**: el jugador dispone de un arma de fuego que se dispara con la barra espaciadora o con el clic izquierdo (2.2), apuntando con una mira fija en el centro de la pantalla. Como la mira está fija en el centro, la dirección del disparo es la del rayo de la columna central: cameraX vale 0 y rayDir es igual a dir. Al disparar, ese rayo recorre la grilla celda por celda con el mismo DDA del capítulo 3 y devuelve la distancia a la primera pared. Se revisa cada enemigo contra ese rayo: el más cercano cuyo cuerpo cruza el rayo, más cerca que la primera pared, muere con el disparo. Un enemigo común tiene un solo punto de vida, así que muere al instante, y cada muerte suma uno al contador de enemigos eliminados. Una pared más cerca que un enemigo bloquea el disparo.
+- **Armamento y disparo**: el jugador dispone de un arma de fuego que se dispara con la barra espaciadora o con el clic izquierdo (2.2), apuntando con una mira fija en el centro de la pantalla. Hay un segundo de espera entre disparos exitosos; los intentos durante la espera no se encolan. Como la mira está fija en el centro, la dirección del disparo es la del rayo de la columna central: cameraX vale 0 y rayDir es igual a dir. Al disparar, ese rayo recorre la grilla celda por celda con el mismo DDA del capítulo 3 y devuelve la distancia a la primera pared. Se revisa cada enemigo contra ese rayo: el más cercano cuyo cuerpo cruza el rayo, más cerca que la primera pared, muere con el disparo. Un enemigo común tiene un solo punto de vida, así que muere al instante, y cada muerte suma uno al contador de enemigos eliminados. Una pared más cerca que un enemigo bloquea el disparo.
 
 - **Gestión de munición**: el cargador tiene capacidad limitada, seis balas por defecto, así que el jugador debe recargar cada cierta cantidad de disparos. Las recargas son infinitas por defecto, para favorecer un ritmo constante. El panel de administración (2.3.5) puede limitarlas: entonces un contador junto a la munición muestra cuántas quedan, y con el cargador y las recargas agotados la escopeta deja de disparar.
 
@@ -109,7 +109,7 @@ Cada partida arranca con un mundo nuevo: se descartan los chunks y los enemigos 
 
 El juego pasa por cuatro estados: menú, en juego, victoria y derrota. El jugador y los enemigos se actualizan solo en juego. En los otros estados la escena queda quieta detrás de la pantalla que corresponde.
 
-Al ganar o al perder aparece una pantalla con el resultado, los enemigos eliminados, el tiempo de juego, el ranking y dos botones: jugar de nuevo y volver al menú. El puntaje suma 100 puntos por cada enemigo común y 1000 por el jefe. Al terminar, el jugador ingresa tres iniciales y la partida se envía a una API externa; el ranking muestra las cinco mejores puntuaciones que devuelve esa API, cada una con su nombre, puntaje y fecha. La API es la única fuente del ranking: no se guarda nada en el navegador. Si la API no responde, la pantalla muestra el error y el juego sigue funcionando.
+Al ganar o al perder aparece una pantalla con el resultado, los enemigos eliminados, el tiempo de juego, el puntaje obtenido, el ranking y dos botones: jugar de nuevo y volver al menú. Las pantallas completas se pueden navegar con las flechas arriba y abajo, o con W para subir y S para bajar; Enter o Space activa el botón enfocado. Al abrir una pantalla, se enfoca su primer botón y se libera la captura del mouse. Mientras el foco está en el campo de iniciales, las teclas se ingresan normalmente. El puntaje suma 100 puntos por cada enemigo común y 1000 por el jefe. Al terminar, el jugador ingresa tres iniciales y la partida se envía a una API externa; el ranking muestra las cinco mejores puntuaciones que devuelve esa API, cada una con su nombre, puntaje y fecha. La API es la única fuente del ranking: no se guarda nada en el navegador. Si la API no responde, la pantalla muestra el error y el juego sigue funcionando.
 
 Los menús y las pantallas son elementos HTML superpuestos al canvas, dentro del mismo marco que lo escala (2.3.5). Así tienen botones reales y acompañan el tamaño de la ventana.
 
@@ -370,6 +370,22 @@ La entrega se considera cumplida si:
 - El minimapa coincide con lo que muestra la vista en primera persona.
 
 # 8. Referencias
+
+# Anexo de decisiones, historias D-28 a D-30
+
+## Semilla del mundo (D-30)
+
+El mundo elige una semilla de 32 bits al iniciar. `createRandom(seed)` genera una secuencia determinística. Cada chunk inicializa su propio generador con una semilla derivada de la semilla del mundo y de su clave de Cantor; así, recorrer los chunks en distinto orden no cambia el mapa. La semilla organiza también las decisiones aleatorias de enemigos. Los chunks permanecen en el `Map` como caché de la sesión.
+
+## Dirección de arte nocturna (D-28)
+
+La extensión visual toma como referencia los edificios de UNAHUR de noche: revoque blanco frío, bandas de ventanas con celosías, paños vidriados con marcos oscuros, acentos verdes y celestes, piso de baldosas claras y cielorraso con luminarias fluorescentes. Las texturas se generan por código, no se incorporan fotografías.
+
+## Posprocesado CRT (D-29)
+
+El filtro CRT usa `pixi-filters` 6.1.5, bundle de navegador bajo licencia MIT, copiado en `lib/pixi-filters.js`. Su SHA-256 es `3bb1830fe730687c9aa24b331b51f8f2263023ac7c91885e50cf9f339cff36ef`. Se carga como script clásico después de PixiJS y extiende el global `PIXI.filters`; el control queda disponible en Render.
+
+El piso y el cielorraso texturados usan floor casting de Lode: por fila se calcula `rowDistance = posZ / abs(y - screenHeight / 2)`, con `posZ = screenHeight / 2`, y el punto del mundo interpola los rayos del plano de cámara. El canvas y su textura persisten; cada cuadro actualiza sus píxeles y la textura Pixi sin crear objetos dentro del ticker. Las luminarias se dibujan como paneles claros en el cielorraso en la posición de cada luz de sala.
 *Lode Vandevenne, Lode's Computer Graphics Tutorial: Raycasting*. Referencia conceptual del motor. [<u>lodev.org/cgtutor/raycasting.html</u>](http://lodev.org/cgtutor/raycasting.html)
 
 *javidx9, Super Fast Ray Casting in Tiled Worlds using DDA*. Explicación en video del recorrido DDA. [<u>youtube.com/watch?v=NbSee-XM7WA</u>](http://youtube.com/watch?v=NbSee-XM7WA)

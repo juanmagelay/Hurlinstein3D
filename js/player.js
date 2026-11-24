@@ -4,6 +4,8 @@
 // TDD 6.6: the camera keeps a small radius, so it never sits flush against a
 // wall face and does not clip a corner. Under 0.5, so a one-cell door still fits.
 const playerRadius = 0.2;
+// One second between successful shots (D-35)
+const shotCooldownDuration = 1;
 // Seconds (D-08c). D-08d: the ten reload frames share it, about 0.096 s each.
 const reloadDuration = 0.96;
 
@@ -26,6 +28,7 @@ const player = {
   reloadsLeft: getReloadAllowance(gameSettings),
   reloading: false,
   reloadTime: 0,
+  shotCooldown: 0,
 };
 
 // H-10c / TDD 3.2: a wall is drawn screenHeight / perpWallDist pixels tall, so
@@ -61,6 +64,7 @@ function resetPlayer() {
   player.reloadsLeft = getReloadAllowance(gameSettings);
   player.reloading = false;
   player.reloadTime = 0;
+  player.shotCooldown = 0;
 }
 
 // D-06b: health never goes below zero, and zero health means defeat.
@@ -79,9 +83,9 @@ function isPlayerDefeated(player) {
   return player.health <= 0;
 }
 
-// D-08: firing spends one round and is blocked while reloading or empty
+// D-08 / D-35: firing spends one round and is blocked while reloading, empty or cooling down
 function canFireShot(player) {
-  return !player.reloading && player.ammo > 0;
+  return !player.reloading && player.ammo > 0 && player.shotCooldown <= 0;
 }
 
 function tryFire(player) {
@@ -89,7 +93,13 @@ function tryFire(player) {
     return false;
   }
   player.ammo -= 1;
+  player.shotCooldown = shotCooldownDuration;
   return true;
+}
+
+function updateShotCooldown(player, deltaTime) {
+  const remaining = player.shotCooldown - deltaTime / 60;
+  player.shotCooldown = remaining <= 1e-9 ? 0 : remaining;
 }
 
 // D-08: reload only tops up an incomplete magazine. D-16c1: it spends one
@@ -238,6 +248,13 @@ function createFireInput(keyTarget, gameTarget) {
   let pendingShot = false;
   keyTarget.addEventListener("keydown", (event) => {
     if (event.key === " " && !event.repeat && !isTypingInField(event)) {
+      if (
+        event.target &&
+        typeof event.target.closest === "function" &&
+        event.target.closest("#game-frame .screen") !== null
+      ) {
+        return;
+      }
       event.preventDefault();
       pendingShot = true;
     }

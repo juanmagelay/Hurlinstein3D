@@ -231,7 +231,7 @@ function choosePatrolNeighbour(enemy) {
   if (options.length === 0) {
     return null;
   }
-  return options[Math.floor(Math.random() * options.length)];
+  return options[Math.floor(gameRandom() * options.length)];
 }
 
 function updatePatrol(enemy, player, deltaTime) {
@@ -263,12 +263,37 @@ function moveEnemyToward(enemy, target, distance) {
 
   // Slide by axis against the walls, like the player, so the enemy never walks
   // into a wall it is chasing past
-  if (canEnemyStandAt(enemy.posX + moveX, enemy.posY)) {
+  if (canEnemyStandAt(enemy.posX + moveX, enemy.posY) &&
+      canEnemyKeepDistance(enemy, enemy.posX + moveX, enemy.posY)) {
     enemy.posX += moveX;
   }
-  if (canEnemyStandAt(enemy.posX, enemy.posY + moveY)) {
+  if (canEnemyStandAt(enemy.posX, enemy.posY + moveY) &&
+      canEnemyKeepDistance(enemy, enemy.posX, enemy.posY + moveY)) {
     enemy.posY += moveY;
   }
+}
+
+// D-27e: check nearby registered enemies before accepting either axis.
+function canEnemyKeepDistance(enemy, posX, posY) {
+  const radius = enemy.width / 2;
+  // Include every cell that could contain a colliding regular enemy or boss.
+  const searchRadius = radius + bossWidth / 2;
+  const minX = Math.floor(posX - searchRadius);
+  const maxX = Math.floor(posX + searchRadius);
+  const minY = Math.floor(posY - searchRadius);
+  const maxY = Math.floor(posY + searchRadius);
+  for (let x = minX; x <= maxX; x += 1) {
+    for (let y = minY; y <= maxY; y += 1) {
+      for (const other of getEnemiesAtCell(x, y)) {
+        if (other === enemy) continue;
+        const minDistance = radius + other.width / 2;
+        const dx = posX - other.posX;
+        const dy = posY - other.posY;
+        if (dx * dx + dy * dy < minDistance * minDistance) return false;
+      }
+    }
+  }
+  return true;
 }
 
 // TDD 6.6: a square footprint, side 2 * enemyCollisionRadius, must not touch a

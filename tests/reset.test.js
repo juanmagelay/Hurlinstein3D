@@ -14,6 +14,7 @@ function makeDirtyWorld() {
   player.reloadsLeft = 0;
   player.reloading = true;
   player.reloadTime = 3;
+  player.shotCooldown = 0.5;
   return world;
 }
 
@@ -54,6 +55,7 @@ test("resetGame respawns the player with full health and a full magazine (D-17a)
   assert.equal(player.ammo, magazineSize);
   assert.equal(player.reloading, false);
   assert.equal(player.reloadTime, 0);
+  assert.equal(player.shotCooldown, 0);
   assert.equal(player.reloadsLeft, world("getReloadAllowance")(world("gameSettings")));
 });
 
@@ -65,4 +67,22 @@ test("resetGame clears the kill count (D-19a)", () => {
   world("resetGame")();
 
   assert.equal(world("getKillCount")(), 0);
+});
+
+test("resetGame preserves explicit seeds and regenerates a world for an omitted seed", () => {
+  const world = makeDirtyWorld();
+  const resetGame = world("resetGame");
+  const seedWorld = (seed) => {
+    resetGame(seed);
+    world("placeGameEnemies")(world("player"), 20);
+    return {
+      chunk: Array.from(world("generatedChunks").get(world("getChunkKey")(0, 0))),
+      enemies: Array.from(world("enemiesByChunk").values()).flat()
+        .map(({ cellX, cellY }) => [cellX, cellY]).sort((a, b) => a[0] - b[0] || a[1] - b[1]),
+    };
+  };
+  const first = seedWorld(123456);
+  assert.deepEqual(seedWorld(123456), first);
+  resetGame();
+  assert.notEqual(world("worldSeed"), 123456);
 });

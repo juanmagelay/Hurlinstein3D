@@ -8,6 +8,15 @@ test("the game starts in the menu (D-18a)", () => {
   assert.equal(getGlobal("getGameState")(), getGlobal("gameStateMenu"));
 });
 
+test("D-16c2: boss controls are editable only in the playing state", () => {
+  const getGlobal = loadScripts();
+  const canEdit = getGlobal("canEditGameSettings");
+  assert.equal(canEdit(getGlobal("gameStateMenu")), false);
+  assert.equal(canEdit(getGlobal("gameStatePlaying")), true);
+  assert.equal(canEdit(getGlobal("gameStateDefeat")), false);
+  assert.equal(canEdit(getGlobal("gameStateVictory")), false);
+});
+
 test("the transition map holds the edges the screens use", () => {
   const getGlobal = loadScripts();
   const transitions = getGlobal("gameStateTransitions");

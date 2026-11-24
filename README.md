@@ -33,13 +33,14 @@ The game fills the browser window on any screen between 4:3 and 21:9, and adapts
 | File | Responsibility | TDD |
 |---|---|---|
 | `lib/pixi.min.js` | Local PixiJS 8.21.0 browser bundle | 6.1, 6.2 |
+| `lib/pixi-filters.js` | pixi-filters 6.1.5 browser bundle, MIT, SHA-256 `3bb1830fe730687c9aa24b331b51f8f2263023ac7c91885e50cf9f339cff36ef` | 6.2 |
 | `js/config.js` | 720 px tall canvas whose width follows the window in 8 px steps, movement and rendering constants, texture and lighting toggles | 6.3, 6.5 |
 | `js/settings.js` | Admin settings: defaults, ranges, clamping and localStorage, with blocked storage falling back to the defaults | 2.3.5 |
 | `js/mapgen.js` | Generates a connected room (and often a second one) plus four corridors in each chunk | 4.2, 4.3 |
 | `js/world.js` | Cantor-keyed chunk storage, `getCell`, room lights, the game's enemies placed around the player, and the per-chunk and per-cell enemy registries | 2.3.2, 5.1, 5.2, 6.8 |
 | `js/player.js` | Camera state, keyboard and mouse input with pointer lock, movement and strafing, collisions against walls and enemies, health in hit points, ammo and reloads | 2.2, 2.3.1, 3.2, 6.6 |
 | `js/raycaster.js` | Camera rays and grid DDA | 3.2, 3.3, 3.4 |
-| `js/renderer.js` | Ceiling, floor, wall strips of any strip width, fisheye mode, procedural wall textures, point lights, enemy sprites standing on the floor with wall occlusion | 2.3.1, 2.3.2, 3.4, 6.4, 6.5 |
+| `js/renderer.js` | Procedural floor and ceiling casting, wall strips of any strip width, fisheye mode, procedural wall textures, point lights, enemy sprites standing on the floor with wall occlusion | 2.3.1, 2.3.2, 3.4, 6.4, 6.5 |
 | `js/enemies.js` | Active area around the player, far enemies brought back near the player, enemy state machine (idle, patrol, chase), DDA line of sight, wall sliding, a chase that stops in front of the player, contact hits once per second, and the center ray shot | 2.3.1, 2.3.2 |
 | `js/minimap.js` | 21 by 21 cell minimap, player position and direction, enemies, and optional rays and chunk borders | 2.3.5, 6.7 |
 | `js/hud.js` | Center crosshair, LIFE and AMMO labels with their bars, reloads left when limited, red damage flash, defeat overlay | 2.3.3, 6.4 |
@@ -76,6 +77,7 @@ The game fills the browser window on any screen between 4:3 and 21:9, and adapts
 ## Credits
 
 - [PixiJS](https://pixijs.com) 8.21.0, MIT license.
+- [pixi-filters](https://github.com/pixijs/filters) 6.1.5 browser bundle, MIT license. `lib/pixi-filters.js`, SHA-256 `3bb1830fe730687c9aa24b331b51f8f2263023ac7c91885e50cf9f339cff36ef`. The bundle extends the PixiJS v8 global at `PIXI.filters`.
 - [Lucide](https://lucide.dev) icons 1.77.0, ISC license (chevron-down, chevron-up and x derive from Feather, MIT). See `assets/icons/LICENSE`.
 - [Husk Mutant](https://opengameart.org/content/husk-mutant) enemy sprite by HorrorMovieRei, CC0. The logomark and favicon are cropped from it. See `assets/enemy-sprites/LICENSE.md`.
 - [FPS Gun Sprites](https://rekkimaru.itch.io/fps-gun-sprites) by Rekkimaru, free for any use (no attribution required).

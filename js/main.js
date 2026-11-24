@@ -21,6 +21,8 @@ function applyScreenWidth(app, scene, width) {
 
 // TDD 6.4: app.init is async, so startup lives in an async function
 async function startGame() {
+  useWallTextures = gameSettings.useWallTextures;
+  useLighting = gameSettings.useLighting;
   // D-16a: the canvas starts with the shape of the window, and H-10c: the
   // camera plane with the matching length
   screenWidth = getScreenWidthForWindow(window.innerWidth, window.innerHeight);
@@ -32,32 +34,47 @@ async function startGame() {
     height: screenHeight,
     background: backgroundColor,
   });
+  const crtFilter = new PIXI.filters.CRTFilter({
+    curvature: 1,
+    lineWidth: 1,
+    lineContrast: 0.15,
+    noise: 0.08,
+    vignetting: 0.25,
+    vignettingAlpha: 0.35,
+    vignettingBlur: 0.2,
+  });
+  let crtWasEnabled = gameSettings.crtFilter;
+  const gameLayer = new PIXI.Container();
+  if (crtWasEnabled) gameLayer.filters = [crtFilter];
+  app.stage.addChild(gameLayer);
   const gameFrame = document.getElementById("game-frame");
   gameFrame.appendChild(app.canvas);
   fitGameFrame(gameFrame);
+  createMenuNavigation(document);
 
   // TDD 6.4: Graphics objects are created once, outside the ticker.
   // Ceiling and floor never change, so they are drawn here, once.
   const ceilingAndFloor = new PIXI.Graphics();
   drawCeilingAndFloor(ceilingAndFloor);
-  app.stage.addChild(ceilingAndFloor);
+  gameLayer.addChild(ceilingAndFloor);
+  const floorCastingSurface = createFloorCastingSurface();
+  gameLayer.addChild(floorCastingSurface.sprite);
 
   // Added second, so the walls are drawn on top of ceiling and floor
   const walls = new PIXI.Graphics();
-  app.stage.addChild(walls);
+  gameLayer.addChild(walls);
 
   // D-09: optional textured walls, one pre-created sprite per strip, above the
   // flat wall graphics and under the enemies
   let wallStrips = null;
-  if (useWallTextures) {
-    initWallTextures();
-    wallStrips = createWallStripSprites();
-    app.stage.addChild(wallStrips.container);
-  }
+  // D-16d: create texture resources and the sprite pool once, even when hidden.
+  initWallTextures();
+  wallStrips = createWallStripSprites();
+  gameLayer.addChild(wallStrips.container);
 
   // D-04c2: enemies draw over the walls, occluded per strip by the wall depth
   const enemies = new PIXI.Graphics();
-  app.stage.addChild(enemies);
+  gameLayer.addChild(enemies);
 
   // D-21b: the enemy sprite, cut into columns once, and its pool of strip
   // sprites, created once, at the same layer as the flat enemies
@@ -65,13 +82,13 @@ async function startGame() {
   if (useEnemySprites) {
     await loadEnemyTextureColumns();
     enemyStrips = createEnemyStripSprites();
-    app.stage.addChild(enemyStrips.container);
+    gameLayer.addChild(enemyStrips.container);
   }
 
   // D-07b / D-07c: the shotgun view model sits at the bottom, aimed at the crosshair,
   // under the HUD and overlay
   const shotgun = await createShotgun();
-  app.stage.addChild(shotgun.sprite);
+  gameLayer.addChild(shotgun.sprite);
 
   // D-27d: the damage flash covers the view and the shotgun, under the minimap
   // and the HUD, so LIFE stays readable
@@ -176,8 +193,11 @@ async function startGame() {
 
   // D-19d / D-32: the end screens show the kills and the game time
   function updateEndStats(prefix) {
-    document.getElementById(`${prefix}-kills`).textContent = getKillCount();
+    const killCount = getKillCount();
+    const isVictory = prefix === "victory";
+    document.getElementById(`${prefix}-kills`).textContent = killCount;
     document.getElementById(`${prefix}-time`).textContent = formatGameTime(getGameTime());
+    document.getElementById(`${prefix}-score`).textContent = getScore(killCount, isVictory);
   }
 
   // D-32: the score submit and the top 5, shared by victory and defeat
@@ -258,6 +278,11 @@ async function startGame() {
   app.ticker.add((ticker) => {
     // D-16b: counts frames for the FPS and refreshes the panel four times per second
     adminPanel.update(ticker.deltaMS);
+    crtFilter.time += ticker.deltaTime / 60;
+    if (crtWasEnabled !== gameSettings.crtFilter) {
+      crtWasEnabled = gameSettings.crtFilter;
+      gameLayer.filters = crtWasEnabled ? [crtFilter] : [];
+    }
     // D-27d: the flash keeps fading, also after the last hit
     updateDamageFlash(damageFlash, ticker.deltaTime);
     // D-12c: the mouse movement since the last frame. It is taken every frame,
@@ -289,6 +314,7 @@ async function startGame() {
       startReloadAnimation(shotgun);
     }
     updateReload(player, ticker.deltaTime);
+    updateShotCooldown(player, ticker.deltaTime);
     // D-07a / TDD 2.3.1: a shot is the center ray DDA; the nearest enemy on it
     // dies instantly. The muzzle flash plays regardless of a hit.
     if (fireInput.consumeShot() && tryFire(player)) {
@@ -301,6 +327,7 @@ async function startGame() {
       triggerDamageFlash(damageFlash);
     }
     updateHudBars();
+    updateFloorCasting(floorCastingSurface, player, !gameSettings.flatColors);
     drawWalls(walls, player, wallStrips);
     drawEnemies(enemies, player, enemyStrips);
     drawMinimap(minimap, player);

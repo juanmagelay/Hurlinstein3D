@@ -102,15 +102,15 @@ Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added i
 | D-12e | A and D strafe; the left and right arrows keep turning | P1 | 4 | D-12b | done |
 | D-28a | Specify the UNAHUR at night look and the textured floor and ceiling in the TDD | P1 | 4 | D-09, D-10 | pending |
 | D-28b | UNAHUR wall textures: white plaster, louvered windows, glass, green accents | P1 | 4 | D-28a | pending |
-| D-28c | Floor and ceiling casting with floor tile and ceiling panel textures | P1 | 4 | D-28a | pending |
-| D-28d | Night atmosphere: cold low light, darkness at distance, ceiling lamps at the room lights | P1 | 4 | D-28b, D-28c | pending |
-| D-29a | Pick the CRT filter source and specify it in the TDD | P1 | 4 | D-16b2 | pending |
-| D-29b | CRT post processing filter over the game, with an admin toggle | P1 | 4 | D-29a | pending |
+| D-28c | Floor and ceiling casting with floor tile and ceiling panel textures | P1 | 4 | D-28a | in progress |
+| D-28d | Night atmosphere: cold low light, darkness at distance, ceiling lamps at the room lights | P1 | 4 | D-28b, D-28c | in progress |
+| D-29a | Pick the CRT filter source and specify it in the TDD | P1 | 4 | D-16b2 | in progress |
+| D-29b | CRT post processing filter over the game, with an admin toggle | P1 | 4 | D-29a | in progress |
 | D-30a | Specify the seeded random in TDD 4.4 | P1 | 4 | D-11 | pending |
-| D-30b | Seeded random for the map: one seed per world, one derived seed per chunk | P1 | 4 | D-30a | pending |
-| D-30c | Enemy placement and patrol from the world seed | P1 | 4 | D-30b | pending |
+| D-30b | Seeded random for the map: one seed per world, one derived seed per chunk | P1 | 4 | D-30a | in progress |
+| D-30c | Enemy placement and patrol from the world seed | P1 | 4 | D-30b | in progress |
 | D-17a | Reset a game: new world, enemies, projectiles and player | P1 | 4 | D-14b | done |
-| D-30d | World seed in the admin panel: see it, type one, start a new world | P1 | 4 | D-30c, D-17a | pending |
+| D-30d | World seed in the admin panel: see it, type one, start a new world | P1 | 4 | D-30c, D-17a | in progress |
 | D-17b | Game state machine: menu, playing, victory, defeat | P1 | 4 | D-17a | done |
 | D-18a | Main menu: title, start game, controls, credits | P1 | 4 | D-16a3, D-17b | done |
 | D-18b | Controls and credits screens | P1 | 4 | D-18a | done |
@@ -118,7 +118,7 @@ Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added i
 | D-19a | Kill counter and KILLS label on the HUD | P2 | 4 | D-15b, D-17a | done |
 | D-19b | Enemy hit points, one for regular enemies | P2 | 4 | D-19a | done |
 | D-19c | Boss appears after the kill target | P2 | 4 | D-19b | done |
-| D-16c2 | Admin settings for the boss flow: enemy and boss hit points, spawn boss | P2 | 4 | D-16c1e, D-19c | pending |
+| D-16c2 | Admin settings for the boss flow: enemy and boss hit points, spawn boss | P2 | 4 | D-16c1e, D-19c | in progress |
 | D-19d | Victory when the boss dies, victory screen | P2 | 4 | D-19c, D-20a | done |
 | D-20b | Score and remote ranking via the API | P2 | 4 | D-19d | done |
 | D-20c | Ranking on the victory and defeat screens | P2 | 4 | D-20b | done |
@@ -126,11 +126,18 @@ Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added i
 | D-21b | Textured enemies with z-buffer occlusion | P2 | 4 | D-21a | done |
 | D-26 | Logomark and favicon from the enemy sprite's head | P2 | 4 | D-21a | done |
 | D-21c | Boss as a tinted, larger enemy sprite | P2 | 4 | D-21b, D-19c | pending |
-| D-16d | Admin render toggles: textures, lighting, flat color | P2 | 4 | D-16b2 | pending |
-| D-27e | Enemies keep body distance from each other, optional | P2 | 4 | D-27b | pending |
+| D-16d | Admin render toggles: textures, lighting, flat color | P2 | 4 | D-16b2 | in progress |
+| D-27e | Enemies keep body distance from each other, optional | P2 | 4 | D-27b | in progress |
 | D-22 | Player initials for the ranking | P3 | 4 | D-20c | done |
 | D-31 | Instant center ray shot instead of the projectile (reverts D-13a to D-13d) | P0 | 4 | D-13d | done |
 | D-32 | Remote ranking via the API (TDD, CLAUDE.md and code) | P0 | 4 | D-19d | done |
+| D-33 | Show the current score on victory and defeat screens | P2 | 4 | D-32 | done |
+| D-34a | Keyboard navigation for full-screen menus | P2 | 4 | D-18a, D-18b, D-20a | done |
+| D-34b | Document keyboard navigation for full-screen menus | P2 | 4 | D-34a | done |
+| D-34c | Preserve native Space activation in menus | P2 | 4 | D-34a | done |
+| D-34d | Keep the focused menu button visibly highlighted | P2 | 4 | D-34a | done |
+| D-35a | Add a one-second cooldown between successful shots | P2 | 4 | D-08a, D-17a | done |
+| D-35b | Document the shot cooldown in the TDD | P2 | 4 | D-35a | done |
 
 ## Backlog review (2026-11-20)
 
@@ -852,6 +859,85 @@ Implementation (done):
 - `js/main.js`: `wireScoreSubmit` and `renderRanking`, and the defeat screen now shows kills and time too.
 - `tests/ranking.test.js`: the pure functions.
 - Folds in D-20b (submit + read), D-20c (top 5 on the end screens) and D-22 (initials).
+
+## D-33: Show the current score on end screens
+
+Request (2026-11-23, Juanma): show the score on both victory and defeat screens.
+
+Acceptance criteria:
+- Both end screens display the score before the player submits initials.
+- The displayed score uses the same formula and outcome as the score sent to the API.
+
+Decisions:
+- Victory includes the 1000-point boss bonus; defeat does not.
+
+Implementation (done):
+- `index.html` adds a score row to both end screens.
+- `js/main.js` fills the score using the existing `getScore` function.
+- `docs/TDD.md` documents the visible score on end screens.
+
+## D-34a: Keyboard navigation for full-screen menus
+
+Request (2026-11-23, Juanma): navigate menus without relying on the mouse cursor.
+
+Acceptance criteria:
+- Arrow Up/Down and W/S cycle through enabled buttons on the main menu, controls, credits, victory and defeat screens; W/Arrow Up move up and S/Arrow Down move down.
+- Enter and Space activate the focused native button.
+- Opening a screen focuses its first enabled button and releases pointer lock.
+- Keyboard navigation does not intercept input while the initials field is focused; the admin panel remains unchanged.
+
+Implementation (done):
+- `js/screens.js` manages menu focus, keyboard navigation and pointer-lock release.
+- `js/main.js` registers the menu keyboard handler once.
+- `tests/screen.test.js` covers key mapping and cyclic button indices.
+
+## D-34b: Document keyboard navigation for full-screen menus
+
+Acceptance criteria:
+- `docs/TDD.md` describes menu navigation and the behavior of focused initial fields.
+
+Implementation (done):
+- `docs/TDD.md` documents the menu controls and pointer-lock release.
+
+## D-34c: Preserve native Space activation in menus
+
+Acceptance criteria:
+- Space on a focused menu button is not consumed by the gameplay fire input.
+
+Implementation (done):
+- `js/player.js` ignores Space events originating inside full-screen menus.
+- `tests/weapon.test.js` verifies menu Space is not prevented and does not fire.
+
+## D-34d: Keep the focused menu button visibly highlighted
+
+Acceptance criteria:
+- The currently focused menu button has a visible outline even when focus was set programmatically after mouse input.
+
+Implementation (done):
+- `index.html` shows the focus outline for every focused menu button.
+
+## D-35a: Add a one-second cooldown between successful shots
+
+Request (2026-11-23, Juanma): add a one-second cooldown to firing.
+
+Acceptance criteria:
+- The first shot is immediate; a successful shot blocks another for one second.
+- Attempts during cooldown are discarded, not queued.
+- Starting a new game resets the cooldown so firing is immediately available.
+
+Implementation (done):
+- `js/player.js` tracks and updates `shotCooldown`; `tryFire` starts it only after a successful shot.
+- `js/main.js` advances the cooldown using ticker delta time.
+- `tests/ammo.test.js` verifies the interval and that blocked attempts do not spend ammunition.
+- `tests/reset.test.js` verifies reset clears the cooldown.
+
+## D-35b: Document the shot cooldown in the TDD
+
+Acceptance criteria:
+- TDD 2.3.1 specifies the one-second delay and that attempts during it are not queued.
+
+Implementation (done):
+- `docs/TDD.md` documents the firing cadence.
 
 ## D-14a: Sync the docs with the code
 

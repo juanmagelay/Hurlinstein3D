@@ -41,6 +41,24 @@ test("space fires once per press and ignores key repeat", () => {
   assert.equal(fireInput.consumeShot(), false);
 });
 
+test("space on a full-screen menu does not fire or prevent button activation", () => {
+  const target = createFakeTarget();
+  const fireInput = createFireInput(target, createFakeTarget());
+  let prevented = false;
+
+  target.dispatch("keydown", {
+    key: " ",
+    repeat: false,
+    target: { closest: () => ({}) },
+    preventDefault() {
+      prevented = true;
+    },
+  });
+
+  assert.equal(prevented, false);
+  assert.equal(fireInput.consumeShot(), false);
+});
+
 // D-12d: a left click on the game is a shot, like Space
 test("one left click is one shot, and a held button does not repeat", () => {
   const gameTarget = createFakeTarget();

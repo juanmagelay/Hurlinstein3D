@@ -11,6 +11,11 @@ let bossSpawned = false;
 // D-24 / TDD 2.3.2: the enemies of the game are placed in the chunks this
 // close to the player's chunk, the 8 neighbors. The player's chunk stays empty.
 const enemyPlacementRadius = 1;
+function createWorldSeed() {
+  return (Math.random() * 4294967296) >>> 0;
+}
+let worldSeed = createWorldSeed();
+let gameRandom = createRandom(worldSeed);
 
 // TDD 6.8: map signed chunk coordinates to non-negative integers, then pair them.
 function getChunkKey(cx, cy) {
@@ -23,7 +28,7 @@ function getChunkKey(cx, cy) {
 function getChunkCells(cx, cy) {
   const key = getChunkKey(cx, cy);
   if (!generatedChunks.has(key)) {
-    const generatedChunk = generateChunk();
+    const generatedChunk = generateChunk(createRandom(getChunkSeed(worldSeed, cx, cy)));
     generatedChunks.set(key, generatedChunk.cells);
     lightsByChunk.set(key, createChunkLights(generatedChunk, cx, cy));
     if (cx === 0 && cy === 0) {
@@ -70,7 +75,7 @@ function placeGameEnemies(player, count) {
 // index 0, 1, 2... no cell is picked twice and every pick costs the same, even
 // with 100,000 enemies.
 function pickRandomCell(cells, index) {
-  const pick = index + Math.floor(Math.random() * (cells.length - index));
+  const pick = index + Math.floor(gameRandom() * (cells.length - index));
   const cell = cells[pick];
   cells[pick] = cells[index];
   cells[index] = cell;
@@ -86,7 +91,13 @@ function removeAllEnemies() {
 // enemies and their per-cell registry), then puts the player back at a fresh
 // spawn. A new game is a new session, so the next chunk (0, 0) is generated
 // again with a brand new map.
-function resetGame() {
+function resetGame(seed) {
+  if (seed !== undefined && seed !== null && seed !== "") {
+    worldSeed = Number(seed) >>> 0;
+  } else {
+    worldSeed = createWorldSeed();
+  }
+  gameRandom = createRandom(worldSeed);
   generatedChunks.clear();
   lightsByChunk.clear();
   removeAllEnemies();
@@ -151,7 +162,7 @@ function addEnemyAtCell(cellX, cellY) {
     width: enemyWidth,
     height: enemyHeight,
     color: enemyColor,
-    health: enemyHealth,
+    health: gameSettings.enemyHealth,
     contactDamage: enemyContactDamage,
     state: "idle",
     stateTime: 0,
@@ -174,7 +185,7 @@ function spawnBoss(player) {
   const playerChunkX = Math.floor(player.posX / chunkSize);
   const playerChunkY = Math.floor(player.posY / chunkSize);
   const offsets = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-  const [offsetX, offsetY] = offsets[Math.floor(Math.random() * offsets.length)];
+  const [offsetX, offsetY] = offsets[Math.floor(gameRandom() * offsets.length)];
   const cx = playerChunkX + offsetX;
   const cy = playerChunkY + offsetY;
   getChunkCells(cx, cy);
@@ -195,7 +206,7 @@ function spawnBoss(player) {
     width: bossWidth,
     height: bossHeight,
     color: bossColor,
-    health: bossHealth,
+    health: gameSettings.bossHealth,
     contactDamage: bossContactDamage,
     isBoss: true,
     state: "idle",
