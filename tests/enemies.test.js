@@ -299,91 +299,132 @@ test("an enemy that walks into the next chunk moves to that chunk's list", () =>
   assert.ok(enemiesByChunk.get(getChunkKey(1, 0)).includes(enemy));
 });
 
-// D-25: a real world, so the gathered enemies land on real air cells
+// D-25 and D-38: a real world, so the gathered enemies land on real air cells.
+// A fixed seed keeps the map the same on every run.
 function createGatherWorld() {
   const world = loadScripts();
+  world("resetGame")(4242);
   world("removeAllEnemies()");
   return world;
 }
 
-// An enemy on the first air cell of chunk (cx, cy)
-function addEnemyInChunk(world, cx, cy) {
+// An enemy on an air cell of chunk (cx, cy) that this player cannot see
+function addHiddenEnemyInChunk(world, cx, cy, player) {
   const cells = [];
   world("addChunkAirCells")(cells, cx, cy);
-  return world("addEnemyAtCell")(cells[0].x, cells[0].y);
+  const isHiddenFromPlayer = world("isHiddenFromPlayer");
+  const cell = cells.find((candidate) => isHiddenFromPlayer(candidate.x + 0.5, candidate.y + 0.5, player));
+  assert.ok(cell, "the chunk has a hidden air cell");
+  return world("addEnemyAtCell")(cell.x, cell.y);
 }
 
-function getEnemyChunkDistance(enemy, chunkX, chunkY) {
-  return Math.max(Math.abs(enemy.chunkX - chunkX), Math.abs(enemy.chunkY - chunkY));
+// Chunk steps counting only straight moves: 1 is a door neighbor
+function getChunkSteps(enemy, chunkX, chunkY) {
+  return Math.abs(enemy.chunkX - chunkX) + Math.abs(enemy.chunkY - chunkY);
 }
 
-test("D-25: an enemy left three chunks behind reappears idle next to the player's chunk", () => {
+const gatherPlayer = { posX: 8.5, posY: 8.5 };
+
+test("D-38: an enemy left three chunks behind reappears idle in a door neighbor", () => {
   const world = createGatherWorld();
-  const enemy = addEnemyInChunk(world, 3, 0);
-  enemy.state = "chase";
+  const enemy = addHiddenEnemyInChunk(world, 3, 0, gatherPlayer);
+  enemy.state = "patrol";
   const oldCellX = enemy.cellX;
   const oldCellY = enemy.cellY;
 
-  world("gatherFarEnemies")({ posX: 8.5, posY: 8.5 });
+  world("gatherFarEnemies")(gatherPlayer);
 
-  assert.equal(getEnemyChunkDistance(enemy, 0, 0), 1);
+  assert.equal(getChunkSteps(enemy, 0, 0), 1);
   assert.equal(world("getCell")(enemy.cellX, enemy.cellY), 0);
   assert.equal(enemy.posX, enemy.cellX + 0.5);
   assert.equal(enemy.state, "idle");
+  assert.ok(world("isHiddenFromPlayer")(enemy.posX, enemy.posY, gatherPlayer));
   assert.ok(world("getEnemiesAtCell")(enemy.cellX, enemy.cellY).includes(enemy));
   assert.equal(world("getEnemiesAtCell")(oldCellX, oldCellY).includes(enemy), false);
   assert.ok(world("getEnemiesForChunk")(enemy.chunkX, enemy.chunkY).includes(enemy));
   assert.equal(world("getEnemiesForChunk")(3, 0).includes(enemy), false);
 });
 
-test("D-25: an enemy inside the active area stays where it is", () => {
+test("D-38: a hidden enemy in a diagonal chunk also comes to a door neighbor", () => {
   const world = createGatherWorld();
-  const enemy = addEnemyInChunk(world, 2, -2);
-  const cellX = enemy.cellX;
+  const enemy = addHiddenEnemyInChunk(world, 1, 1, gatherPlayer);
 
-  world("gatherFarEnemies")({ posX: 8.5, posY: 8.5 });
+  world("gatherFarEnemies")(gatherPlayer);
+
+  assert.equal(getChunkSteps(enemy, 0, 0), 1);
+});
+
+test("D-38: an enemy in a door neighbor stays where it is", () => {
+  const world = createGatherWorld();
+  const enemy = addHiddenEnemyInChunk(world, 0, -1, gatherPlayer);
+  const cellX = enemy.cellX;
+  const cellY = enemy.cellY;
+
+  world("gatherFarEnemies")(gatherPlayer);
 
   assert.equal(enemy.cellX, cellX);
-  assert.equal(enemy.chunkX, 2);
+  assert.equal(enemy.cellY, cellY);
+});
+
+test("D-38: a chasing enemy and one the player can see are in play", () => {
+  const world = createGatherWorld();
+  const isEnemyOutOfPlay = world("isEnemyOutOfPlay");
+  const player = { posX: 14.5, posY: 14.5 };
+  // Diagonal chunk (1, 1), three cells from the player: inside the minimap window
+  const close = { chunkX: 1, chunkY: 1, cellX: 17, cellY: 17, posX: 17.5, posY: 17.5, state: "idle" };
+  // Three chunks away, hidden, but chasing
+  const chasing = { chunkX: 3, chunkY: 0, cellX: 56, cellY: 8, posX: 56.5, posY: 8.5, state: "chase" };
+  const far = { ...chasing, state: "patrol" };
+
+  assert.equal(isEnemyOutOfPlay(close, player), false);
+  assert.equal(isEnemyOutOfPlay(chasing, player), false);
+  assert.equal(isEnemyOutOfPlay(far, player), true);
 });
 
 test("D-25: nothing moves while the player stays in the same chunk", () => {
   const world = createGatherWorld();
   const gatherFarEnemies = world("gatherFarEnemies");
-  gatherFarEnemies({ posX: 8.5, posY: 8.5 });
-  const enemy = addEnemyInChunk(world, 5, 0);
+  gatherFarEnemies(gatherPlayer);
+  const enemy = addHiddenEnemyInChunk(world, 5, 0, gatherPlayer);
 
   gatherFarEnemies({ posX: 12.5, posY: 3.5 });
   assert.equal(enemy.chunkX, 5);
 
-  // Entering chunk (1, 0) brings it to a neighbor of chunk (1, 0)
+  // Entering chunk (1, 0) brings it to a door neighbor of chunk (1, 0)
   gatherFarEnemies({ posX: 20.5, posY: 8.5 });
-  assert.equal(getEnemyChunkDistance(enemy, 1, 0), 1);
+  assert.equal(getChunkSteps(enemy, 1, 0), 1);
 });
 
-test("D-25: gathered enemies never share a cell", () => {
+test("D-38: gathered enemies never share a cell and spread evenly", () => {
   const world = createGatherWorld();
   const enemies = [];
   for (let cx = 10; cx < 30; cx += 1) {
-    enemies.push(addEnemyInChunk(world, cx, 10));
+    enemies.push(addHiddenEnemyInChunk(world, cx, 10, gatherPlayer));
   }
 
-  world("gatherFarEnemies")({ posX: 8.5, posY: 8.5 });
+  world("gatherFarEnemies")(gatherPlayer);
 
   const cells = new Set(enemies.map((enemy) => `${enemy.cellX},${enemy.cellY}`));
   assert.equal(cells.size, enemies.length);
-  assert.ok(enemies.every((enemy) => getEnemyChunkDistance(enemy, 0, 0) === 1));
+  assert.ok(enemies.every((enemy) => getChunkSteps(enemy, 0, 0) === 1));
+  const perChunk = new Map();
+  for (const enemy of enemies) {
+    const key = `${enemy.chunkX},${enemy.chunkY}`;
+    perChunk.set(key, (perChunk.get(key) || 0) + 1);
+  }
+  assert.deepEqual([...perChunk.values()], [5, 5, 5, 5]);
 });
 
-test("D-25: with every cell of the 8 neighbors taken, a far enemy waits where it is", () => {
+test("D-38: with every free hidden cell of the door neighbors taken, an enemy out of play waits", () => {
   const world = createGatherWorld();
-  const player = { posX: 8.5, posY: 8.5 };
-  const ringCells = [];
-  world("addRingAirCells")(ringCells, 0, 0, 1);
-  world("placeGameEnemies")(player, ringCells.length);
-  const enemy = addEnemyInChunk(world, 6, 0);
+  let freeCells = 0;
+  for (const area of world("getSpawnAreas")(gatherPlayer)) {
+    freeCells += area.roomCells.length + area.corridorCells.length;
+  }
+  world("placeGameEnemies")(gatherPlayer, freeCells);
+  const enemy = addHiddenEnemyInChunk(world, 6, 0, gatherPlayer);
 
-  world("gatherFarEnemies")(player);
+  world("gatherFarEnemies")(gatherPlayer);
 
   assert.equal(enemy.chunkX, 6);
 });

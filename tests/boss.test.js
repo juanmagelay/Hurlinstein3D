@@ -52,11 +52,61 @@ test("spawnBoss places one boss on an air cell with its hit points", () => {
   assert.ok(world("getEnemiesAtCell")(boss.cellX, boss.cellY).includes(boss));
 });
 
-test("only one boss spawns per game", () => {
-  const world = loadScripts();
+function countBosses(world) {
+  return world("[...enemiesByChunk.values()].flat().filter((enemy) => enemy.isBoss).length");
+}
 
-  assert.notEqual(world("spawnBoss")(world("player")), null);
-  assert.equal(world("spawnBoss")(world("player")), null);
+test("D-38: the boss appears in a door neighbor, out of the player's sight", () => {
+  const world = loadScripts();
+  world("resetGame")(4242);
+  const player = world("player");
+  const boss = world("spawnBoss")(player);
+  const playerChunkX = Math.floor(player.posX / 16);
+  const playerChunkY = Math.floor(player.posY / 16);
+
+  assert.equal(Math.abs(boss.chunkX - playerChunkX) + Math.abs(boss.chunkY - playerChunkY), 1);
+  assert.ok(world("isHiddenFromPlayer")(boss.posX, boss.posY, player));
+});
+
+test("D-38: spawning again brings the same boss near the player instead of a second one", () => {
+  const world = loadScripts();
+  const spawnBoss = world("spawnBoss");
+  const first = spawnBoss(world("player"));
+  // The player walked three chunks east
+  const movedPlayer = { posX: 56.5, posY: 8.5 };
+
+  const second = spawnBoss(movedPlayer);
+
+  assert.equal(second, first);
+  assert.equal(countBosses(world), 1);
+  assert.equal(Math.abs(second.chunkX - 3) + Math.abs(second.chunkY - 0), 1);
+});
+
+test("D-38: the boss can spawn again after a new total wiped it", () => {
+  const world = loadScripts();
+  const player = world("player");
+  world("spawnBoss")(player);
+  world("placeGameEnemies")(player, 5);
+  assert.equal(countBosses(world), 0);
+
+  assert.notEqual(world("spawnBoss")(player), null);
+  assert.equal(countBosses(world), 1);
+});
+
+test("D-38: a regular kill past the target leaves the live boss where it is", () => {
+  const world = makeShotWorld();
+  const player = world("player");
+  world("gameSettings.enemiesPerGame = 1");
+  const boss = world("spawnBoss")(player);
+  const cellX = boss.cellX;
+  const cellY = boss.cellY;
+  addEnemyAhead(world, player);
+
+  world("shootCenterRay")(player);
+
+  assert.equal(boss.cellX, cellX);
+  assert.equal(boss.cellY, cellY);
+  assert.equal(countBosses(world), 1);
 });
 
 test("no boss spawns before the kill target", () => {

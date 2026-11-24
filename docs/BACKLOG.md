@@ -145,6 +145,9 @@ Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added i
 | D-37c | Admin panel as a retro technical console | P2 | 4 | D-37a | done |
 | D-37d | Team logo on the main menu | P2 | 4 | D-37a | done |
 | D-37e | Admin panel grows to fit its content, with more space between blocks | P2 | 4 | D-37c | done |
+| D-38a | Enemies spawn evenly in the rooms of the 4 door neighbors, out of the player's sight | P1 | 4 | D-24 | done |
+| D-38b | Hidden enemies left behind come back one door away on every chunk change | P1 | 4 | D-38a, D-25 | done |
+| D-38c | Boss spawns with the same rules; the admin button always shows it | P1 | 4 | D-38a, D-19c | done |
 
 ## Backlog review (2026-11-20)
 
@@ -2002,6 +2005,64 @@ Decisions:
 - `max-height: 100dvh` (with `100vh` before it for older browsers) instead of `70vh`: the panel never goes past the window, so its own scroll is the fallback on a short window.
 - Gaps: live info cells 6 to 8 px, settings groups 16 by 12 to 26 by 16 px (the legend chip rises over the box border, so the rows need more), section headers and titles a few pixels more.
 - `auto-fit` instead of `auto-fill` in both grids: the empty tracks collapse and the blocks share the width, so labels wrap less.
+
+## D-38: Enemies and boss closer to the player (split in three)
+
+Request (2026-11-24, Juanma): enemies should spawn closer, spread over the four dungeons up, down, left and right, without spawning on top of the player. When the player wanders the infinite map, the ones still alive should come back near. Same for the boss, which the team never saw rendered: the Spawn boss button seemed to do nothing.
+
+Diagnosis of the boss:
+- The boss was created on the first click, at a room center of a neighbor chunk about 16 cells away, behind walls and outside the minimap window. Idle or patrolling two cells, it only chased with line of sight, so it was easy to never find. The render was fine.
+- From the second click on nothing happened: `bossSpawned` was already true.
+- Bug: a new total or Reset settings ran `placeGameEnemies`, which wiped every enemy, the boss included, but left `bossSpawned` true. The boss could not come back that game, neither from the button nor from the kill target.
+
+## D-38a: Spawn in the rooms of the four door neighbors
+
+Acceptance criteria:
+- The total goes to the 4 chunks that share a door with the player's chunk (north, south, west, east), spread evenly: 20 give 5 per chunk. The player's chunk stays empty.
+- Random room cells first, corridor cells once the rooms are full. One enemy per cell.
+- No enemy spawns where the player could see it: more than 10 cells from the player's cell (outside the 21 by 21 minimap window) and with no line of sight to the player.
+- A total that does not fit spreads ring by ring around the player's chunk, with the same visibility rule (admin stress test up to 100,000).
+- Tests: hidden radius equals half the minimap window; near or in sight is not hidden, a wall hides; rooms before corridors and no cell twice; 20 give 5 per door neighbor, in rooms, hidden; 100 in distinct cells of the door neighbors, spread evenly; a new total replaces the old enemies; a total too big grows into the rings.
+
+Files: `js/world.js`, `tests/world.test.js`, `docs/TDD.md` (2.3.2), `README.md`.
+
+Decisions:
+- Rooms first because that is where the player looks and they are lit (D-10). `roomsByChunk` keeps each chunk's rooms in world cells; `getChunkRooms` also feeds the lights, which stay where they were.
+- Hidden means outside the minimap window and with a wall in between, checked with the same DDA line of sight the enemies use (`hasLineOfSight`). Nothing pops into view or onto the minimap, and nothing spawns close enough to hit the player.
+- Even spread: each new enemy goes to the door neighbor with the fewest enemies. The four areas are shuffled with the world random first, so ties do not always favor north and a seed repeats the result (D-30c).
+- Measured over 200 seeds with 20 enemies: always 5 per chunk, 99.5% in rooms, nearest spawn 10.5 cells from the player, 16.6 on average, placement under 5 ms. 100,000 take about 370 ms once (the visibility check on every ring cell), up from 41 ms; it is an admin stress action.
+
+## D-38b: Hidden enemies come back one door away
+
+Acceptance criteria:
+- When the player enters another chunk, every live enemy out of play moves, idle, to a free hidden cell of the 4 door neighbors of the new chunk, to the one with the fewest enemies, rooms first.
+- Out of play: not in the player's chunk or its door neighbors, not chasing, and hidden from the player. The boss counts like any enemy.
+- Nothing moves while the player stays in the same chunk. With no free cell left, an enemy waits where it is.
+- Tests: an enemy three chunks behind reappears idle in a door neighbor and leaves its old cell and chunk; a hidden one in a diagonal chunk also comes; one in a door neighbor stays; a chasing enemy and one inside the minimap window are in play; nothing moves inside the same chunk; 20 gathered enemies get distinct cells, 5 per door neighbor; with the door neighbors full an enemy waits.
+
+Files: `js/enemies.js`, `tests/enemies.test.js`.
+
+Decisions:
+- Replaces the D-25 rule (enemies outside the 5 by 5 active area to any air cell of the 8 neighbors). Enemies two chunks away or in a diagonal chunk used to stay where the player rarely went.
+- Only hidden enemies move, so the player never sees one vanish or appear, on screen or on the minimap.
+- The free cells are counted first and only that many enemies are collected: with 100,000 enemies and full rooms a chunk change went from 169 ms to 1 ms.
+- Checked with headless Chrome on `file://`: after walking five chunks east, the 21 alive (boss included) were all one door away and out of sight, with no console errors.
+
+## D-38c: The boss follows the same rules
+
+Acceptance criteria:
+- The boss spawns like a regular enemy: a room of a door neighbor, hidden from the player.
+- Spawn boss always works: with no live boss it creates one; with a live boss it brings that same boss next to the player. There is never a second boss.
+- A boss wiped by a new total or Reset can spawn again.
+- A regular kill past the target does not move a live boss.
+- Tests: the boss lands in a door neighbor and hidden; a second spawn returns the same boss near the moved player; spawn works after a new total wiped it; a kill past the target leaves the boss in place.
+
+Files: `js/world.js`, `js/enemies.js`, `tests/boss.test.js`, `docs/TDD.md` (2.3.2, 2.3.5).
+
+Decisions:
+- `bossSpawned` is gone: `findBoss` asks the registry, so the flag can never go out of sync with the enemies. Killing the boss ends the game, so it still spawns once per game.
+- If the four door neighbors are full, the boss takes a hidden cell of the rings around them, so the button never fails.
+- Checked with headless Chrome on `file://`: the button put the boss 18 cells away in the north neighbor's room, hidden; a second click kept one boss; standing 3.6 cells away it is drawn crimson and larger than the regular enemies, and it shows on the minimap.
 
 ## Desirables
 
