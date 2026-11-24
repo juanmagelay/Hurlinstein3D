@@ -47,11 +47,12 @@ The game fills the browser window on any screen between 4:3 and 21:9, and adapts
 | `js/weapon.js` | Shotgun aimed at the crosshair, idle, firing and reload animation | 2.3.1, 2.3.3, 6.4 |
 | `js/enemy-sheet.js` | Embedded enemy sprite, a copy of `assets/enemy-sprites/ZOMBA1.png` | 2.3.2, 6.2 |
 | `js/weapon-sheet.js` | Embedded shotgun strip generated from `assets/gun-sprites/Sgun.png` | 6.1 |
+| `js/logo-sheet.js` | Embedded menu logotype (WebP), made from `assets/logo/logotype.png` | 2.3.4, 6.2 |
 | `js/admin.js` | Admin panel: top strip, pinned panel, P key, live info and settings fields; opening it releases the mouse | 2.3.5 |
 | `js/main.js` | PixiJS application, scene, window resize and ticker | 6.4, 6.5 |
 | `assets/icons/LICENSE` | License of the Lucide icons embedded in `index.html` | 2.3.5 |
 | `assets/enemy-sprites/` | Original enemy sprite and its source and license | 2.3.2 |
-| `assets/logo/` | Logomark (512 px) and favicon (32 px), cut from the enemy's head; the favicon is embedded in `index.html` | 6.2 |
+| `assets/logo/` | Logomark (512 px) and favicon (32 px), cut from the enemy's head, and the menu logotype with a transparent background; the favicon is embedded in `index.html` | 6.2 |
 | `tests/` | Node tests for world generation, DDA, movement, projection, enemies, shooting, HUD, weapon and admin settings | 8.7 |
 
 ## Verification
@@ -82,6 +83,7 @@ The game fills the browser window on any screen between 4:3 and 21:9, and adapts
 - [Husk Mutant](https://opengameart.org/content/husk-mutant) enemy sprite by HorrorMovieRei, CC0. The logomark and favicon are cropped from it. See `assets/enemy-sprites/LICENSE.md`.
 - [FPS Gun Sprites](https://rekkimaru.itch.io/fps-gun-sprites) by Rekkimaru, free for any use (no attribution required).
 - [UI BARS](https://guilemus.itch.io/ui-bars) by guilemus, free for commercial use (no redistribution).
+- Hurlinstein3D logotype by Juan Manuel Gelay, made with Google Gemini Pro; background removed for the menu. See `assets/logo/logotype.png`.
 
 ## Course
 

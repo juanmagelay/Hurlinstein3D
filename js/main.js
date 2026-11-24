@@ -21,6 +21,8 @@ function applyScreenWidth(app, scene, width) {
 
 // TDD 6.4: app.init is async, so startup lives in an async function
 async function startGame() {
+  // D-37d: the menu logo, before the first await so it shows with the menu
+  document.getElementById("menu-logo").src = logotypeDataUri;
   useWallTextures = gameSettings.useWallTextures;
   useLighting = gameSettings.useLighting;
   // D-16a: the canvas starts with the shape of the window, and H-10c: the

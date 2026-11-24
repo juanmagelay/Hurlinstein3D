@@ -93,7 +93,7 @@
       justify-content: center;
       justify-content: safe center;
       gap: 18px;
-      padding: 24px;
+      padding: clamp(12px, 3cqh, 24px);
       overflow-y: auto;
       background:
         var(--scanlines),
@@ -116,16 +116,23 @@
       text-shadow: 3px 3px 0 var(--blood), 6px 6px 0 var(--steel-950);
     }
 
-    /* D-37a: the game name on the main menu, until the logo arrives (D-37d) */
-    .menu-wordmark {
-      font-size: clamp(44px, 12cqh, 96px);
-      letter-spacing: 4px;
+    /* D-37d: the logotype on the main menu, sized by the frame height */
+    .menu-logo {
+      margin: 0;
+      line-height: 0;
     }
 
-    .menu-wordmark-3d {
-      margin-left: 6px;
-      color: var(--blood-hot);
-      text-shadow: 3px 3px 0 var(--blood-deep), 6px 6px 0 var(--steel-950);
+    .menu-logo img {
+      display: block;
+      width: auto;
+      height: clamp(110px, 40cqh, 400px);
+      max-width: 92cqw;
+      object-fit: contain;
+    }
+
+    /* until main.js sets the src, the box keeps its space and shows nothing */
+    .menu-logo img:not([src]) {
+      visibility: hidden;
     }
 
     /* D-37a: a raised steel plate that groups a screen's content */
@@ -596,7 +603,9 @@
       left: 0;
       right: 0;
       z-index: 12;
-      max-height: 70vh;
+      /* D-37e: as tall as its content; it scrolls only in a window shorter than that */
+      max-height: 100vh;
+      max-height: 100dvh;
       overflow-y: auto;
       padding: 12px 24px 16px;
       background-color: var(--steel-850);
@@ -681,7 +690,7 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      margin: 14px 0 8px;
+      margin: 16px 0 10px;
       font: 400 11px/1 var(--font-heavy);
       letter-spacing: 2px;
       text-transform: uppercase;
@@ -698,8 +707,9 @@
     /* D-37c: each live value as a small display, label on top, value below */
     .admin-stats {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(124px, 1fr));
-      gap: 6px;
+      /* auto-fit: the cells stretch over the empty tracks of a wide window */
+      grid-template-columns: repeat(auto-fit, minmax(124px, 1fr));
+      gap: 8px;
       margin: 0;
     }
 
@@ -731,7 +741,7 @@
       display: flex;
       align-items: center;
       gap: 12px;
-      margin: 16px 0 12px;
+      margin: 22px 0 16px;
     }
 
     .admin-section-header .admin-section-title {
@@ -741,8 +751,9 @@
 
     .admin-groups {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-      gap: 16px 12px;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      /* the legend chip rises over the box border, so rows need the larger gap */
+      gap: 26px 16px;
     }
 
     .admin-group {
@@ -896,7 +907,8 @@
     <!-- D-37a: each screen is a title over a raised steel plate (.screen-card).
          The ids main.js and screens.js use are unchanged. -->
     <div id="menu-screen" class="screen">
-      <h1 class="menu-title menu-wordmark">Hurlinstein<span class="menu-wordmark-3d">3D</span></h1>
+      <!-- D-37d: main.js sets the src from js/logo-sheet.js -->
+      <h1 class="menu-logo"><img id="menu-logo" width="1341" height="743" alt="Hurlinstein3D"></h1>
       <div class="screen-card">
         <button id="start-game" class="menu-button" type="button">Start game</button>
         <button id="show-controls" class="menu-button" type="button">Controls</button>
@@ -979,6 +991,7 @@
           <li>Husk Mutant by HorrorMovieRei, CC0</li>
           <li>FPS Gun Sprites by Rekkimaru, free for any use</li>
           <li>UI BARS by guilemus, free for commercial use</li>
+          <li>Hurlinstein3D logo by Juan Manuel Gelay, made with Gemini Pro</li>
         </ul>
         <button id="credits-back" class="menu-button" type="button">Back</button>
       </div>
@@ -1139,6 +1152,7 @@
   <script src="js/admin.js"></script>
   <script src="js/game-state.js"></script>
   <script src="js/screens.js"></script>
+  <script src="js/logo-sheet.js"></script>
   <script src="js/ranking.js"></script>
   <script src="js/main.js"></script>
 </body>

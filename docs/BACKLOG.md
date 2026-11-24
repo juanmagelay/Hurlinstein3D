@@ -143,7 +143,8 @@ Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added i
 | D-37a | Retro UI theme for the menu, Controls, Credits and end screens | P2 | 4 | D-36b | done |
 | D-37b | Retro bevel frames for the HUD block and the minimap | P2 | 4 | D-37a | done |
 | D-37c | Admin panel as a retro technical console | P2 | 4 | D-37a | done |
-| D-37d | Team logo on the main menu | P2 | 4 | D-37a | pending |
+| D-37d | Team logo on the main menu | P2 | 4 | D-37a | done |
+| D-37e | Admin panel grows to fit its content, with more space between blocks | P2 | 4 | D-37c | done |
 
 ## Backlog review (2026-11-20)
 
@@ -1921,7 +1922,7 @@ Request (2026-11-24, Juanma): restyle the whole UI as a 90s shooter (Wolfenstein
 
 Acceptance criteria:
 - Tokens on `:root`: steel grays, blood red (selected action), amber (titles and labels), cyan (text fields and live values). System fonts only: Impact for titles, Arial Black for buttons, a monospace stack for text. No network (TDD 6.2).
-- Main menu: the name as a wordmark (HURLINSTEIN in amber, 3D in red) over a raised steel plate with Start game, Controls and Credits.
+- Main menu: the name over a raised steel plate with Start game, Controls and Credits. A text wordmark at first; D-37d replaced it with the logotype.
 - Buttons with hard bevels and shadows. The focused button is the selected item: red plate and an amber cursor, so keyboard navigation (D-34a, D-34d) always shows where it is. Pressed buttons sink.
 - Controls: keys as keycaps on the left, actions on the right. Credits: the team first, the asset licenses apart under a rule. Same lines as before.
 - End screens: YOU DIED in red over a red vignette, YOU WON in amber. Kills, Time and Score as three display cells; initials field, Submit score, the top 5 as a high score table (rank, initials, score, date), Play again and Main menu.
@@ -1969,7 +1970,38 @@ Decisions:
 
 ## D-37d: Team logo on the main menu
 
-Pending: the team sends the logo file. It replaces or joins the wordmark of D-37a and goes into `index.html` inline (SVG) or as a data URI, so `file://` loads no extra file (TDD 6.2).
+Request (2026-11-24, Juanma): the Hurlinstein3D logotype on the main menu, without the solid purple background it came with. Made by Juanma with Google Gemini Pro.
+
+Acceptance criteria:
+- The logotype replaces the text wordmark on the main menu, with a transparent background and no purple fringe; its alt text is the game name.
+- It loads under `file://` with no extra file (TDD 6.2) and fits the menu from a small iframe (800 by 450) to full screen.
+- Credits names the origin of the image (TDD 2.3.4).
+
+Files: `js/logo-sheet.js`, `assets/logo/logotype.png`, `index.html`, `js/main.js`, `README.md`.
+
+Decisions:
+- Background removed with a small Node script outside the repo. Around the logo, each pixel is read as a mix of black (the outline and its soft shadow) and the purple (45, 25, 59): alpha is the black share and the color is un-mixed from the purple, so the shadow stays soft and no purple fringe is left. A flood fill from the image border limits this to the outside, so the dark parts inside the logo stay opaque; no purple pocket was left inside.
+- Cropped to the logo with an 8 px margin and halved to 1341 by 743 px, enough for a retina menu. `assets/logo/logotype.png` keeps that transparent PNG (1.1 MB) as the reusable source.
+- The game embeds it as WebP at quality 0.92 (165 KB, encoded with Chrome's canvas), in `js/logo-sheet.js` like the enemy and shotgun sheets. The PNG as base64 would have been 1.46 MB.
+- `main.js` sets the `src` before its first `await`, so the logo shows with the menu. The `width` and `height` attributes keep its space until then.
+- Height `clamp(110px, 40cqh, 400px)` and screen padding `clamp(12px, 3cqh, 24px)`, so the logo and the three buttons fit an 800 by 450 iframe without scrolling.
+- Credits line: "Hurlinstein3D logo by Juan Manuel Gelay, made with Gemini Pro": the author and the tool, as TDD 2.3.4 asks for every image.
+
+## D-37e: Admin panel fits its content
+
+Request (2026-11-24, Juanma): the admin panel must not be cut; it grows until it shows all its content, with a little more space between blocks.
+
+Acceptance criteria:
+- The open panel is as tall as its content, down to Close admin panel. It only scrolls in a window shorter than its content.
+- A little more space between the live info cells, between the sections and between the settings groups.
+- On a wide window the cells and the groups stretch over the whole width instead of leaving empty columns.
+
+Files: `index.html`.
+
+Decisions:
+- `max-height: 100dvh` (with `100vh` before it for older browsers) instead of `70vh`: the panel never goes past the window, so its own scroll is the fallback on a short window.
+- Gaps: live info cells 6 to 8 px, settings groups 16 by 12 to 26 by 16 px (the legend chip rises over the box border, so the rows need more), section headers and titles a few pixels more.
+- `auto-fit` instead of `auto-fill` in both grids: the empty tracks collapse and the blocks share the width, so labels wrap less.
 
 ## Desirables
 
