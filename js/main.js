@@ -21,6 +21,8 @@ function applyScreenWidth(app, scene, width) {
 
 // TDD 6.4: app.init is async, so startup lives in an async function
 async function startGame() {
+  // D-37d: the menu logo, before the first await so it shows with the menu
+  document.getElementById("menu-logo").src = logotypeDataUri;
   useWallTextures = gameSettings.useWallTextures;
   useLighting = gameSettings.useLighting;
   // D-16a: the canvas starts with the shape of the window, and H-10c: the
@@ -242,11 +244,17 @@ async function startGame() {
     document.getElementById(`${prefix}-submit-button`).disabled = false;
   }
 
+  // D-37a: one span per column (initials, score, date), so the CSS lines the
+  // top 5 up like a high score table
   function renderRanking(list, entries) {
     list.textContent = "";
     for (const entry of entries) {
       const item = document.createElement("li");
-      item.textContent = `${entry.nombre} — ${entry.puntuacion} — ${formatScoreDate(entry.createdAt)}`;
+      for (const text of [entry.nombre, entry.puntuacion, formatScoreDate(entry.createdAt)]) {
+        const cell = document.createElement("span");
+        cell.textContent = text;
+        item.appendChild(cell);
+      }
       list.appendChild(item);
     }
   }

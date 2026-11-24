@@ -140,6 +140,11 @@ Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added i
 | D-35b | Document the shot cooldown in the TDD | P2 | 4 | D-35a | done |
 | D-36a | Clicks on the menu screens never capture the mouse, fire or reload | P0 | 4 | D-12d, D-18a | done |
 | D-36b | In-game hint that a click on the view captures the mouse | P0 | 4 | D-36a | done |
+| D-37a | Retro UI theme for the menu, Controls, Credits and end screens | P2 | 4 | D-36b | done |
+| D-37b | Retro bevel frames for the HUD block and the minimap | P2 | 4 | D-37a | done |
+| D-37c | Admin panel as a retro technical console | P2 | 4 | D-37a | done |
+| D-37d | Team logo on the main menu | P2 | 4 | D-37a | done |
+| D-37e | Admin panel grows to fit its content, with more space between blocks | P2 | 4 | D-37c | done |
 
 ## Backlog review (2026-11-20)
 
@@ -1908,6 +1913,95 @@ Decisions:
 - `createMouseHint(document, gameFrame, element)` returns `update(isPlaying)`; the ticker calls it after `syncScreenToState()` and it writes `hidden` only when the answer changes.
 - Top center, 64 px down: under the admin hover band and between the bars and the minimap.
 - Tests: 253 of 253 pass (`node --test "tests/*.test.js"`).
+
+## D-37: Retro UI (split in four)
+
+Request (2026-11-24, Juanma): restyle the whole UI as a 90s shooter (Wolfenstein 3D, DOOM) with a military retro look, keeping every screen, value, control and id. Split by area so each part can be checked on its own; D-37d waits for the logo file from the team.
+
+## D-37a: Retro theme for the screens
+
+Acceptance criteria:
+- Tokens on `:root`: steel grays, blood red (selected action), amber (titles and labels), cyan (text fields and live values). System fonts only: Impact for titles, Arial Black for buttons, a monospace stack for text. No network (TDD 6.2).
+- Main menu: the name over a raised steel plate with Start game, Controls and Credits. A text wordmark at first; D-37d replaced it with the logotype.
+- Buttons with hard bevels and shadows. The focused button is the selected item: red plate and an amber cursor, so keyboard navigation (D-34a, D-34d) always shows where it is. Pressed buttons sink.
+- Controls: keys as keycaps on the left, actions on the right. Credits: the team first, the asset licenses apart under a rule. Same lines as before.
+- End screens: YOU DIED in red over a red vignette, YOU WON in amber. Kills, Time and Score as three display cells; initials field, Submit score, the top 5 as a high score table (rank, initials, score, date), Play again and Main menu.
+- The mouse hint (D-36b) uses the same bevel look.
+
+Files: `index.html`, `js/main.js`.
+
+Decisions:
+- `#game-frame` is a size container, so the titles scale with `cqh` and keep their proportion inside the portfolio iframe. `.screen` scrolls when its content is taller than the frame (`justify-content: safe center`).
+- Scanlines and the vignette are static CSS gradients; nothing animates and nothing blurs, so the screens cost nothing while the game renders behind them.
+- `renderRanking` writes one span per column instead of one text with dashes, so the CSS can line the columns up.
+- Bug fixed: `.score-submit { display: flex }` won over the `hidden` attribute, so the initials form stayed on screen after a successful submit. A global `[hidden] { display: none !important }` makes `hidden` always win.
+- The initials field has `aria-label="Your initials"`; it only had the ABC placeholder.
+
+## D-37b: Retro bevel frames for the HUD and the minimap
+
+Acceptance criteria:
+- A steel plate with a bevel and a hard shadow behind LIFE, AMMO and KILLS, and a bevel ring around the minimap, both in the colors of the HTML screens.
+- Labels in amber with the same monospace stack as the screens. Crosshair and minimap player in cyan.
+- The bar, label and minimap positions do not change (`tests/hud.test.js`, `tests/minimap.test.js`).
+
+Files: `js/hud.js`, `js/minimap.js`, `README.md`.
+
+Decisions:
+- The frames go in the `hud` Graphics, next to the crosshair: drawn once and again only on resize (TDD 6.4), nothing per frame. That Graphics sits above the minimap and under the bars and labels, so the plate shows behind the bars and the ring is drawn only outside the map window.
+- The hard shadow is an L (right and bottom strips), so it never covers the minimap.
+- One `fill()` per color across both frames (CLAUDE.md 8.4).
+- The plate is 208 px wide: the bars plus a reload counter up to x99. With an Enemies per game in the tens of thousands, the KILLS label goes past the plate; it stays readable.
+
+## D-37c: Admin panel as a retro console
+
+Acceptance criteria:
+- Header with a red pilot lamp, ADMIN PANEL in amber and a bevel X. Reset settings in red, apart from the other buttons.
+- Live info: each value in a sunken display cell, small label on top and the value in cyan below.
+- Settings: each group in a sunken box with an amber legend chip. Number fields and the list sunken with cyan values; checkboxes as square lamps, amber when on; Spawn boss, Refill ammo and New world as bevel buttons.
+- Every section, field, value and button from before is kept, with the same `data-` attributes.
+
+Files: `index.html`.
+
+Decisions:
+- The panel is opaque and unblurred: the old `backdrop-filter` re-blurred the live game every frame, and a translucent panel let the HUD show through the text.
+- A faint grid on the panel and a hazard stripe (amber and black) along its bottom edge mark it as a tool layer over the game.
+- The Game group, which admin.js locks outside a game, dims to half opacity.
+- Focus rings in cyan on every field and button; clicks and keys behave as before (`onAdminButton` and `isTypingInField` untouched).
+
+## D-37d: Team logo on the main menu
+
+Request (2026-11-24, Juanma): the Hurlinstein3D logotype on the main menu, without the solid purple background it came with. Made by Juanma with Google Gemini Pro.
+
+Acceptance criteria:
+- The logotype replaces the text wordmark on the main menu, with a transparent background and no purple fringe; its alt text is the game name.
+- It loads under `file://` with no extra file (TDD 6.2) and fits the menu from a small iframe (800 by 450) to full screen.
+- Credits names the origin of the image (TDD 2.3.4).
+
+Files: `js/logo-sheet.js`, `assets/logo/logotype.png`, `index.html`, `js/main.js`, `README.md`.
+
+Decisions:
+- Background removed with a small Node script outside the repo. Around the logo, each pixel is read as a mix of black (the outline and its soft shadow) and the purple (45, 25, 59): alpha is the black share and the color is un-mixed from the purple, so the shadow stays soft and no purple fringe is left. A flood fill from the image border limits this to the outside, so the dark parts inside the logo stay opaque; no purple pocket was left inside.
+- Cropped to the logo with an 8 px margin and halved to 1341 by 743 px, enough for a retina menu. `assets/logo/logotype.png` keeps that transparent PNG (1.1 MB) as the reusable source.
+- The game embeds it as WebP at quality 0.92 (165 KB, encoded with Chrome's canvas), in `js/logo-sheet.js` like the enemy and shotgun sheets. The PNG as base64 would have been 1.46 MB.
+- `main.js` sets the `src` before its first `await`, so the logo shows with the menu. The `width` and `height` attributes keep its space until then.
+- Height `clamp(110px, 40cqh, 400px)` and screen padding `clamp(12px, 3cqh, 24px)`, so the logo and the three buttons fit an 800 by 450 iframe without scrolling.
+- Credits line: "Hurlinstein3D logo by Juan Manuel Gelay, made with Gemini Pro": the author and the tool, as TDD 2.3.4 asks for every image.
+
+## D-37e: Admin panel fits its content
+
+Request (2026-11-24, Juanma): the admin panel must not be cut; it grows until it shows all its content, with a little more space between blocks.
+
+Acceptance criteria:
+- The open panel is as tall as its content, down to Close admin panel. It only scrolls in a window shorter than its content.
+- A little more space between the live info cells, between the sections and between the settings groups.
+- On a wide window the cells and the groups stretch over the whole width instead of leaving empty columns.
+
+Files: `index.html`.
+
+Decisions:
+- `max-height: 100dvh` (with `100vh` before it for older browsers) instead of `70vh`: the panel never goes past the window, so its own scroll is the fallback on a short window.
+- Gaps: live info cells 6 to 8 px, settings groups 16 by 12 to 26 by 16 px (the legend chip rises over the box border, so the rows need more), section headers and titles a few pixels more.
+- `auto-fit` instead of `auto-fill` in both grids: the empty tracks collapse and the blocks share the width, so labels wrap less.
 
 ## Desirables
 
