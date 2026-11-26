@@ -1,6 +1,6 @@
 # Backlog
 
-Source of truth: `docs/TDD.md` (TDD v1.1). Work follows the story cycle in `CLAUDE.md` section 10. IDs are stable: a story that grows is split with suffixes (H-05a, H-05b) and a new story takes the next free number.
+Source of truth: `docs/TDD.md` (TDD v1.2, updated on 2026-11-26). Work follows the story cycle in `CLAUDE.md` section 10. IDs are stable: a story that grows is split with suffixes (H-05a, H-05b) and a new story takes the next free number.
 
 Branches: every story is committed on `develop`, and once validated `develop` is merged into `main` (fast forward). `main` never gets direct commits. Details in `CLAUDE.md` section 10.3.
 
@@ -168,6 +168,7 @@ Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added i
 | D-41d | Arena sounds: shot, dry fire, reload, enemy hit and death, player hit, boss | P1 | 4 | D-41b, D-39c | done |
 | D-41e | Music and UI sounds: menu and arena tracks, button focus and click, victory and defeat | P1 | 4 | D-41b, D-17b | done |
 | D-41f | Enemy sounds by distance and side, with the dot product of the presentation (optional) | P3 | 4 | D-41d | done |
+| D-43 | Sync the README, the TDD, the credits screen and the asset licenses with the finished game | P1 | 4 | D-41f | done |
 
 ## Backlog review (2026-11-20)
 
@@ -2557,6 +2558,26 @@ Decisions:
 - Used for the enemy hit, death and alert, through `playEnemySound` in `js/enemies.js`. The boss roar stays centered, since it announces a boss one door away.
 - Tests: right +1, ahead 0, left -1, behind 0, 45 degrees cos(45°); the volume halves when the distance doubles.
 - Tests: 336 before D-41, 358 after (`node --test "tests/*.test.js"`).
+
+## D-43: Sync the docs with the finished game
+
+Requested by Juanma on 2026-11-26 after D-41: check the README and the other docs against every feature done.
+
+Acceptance criteria:
+- README: a How to play section (menu, kill target, boss, victory and defeat, score, initials and ranking), the KILLS counter in the HUD description, the internet connection needed only by the ranking, a Tests section, project map rows for `index.html`, `docs/`, `assets/gun-sprites/` and `assets/ui-bars/`, and the TDD 7.2 checks updated for the textured walls and the vertical look.
+- TDD: the update date in the header and `logo-sheet` in the 6.3 file table. `CLAUDE.md` and this file point to TDD v1.2.
+- Credits screen: pixi-filters, which the CRT filter comes from.
+- Asset licenses: `assets/ui-bars/` and `assets/gun-sprites/` get a `LICENSE.md` like the other asset folders.
+
+Files: `README.md`, `docs/TDD.md`, `docs/BACKLOG.md`, `CLAUDE.md`, `index.html`, `js/ranking.js`, `assets/ui-bars/`, `assets/gun-sprites/`.
+
+Decisions:
+- The UI BARS license does not allow redistributing the pack, so its five PNG files leave the repo (and the copy the portfolio makes of `assets/`). The game does not lose anything: `js/hud.js` already embeds the three sheets it draws (`empty_bar`, `health_bar` and `magic_bar`, byte for byte, sha256 in the LICENSE.md). Earlier commits still hold the files.
+- `MCGUN1.png`, `PICK1.png`, `PIST1.png` and `PIST2.png` were never used, so they leave `assets/gun-sprites/`; only `Sgun.png`, the source of `js/weapon-sheet.js`, stays.
+- The TDD header keeps the 2026-10-13 line and adds the 2026-11-26 one; the TDD content does not change otherwise.
+- The tests row of the README project map pointed to section 8.7, which only exists in `CLAUDE.md` (TDD chapter 8 is the references). It now points to TDD 7.2 and 7.3.
+- The network error of the ranking was the only text in Spanish in the English UI ("No se pudo contactar la API"); it is now "Could not reach the ranking server".
+- Tests: 358, unchanged.
 
 ## Desirables
 

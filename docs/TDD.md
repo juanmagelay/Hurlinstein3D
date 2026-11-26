@@ -13,7 +13,8 @@ de mazmorras por chunks
 **Profesor** Facundo Toufick Saiegh
 
 Hurlingham, provincia de Buenos Aires, 29 de septiembre de 2026  
-Actualizado el 13 de octubre de 2026 (feedback profesor)
+Actualizado el 13 de octubre de 2026 (feedback profesor)  
+Actualizado el 26 de noviembre de 2026 (feedback profesor y alcance deseable)
 
 # 1. Introducción
 ## 1.1 Contexto y consigna
@@ -373,6 +374,7 @@ El alcance deseable suma lib/pixi-filters.js, cargado justo después de pixi.min
 | weapon-sheet | Tira de cuadros de la escopeta embebida como data URI                                |
 | weapon       | Escopeta apuntada a la mira, animación de disparo y de recarga, balanceo con los pasos |
 | enemy-sheet  | Sprite del enemigo y tira de sus cuadros de muerte, embebidos como data URI           |
+| logo-sheet   | Logotipo del menú principal embebido como data URI                                    |
 | game-state   | Estados de la partida, contador de enemigos eliminados y reinicio                    |
 | ranking      | Puntaje, envío de la partida y lectura del ranking en la API externa (2.3.4)         |
 | sound-sheet  | Sonidos y pistas de música embebidos como data URI (2.3.7)                          |

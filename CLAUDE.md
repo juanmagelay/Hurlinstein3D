@@ -21,7 +21,7 @@ Juanma es diseñador UX y estudia la licenciatura. Entiende bien la teoría de r
 
 ## 3. Fuentes de verdad
 
-1. `docs/TDD.md` (TDD v1.1, actualizado el 13/10/2026 con el feedback del profesor) es el contrato. Si el repo, este archivo o una idea tuya lo contradicen, gana el TDD. Leé la sección que corresponde antes de implementar cada historia.
+1. `docs/TDD.md` (TDD v1.2, actualizado el 26/11/2026 con el feedback del profesor y el alcance deseable) es el contrato. Si el repo, este archivo o una idea tuya lo contradicen, gana el TDD. Leé la sección que corresponde antes de implementar cada historia.
 2. Lo que el TDD no define (por ejemplo, la condición de victoria o la tecla de recarga) se pregunta antes de implementarlo. No lo inventes.
 3. Si encontrás un error o una contradicción en el TDD, marcalo y proponé la corrección. No la apliques en silencio.
 4. Material de referencia local en `references/`, fuera de git (puede no existir en otra máquina; si falta, trabajá con los resúmenes de este archivo):
