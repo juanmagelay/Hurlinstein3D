@@ -153,10 +153,10 @@ Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added i
 | D-39a | Specify in the TDD: death animation, blood stain stored per cell, blood particles | P1 | 4 | D-38c | done |
 | D-39b | Death frames of the Husk Mutant, packed offline into one strip and embedded | P1 | 4 | D-39a, D-21b | done |
 | D-39c | Death animation: the killed enemy leaves play at once and falls where it died | P1 | 4 | D-39b | done |
-| D-39d | Blood stain stored per cell, in the chunk of its cell, kept for the session | P1 | 4 | D-39c | pending |
-| D-39e | Blood stain drawn on the floor by the floor casting and marked on the minimap | P1 | 4 | D-39d, D-28c | pending |
-| D-39f | Blood particle simulation: a spray on each hit and on death, gravity with an Euler step, fixed pool | P1 | 4 | D-39c | pending |
-| D-39g | Blood drops drawn in 3D with z-buffer occlusion | P1 | 4 | D-39f | pending |
+| D-39d | Blood stain stored per cell, in the chunk of its cell, kept for the session | P1 | 4 | D-39c | done |
+| D-39e | Blood stain drawn on the floor by the floor casting and marked on the minimap | P1 | 4 | D-39d, D-28c | done |
+| D-39f | Blood particle simulation: a spray on each hit and on death, gravity with an Euler step, fixed pool | P1 | 4 | D-39c | done |
+| D-39g | Blood drops drawn in 3D with z-buffer occlusion | P1 | 4 | D-39f | done |
 | D-40a | Specify in the TDD: limited vertical look with the mouse (y-shearing), shot height along the crosshair, footstep bob | P1 | 4 | D-38c | pending |
 | D-40b | Vertical look: the mouse moves the horizon up and down within a limit, walking or standing | P1 | 4 | D-40a, D-12c, D-28c | pending |
 | D-40c | The projectile follows the crosshair height: it climbs or drops with the aim and hits only across a body | P1 | 4 | D-40b, D-42b | pending |
@@ -2267,6 +2267,13 @@ Acceptance criteria:
 
 Files: `js/blood.js` (new), `js/enemies.js`, `index.html`, `tests/blood.test.js` (new).
 
+Decisions (2026-11-26, done with D-39e, D-39f and D-39g in one batch, without a plan stop):
+- `js/blood.js` loads right after `js/world.js`: `stainsByChunk` is a `Map` keyed by `getChunkKey`, with one `Uint8Array(256)` per chunk created by its first stain. `getStain(x, y)` finds the chunk with `Math.floor`, like `getCell`, and returns 0 for a chunk without stains through `getChunkStains`, which never creates anything.
+- `addStain` keeps the first stain of a cell. The shape is `getChunkSeed(worldSeed ^ stainSeedSalt, x, y) % 4 + 1`: the mix of the chunk seed (`js/random.js`) with the cell in place of the chunk. The salt keeps the stain of cell (x, y) apart from the map of chunk (x, y), which uses the same mix.
+- `startEnemyDeath` (`js/enemies.js`) adds the stain at `Math.floor` of the position, so it appears in the frame of the kill, under the falling body, and stays after the body fades out.
+- `resetGame` calls `clearStains`, so Play again and a new world from the admin panel both clear them.
+- Tests (`tests/blood.test.js`, new): stains at negative cells and on both sides of chunk borders, with their index in the chunk array; a chunk without stains answers 0 and creates nothing; one stain per cell, the first one stays; the same seed gives the same shapes in reverse order, all four shapes appear and another seed changes some; a kill at x = -0.5 stains cell -1. `tests/reset.test.js` checks that a reset clears them.
+
 ## D-39e: Blood stain on the floor and the minimap
 
 Acceptance criteria:
@@ -2278,6 +2285,15 @@ Acceptance criteria:
 
 Files: `js/renderer.js`, `js/minimap.js`, `tests/renderer.test.js`.
 
+Decisions:
+- The texture: `initStainTexture` (`js/renderer.js`) draws the four shapes once on a hidden 128 by 32 canvas, 32 px each: a dark red ellipse, a second lobe for shape 3, small drops around it and a darker core, placed by a fixed seed per shape. Shape 1 is a round pool, 2 a smear, 3 two lobes, 4 a splash. Every shape stays within 14 px of the center, so no stain is cut by the cell edge and none reaches the tile joints. The RGBA is read back once with `getImageData` (drawn by code, so `file://` allows it).
+- The blend is a product. `createStainFactors` turns each texel into what it lets through of the tile per channel, `1 + (stain / tile - 1) * coverage`, plus the coverage (alpha times 0.85, so a little of the tile shows through). Multiplying the shaded tile by the factor gives the same color as laying the stain over the tile and shading both by the same light, so the stain takes the room lights or the distance bands of the floor around it (TDD 6.5), without computing the light again.
+- `drawFloorCasting` keeps the chunk of the last sample by its first cell and looks up the lights and the stain array again only when a sample leaves it. The stain of a floor sample is one index in that array. `applyStain(tileColor, shape, u, v)` runs only for samples of a stained cell, with u and v the place of the sample inside its cell (`getStainTexelIndex` picks the texel), and returns the tile as it is on a transparent texel. The ceiling never asks, and with no stain in the world the lookup is skipped.
+- Flat color mode and textures off hide the floor casting, so no stain shows in 3D. The minimap keeps its dots in flat mode, like it keeps the enemies, since the dot is the proof the cell was stored; the TDD 2.3.2 sentence about flat mode now says so.
+- Minimap: a dark red (0x8a1010) dot of radius 2.5 px at the center of every stained cell in the window, all in one `fill()`, drawn over the walls and under the rays, enemies, projectiles and player.
+- Floor time, measured in headless Chrome with the HEAD floor casting loaded in the same page and alternated with the new one (8 rounds of 40 frames, 2 px strips, lighting on): with no stain the new code is 4 to 7% slower; with the 11 stains of a full game in the nearest cells ahead, 10 to 14%; with every air cell within 8 cells stained (53 to 108 stains), 13 to 17%. In absolute terms 0.3 to 0.8 ms over about 5 to 6 ms. The 10% target holds without stains and is passed by a few points when stains cover most of the visible floor. Tried and dropped: blending inside `getFloorTextureColor` (+7 to 9% with no stain, as V8 stops inlining it) and a separate stained color function that computed the light again (+15 to 20% with 11 stains).
+- Tests: the texel index of a floor point by hand (1064 for shape 2 at a quarter of the cell); a stain texel over the tile by hand (156, 166, 169 becomes 108, 24, 25), darker farther away, and a transparent texel leaves the tile; the floor casting passes the stain shape for every floor sample of the stained cell, 0 elsewhere and on the ceiling (`tests/renderer.test.js`); the minimap dot at its cell center and none outside the window (`tests/minimap.test.js`).
+
 ## D-39f: Blood particle simulation
 
 Acceptance criteria:
@@ -2288,6 +2304,15 @@ Acceptance criteria:
 
 Files: `js/particles.js` (new), `js/enemies.js`, `index.html`, `tests/particles.test.js` (new).
 
+Decisions:
+- `js/particles.js` loads after `js/projectiles.js` (it uses `ticksPerSecond` of `js/enemies.js`). `bloodDrops` holds 256 drop objects created at load, each with `active`, `posX`, `posY`, `z`, `velX`, `velY`, `velZ` and `life`. Units are cells and 60 Hz ticker units, like the rest of the simulation.
+- `sprayBlood(enemy, player, count)` turns on free drops at the enemy's chest (0.7 of its height, 0.42 cells for a regular enemy), each moving away from the player inside a fan of 1.75 radians, at 0.8 to 2.4 cells per second, rising at 0.3 to 1.5 cells per second, with 0.6 to 1 s of life. A full pool skips the rest.
+- `damageEnemy` sprays 6 drops on a hit that leaves the enemy alive and 24 on the killing hit, so a regular enemy, which dies with one shot, sprays 24 and the boss 6 per hit and 24 at the end.
+- `stepBloodDrop` is the Euler step of TDD 3.5, in that order: `velZ -= g * deltaTime`, then the position plus the velocity times `deltaTime`. g is 9 cells per second squared (0.0025 per tick squared), so a drop lands in about 0.3 to 0.5 s. A drop dies at z 0 or when its life runs out, and leaves no stain.
+- The randomness comes from `bloodRandom`, a generator of its own seeded with the world seed and reseeded by `clearBloodDrops`, so `Math.random` still only picks the world seed (TDD 4.4) and the drops never change the patrol choices made with `gameRandom`.
+- `updateBloodDrops` runs in the ticker after `updateDyingEnemies`, only while playing. `resetGame` calls `clearBloodDrops`.
+- Tests (`tests/particles.test.js`, new): one Euler step against values computed by hand; a drop dies on the floor and when its life ends; the spray starts at the chest and moves away from the player, and every drop lands within 120 ticks; the pool stays at 256 with 300 drops asked for; a surviving hit sprays 6 and the kill 24 more. `tests/reset.test.js` checks that a reset leaves no drop in the air.
+
 ## D-39g: Blood drops in 3D
 
 Acceptance criteria:
@@ -2297,6 +2322,14 @@ Acceptance criteria:
 - Tests: a drop behind a wall is not drawn; a drop straight ahead lands on the center column.
 
 Files: `js/renderer.js`, `js/main.js`, `tests/renderer.test.js`.
+
+Decisions:
+- `ParticleContainer` fits: checked in the bundled v8.21 (`lib/pixi.min.js`), a `Particle` has `x`, `y`, `scaleX`, `scaleY`, `anchorX`, `anchorY`, `tint` and `alpha`, and the container takes `dynamicProperties` for `position`, `vertex` (the scale) and `color`. A `Particle` has no `visible` flag, so a hidden drop gets alpha 0. `createBloodDropParticles` builds the container and its 256 particles once, over a 4 by 4 px rounded white square drawn by code and tinted. The container reports empty bounds, so `boundsArea` gives it the screen size for the CRT filter on the 3D layer.
+- `getBloodDropView` projects a drop with `getEnemyProjection` (Lode part 3). The eye is half a cell above the floor, so a drop z cells high is drawn `screenHeight * (0.5 - z) / depth` px under the horizon: on the floor line of the enemies at z 0, on the horizon at z 0.5. It is 0.03 cells wide, never under 2 px, skipped nearer than 0.2 cells, and drawn only when it is nearer than the wall depth of its column (`wallDepthBuffer`). Its dark red is shaded by the distance bands, like the enemies.
+- The container sits over the enemies and under the projectiles, so a spray reads as a burst out of the body. The drops are not sorted against the enemy strips.
+- `drawBloodDrops` runs every frame after `drawEnemies`; the flat color mode hides every drop, like the falling enemies and the stains. The minimap does not show drops.
+- Tests (`tests/renderer.test.js`): a drop straight ahead lands on the center column, on the horizon at eye height and on the floor line at z 0, with its size by hand and the 2 px minimum; a drop behind a nearer wall or behind the camera is not drawn; the particles follow their drops, hidden ones get alpha 0, and flat mode hides them all.
+- Checked: 304 of 304 tests pass (287 before). Headless Chrome on `file://`: an enemy two cells ahead dies with one shot, 24 drops fly out of its chest and land, the body falls on a dark red stain that stays after it fades, and the minimap shows the dot in its cell. A boss hit that leaves it alive sprays 6. Flat mode shows no drop and no stain. A new game leaves no stain and no drop. No console messages.
 
 ## D-42: The flying projectile stays (split in two)
 

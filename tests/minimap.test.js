@@ -181,3 +181,28 @@ test("D-42b: a projectile is a red-orange dot at its minimap position", () => {
   assert.deepEqual(dots, [{ x: dotsMinimapX + 132.5, y: 10 + 95, radius: 2 }]);
   assert.ok(graphics.fillColors.includes(projectileColor));
 });
+
+// D-39e: every stained cell in the window is a dark red dot at its center
+test("D-39e: a stained cell is a dark red dot, only inside the window", () => {
+  const stainWorld = loadScripts();
+  stainWorld("getCell = function () { return 0; }");
+  const stainMinimapX = stainWorld("getMinimapX()");
+  const stainColor = stainWorld("minimapStainColor");
+  const player = { posX: 10.5, posY: 10.5, dirX: 1, dirY: 0 };
+
+  // Without stains the stain color is never filled
+  const empty = createRecordingGraphics();
+  stainWorld("drawMinimap")(empty, player);
+  assert.equal(empty.fillColors.includes(stainColor), false);
+
+  // Cell (13, 9) is inside the window (cells 0 to 20), cell (40, 10) is not
+  stainWorld("addStain")(13, 9);
+  stainWorld("addStain")(40, 10);
+  const graphics = createRecordingGraphics();
+  stainWorld("drawMinimap")(graphics, player);
+
+  // The center of cell (13, 9) is 135 px right and 95 px down from the corner
+  const dots = graphics.circles.filter((circle) => circle.radius === 2.5);
+  assert.deepEqual(dots, [{ x: stainMinimapX + 135, y: 10 + 95, radius: 2.5 }]);
+  assert.ok(graphics.fillColors.includes(stainColor));
+});

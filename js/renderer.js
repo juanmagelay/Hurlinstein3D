@@ -266,6 +266,115 @@ function getFloorLight(worldX, worldY, lights) {
   return Math.min(1, illumination);
 }
 
+// D-39e / TDD 6.2: the four stain shapes, drawn by code side by side on a
+// hidden canvas, 32 by 32 px each, read back once and turned into one factor
+// per texel and color channel (TDD 6.4). The floor casting reads them with no
+// object.
+const stainTextureSize = 32;
+const stainTextureWidth = stainTextureSize * stainShapeCount;
+// A stain lets a little of the tile show through
+const stainOpacity = 0.85;
+const stainColor = "#5e0b0b";
+const stainCoreColor = "#3c0505";
+// Shape 1 a round pool, 2 a smear, 3 two lobes, 4 a splash with many drops.
+// Every size stays within 14 px of the center, so no stain is cut by the cell edge.
+const stainShapeStyles = [
+  { radiusX: 9, radiusY: 8, lobes: 1, droplets: 3 },
+  { radiusX: 11, radiusY: 5, lobes: 1, droplets: 5 },
+  { radiusX: 7, radiusY: 5.5, lobes: 2, droplets: 4 },
+  { radiusX: 5.5, radiusY: 5.5, lobes: 1, droplets: 10 },
+];
+// The unshaded floor tile of getFloorTextureColor, 166 with its green tint
+const floorTileRgb = [166 * 0.94, 166, 166 * 1.02];
+let stainFactors = null;
+
+// D-39e: each shape is a dark red ellipse, a second lobe for shape 3, small
+// drops around it and a darker core. Its own fixed seed places them, so the
+// four shapes look the same in every game.
+function drawStainShape(context, shapeIndex) {
+  const style = stainShapeStyles[shapeIndex];
+  const random = createRandom(shapeIndex + 1);
+  const centerX = shapeIndex * stainTextureSize + stainTextureSize / 2;
+  const centerY = stainTextureSize / 2;
+  const rotation = random() * Math.PI;
+
+  context.save();
+  context.beginPath();
+  context.rect(shapeIndex * stainTextureSize, 0, stainTextureSize, stainTextureSize);
+  context.clip();
+
+  context.fillStyle = stainColor;
+  context.beginPath();
+  context.ellipse(centerX, centerY, style.radiusX, style.radiusY, rotation, 0, 2 * Math.PI);
+  if (style.lobes === 2) {
+    const lobeX = centerX + Math.cos(rotation) * 6;
+    const lobeY = centerY + Math.sin(rotation) * 6;
+    context.ellipse(lobeX, lobeY, style.radiusY, style.radiusY, 0, 0, 2 * Math.PI);
+  }
+  context.fill();
+
+  for (let index = 0; index < style.droplets; index++) {
+    const angle = random() * 2 * Math.PI;
+    const distance = Math.min(style.radiusX + 1 + random() * 4, 11.5);
+    const radius = 0.8 + random() * 1.4;
+    context.beginPath();
+    context.arc(centerX + Math.cos(angle) * distance, centerY + Math.sin(angle) * distance, radius, 0, 2 * Math.PI);
+    context.fill();
+  }
+
+  context.fillStyle = stainCoreColor;
+  context.beginPath();
+  context.ellipse(centerX, centerY, style.radiusX * 0.5, style.radiusY * 0.5, rotation, 0, 2 * Math.PI);
+  context.fill();
+  context.restore();
+}
+
+// D-39e / TDD 6.4: runs once, outside the ticker
+function initStainTexture() {
+  if (stainFactors !== null) {
+    return;
+  }
+  const canvas = document.createElement("canvas");
+  canvas.width = stainTextureWidth;
+  canvas.height = stainTextureSize;
+  const context = canvas.getContext("2d");
+  for (let shapeIndex = 0; shapeIndex < stainShapeCount; shapeIndex++) {
+    drawStainShape(context, shapeIndex);
+  }
+  stainFactors = createStainFactors(context.getImageData(0, 0, stainTextureWidth, stainTextureSize).data);
+}
+
+// D-39e: what each stain texel lets through of the tile under it, per color
+// channel, and its coverage. Blending the stain over the tile by its alpha is
+// a product: where the texel is opaque the factor turns the tile into the
+// stain color, where it is transparent (coverage 0) the tile stays. Four
+// numbers per texel, like the RGBA it comes from. The tile under a stain is
+// always plain tile, never a joint, since every shape stays 2 px away from the
+// cell edge.
+function createStainFactors(texels) {
+  const texelCount = stainTextureWidth * stainTextureSize;
+  const factors = new Float64Array(texelCount * 4);
+  for (let texel = 0; texel < texelCount; texel++) {
+    const coverage = texels[texel * 4 + 3] / 255 * stainOpacity;
+    for (let channel = 0; channel < 3; channel++) {
+      const ratio = texels[texel * 4 + channel] / floorTileRgb[channel];
+      factors[texel * 4 + channel] = 1 + (ratio - 1) * coverage;
+    }
+    factors[texel * 4 + 3] = coverage;
+  }
+  return factors;
+}
+
+// D-39e / TDD 6.5: the stain texel under a floor point. u and v are the
+// fractional parts of the point, its place inside the cell, used as texture
+// coordinates, and the shape picks one of the four 32 px squares of the strip.
+// Returns the texel number, row times the strip width plus column.
+function getStainTexelIndex(shape, u, v) {
+  const texX = (shape - 1) * stainTextureSize + Math.floor(u * stainTextureSize);
+  const texY = Math.floor(v * stainTextureSize);
+  return texY * stainTextureWidth + texX;
+}
+
 // D-28c / D-28d: the color of one floor or ceiling sample as 0xRRGGBB, like
 // shadeColor, so drawing a pixel creates no object. Each cell is a light tile
 // with a dark joint along two of its edges. With lighting on, the room lights
@@ -313,6 +422,23 @@ function getFloorTextureColor(worldX, worldY, isCeiling, rowDistance, lights) {
   return (toColorByte(red) << 16) | (toColorByte(green) << 8) | toColorByte(blue);
 }
 
+// D-39e / TDD 6.5: lays the stain of a cell over a floor sample. The tile
+// color comes already shaded, by the lights or the distance bands, and is
+// multiplied by the factors of its stain texel, so the stain keeps the light
+// of the floor around it. u and v are the place of the sample inside its cell.
+// Only the samples of a stained cell come here, and a transparent texel, most
+// of the square around a blob, returns the tile as it is.
+function applyStain(tileColor, stainShape, u, v) {
+  const texel = getStainTexelIndex(stainShape, u, v) * 4;
+  if (stainFactors[texel + 3] === 0) {
+    return tileColor;
+  }
+  const red = ((tileColor >> 16) & 0xff) * stainFactors[texel];
+  const green = ((tileColor >> 8) & 0xff) * stainFactors[texel + 1];
+  const blue = (tileColor & 0xff) * stainFactors[texel + 2];
+  return (toColorByte(red) << 16) | (toColorByte(green) << 8) | toColorByte(blue);
+}
+
 function toColorByte(value) {
   return Math.min(255, Math.floor(value));
 }
@@ -355,11 +481,14 @@ function drawFloorCasting(surface, player) {
   const canvasWidth = surface.canvas.width;
   const data = surface.imageData.data;
   const noLights = [];
-  // Neighbor samples usually fall in the same chunk, so the lights of a chunk
-  // are looked up again only when the samples cross into another one
+  // Neighbor samples usually fall in the same chunk, so the lights and the
+  // stains (D-39e) of a chunk are looked up again only when the samples cross
+  // into another one. The chunk is kept by its first cell, as whole numbers.
   let lights = noLights;
-  let lightsChunkX = NaN;
-  let lightsChunkY = NaN;
+  let stains = null;
+  let hasChunk = false;
+  let chunkFirstX = 0;
+  let chunkFirstY = 0;
 
   for (let row = 0; row < rows; row++) {
     const y = (row + 0.5) * stripWidth;
@@ -384,21 +513,45 @@ function drawFloorCasting(surface, player) {
     let floorY = first.y;
 
     // The lights matter for the lamps on the ceiling and, with lighting on,
-    // for the light on the floor
+    // for the light on the floor. D-39e: stains lie on the floor only, and
+    // only once some enemy has died.
     const needsLights = isCeiling || useLighting;
+    const needsStains = !isCeiling && stainsByChunk.size > 0 && stainFactors !== null;
     for (let column = 0; column < columns; column++) {
       let sampleLights = noLights;
-      if (needsLights) {
-        const chunkX = Math.floor(floorX / chunkSize);
-        const chunkY = Math.floor(floorY / chunkSize);
-        if (chunkX !== lightsChunkX || chunkY !== lightsChunkY) {
-          lights = getLightsAtCell(Math.floor(floorX), Math.floor(floorY));
-          lightsChunkX = chunkX;
-          lightsChunkY = chunkY;
+      let stainShape = 0;
+      let cellX = 0;
+      let cellY = 0;
+      if (needsLights || needsStains) {
+        // The cell of the sample; while it stays inside the same 16 by 16
+        // chunk, nothing is looked up again
+        cellX = Math.floor(floorX);
+        cellY = Math.floor(floorY);
+        const outsideX = cellX < chunkFirstX || cellX >= chunkFirstX + chunkSize;
+        const outsideY = cellY < chunkFirstY || cellY >= chunkFirstY + chunkSize;
+        if (!hasChunk || outsideX || outsideY) {
+          hasChunk = true;
+          const chunkX = Math.floor(cellX / chunkSize);
+          const chunkY = Math.floor(cellY / chunkSize);
+          lights = getLightsAtCell(cellX, cellY);
+          stains = getChunkStains(chunkX, chunkY);
+          chunkFirstX = chunkX * chunkSize;
+          chunkFirstY = chunkY * chunkSize;
         }
-        sampleLights = lights;
+        if (needsLights) {
+          sampleLights = lights;
+        }
+        // TDD 6.8: the stain of the cell is one index in the chunk array
+        if (needsStains && stains !== null) {
+          stainShape = stains[(cellY - chunkFirstY) * chunkSize + (cellX - chunkFirstX)];
+        }
       }
-      writeColorPixel(data, index, getFloorTextureColor(floorX, floorY, isCeiling, rowDistance, sampleLights));
+      let color = getFloorTextureColor(floorX, floorY, isCeiling, rowDistance, sampleLights);
+      if (stainShape > 0) {
+        // The place of the sample inside its cell is the texture coordinate
+        color = applyStain(color, stainShape, floorX - cellX, floorY - cellY);
+      }
+      writeColorPixel(data, index, color);
       index += 4;
       floorX += stepX;
       floorY += stepY;
@@ -901,4 +1054,93 @@ function drawProjectiles(graphics, player) {
   }
 
   fillStrips(graphics, projectileStrips, projectileColor);
+}
+
+// D-39g: look of a blood drop, a small dark red square 0.03 cells wide, never
+// under 2 px so far drops still show. Closer than bloodDropMinDepth it would
+// be a big square over the view, so it is skipped.
+const bloodDropSize = 0.03;
+const bloodDropMinPixels = 2;
+const bloodDropColor = 0x8c0a0a;
+const bloodDropMinDepth = 0.2;
+const bloodDropTextureSize = 4;
+
+// D-39g: a 4 by 4 px rounded square, white so the tint gives its color, drawn
+// by code on a hidden canvas (TDD 6.2)
+function createBloodDropTexture() {
+  const canvas = document.createElement("canvas");
+  canvas.width = bloodDropTextureSize;
+  canvas.height = bloodDropTextureSize;
+  const context = canvas.getContext("2d");
+  context.fillStyle = "#ffffff";
+  context.fillRect(1, 0, 2, 4);
+  context.fillRect(0, 1, 4, 2);
+  const texture = PIXI.Texture.from(canvas);
+  texture.source.scaleMode = "nearest";
+  return texture;
+}
+
+// D-39g / TDD 6.4: one Particle per drop of the pool, created once. A Particle
+// has no visible flag, so a hidden drop gets alpha 0. Position, size (vertex)
+// and color change every frame, so the three are dynamic. A ParticleContainer
+// reports empty bounds, so boundsArea gives the CRT filter the screen size.
+function createBloodDropParticles() {
+  const texture = createBloodDropTexture();
+  const container = new PIXI.ParticleContainer({
+    dynamicProperties: { position: true, vertex: true, color: true },
+    boundsArea: new PIXI.Rectangle(0, 0, maxScreenWidth, screenHeight),
+  });
+  const particles = [];
+  for (let index = 0; index < bloodDropPoolSize; index++) {
+    const particle = new PIXI.Particle({ texture, anchorX: 0.5, anchorY: 0.5, alpha: 0 });
+    container.addParticle(particle);
+    particles.push(particle);
+  }
+  return { container, particles };
+}
+
+// D-39g (Lode part 3): a drop is projected like an enemy, and its height
+// moves it up from the floor line. The eye is half a cell above the floor, so
+// a point z cells high is (0.5 - z) cells under eye level, screenHeight / depth
+// pixels per cell. It is drawn only when it is nearer than the wall depth of
+// its column (D-04c1). Returns null when it is not drawn.
+function getBloodDropView(drop, player) {
+  const { transformX, depth } = getEnemyProjection(drop, player);
+  if (depth < bloodDropMinDepth || depth > maxRayDistance) {
+    return null;
+  }
+  const x = (screenWidth / 2) * (1 + transformX / depth);
+  if (x < 0 || x >= screenWidth) {
+    return null;
+  }
+  if (depth >= wallDepthBuffer[Math.floor(x / gameSettings.stripWidth)]) {
+    return null;
+  }
+  return {
+    x,
+    y: screenHeight / 2 + screenHeight * (0.5 - drop.z) / depth,
+    size: Math.max(bloodDropMinPixels, screenHeight * bloodDropSize / depth),
+    tint: shadeColor(bloodDropColor, getDistanceBrightness(depth)),
+  };
+}
+
+// D-39g: every frame, each particle follows its drop of the pool. Like the
+// falling enemies and the stains, the flat color mode shows no drops.
+function drawBloodDrops(dropParticles, player) {
+  const show = !gameSettings.flatColors;
+  for (let index = 0; index < bloodDrops.length; index++) {
+    const drop = bloodDrops[index];
+    const particle = dropParticles.particles[index];
+    const view = show && drop.active ? getBloodDropView(drop, player) : null;
+    if (view === null) {
+      particle.alpha = 0;
+      continue;
+    }
+    particle.x = view.x;
+    particle.y = view.y;
+    particle.scaleX = view.size / bloodDropTextureSize;
+    particle.scaleY = view.size / bloodDropTextureSize;
+    particle.tint = view.tint;
+    particle.alpha = 1;
+  }
 }

@@ -66,6 +66,8 @@ async function startGame() {
   // texture and its sprite are created once and the ticker only writes pixels
   const floorCastingSurface = createFloorCastingSurface();
   gameLayer.addChild(floorCastingSurface.sprite);
+  // D-39e: the blood stain shapes, drawn by code once and read by the casting
+  initStainTexture();
 
   // Added second, so the walls are drawn on top of ceiling and floor
   const walls = new PIXI.Graphics();
@@ -92,6 +94,11 @@ async function startGame() {
     enemyStrips = createEnemyStripSprites();
     gameLayer.addChild(enemyStrips.container);
   }
+
+  // D-39g: the 256 blood drops, one Particle each, created once over the
+  // enemies, so a spray reads as a burst out of the body
+  const bloodDropParticles = createBloodDropParticles();
+  gameLayer.addChild(bloodDropParticles.container);
 
   // D-13c: projectiles draw over the enemies, with the same wall occlusion
   const projectileGraphics = new PIXI.Graphics();
@@ -346,6 +353,8 @@ async function startGame() {
     // D-39c: the killed enemies fall; the boss shows the victory screen when
     // it lies on the floor
     updateDyingEnemies(ticker.deltaTime);
+    // D-39f / TDD 3.5: one Euler step for every drop in the air
+    updateBloodDrops(ticker.deltaTime);
     updateShotgun(shotgun, ticker.deltaTime);
     // D-27c: whole hits. The flash starts and the bar drops in this same frame.
     if (damagePlayer(player, getContactDamage(player, ticker.deltaTime))) {
@@ -356,6 +365,7 @@ async function startGame() {
     updateFloorCasting(floorCastingSurface, player, useWallTextures && !gameSettings.flatColors);
     drawWalls(walls, player, wallStrips);
     drawEnemies(enemies, player, enemyStrips);
+    drawBloodDrops(bloodDropParticles, player);
     drawProjectiles(projectileGraphics, player);
     drawMinimap(minimap, player);
   });

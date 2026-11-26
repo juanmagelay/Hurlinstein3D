@@ -849,3 +849,147 @@ test("D-39c: the flat color mode draws no falling enemy", () => {
   assert.deepEqual(graphics.rects, []);
   spriteDyingEnemies.length = 0;
 });
+
+// D-39e: the blood stain on the floor, read from the stain texture strip
+test("D-39e: the stain texel of a floor point, computed by hand", () => {
+  const getStainTexelIndex = getGlobal("getStainTexelIndex");
+  // Four 32 px squares side by side: the strip is 128 texels wide. The point
+  // (10.25, -3.75) is a quarter into its cell on both axes (-3.75 - -4 = 0.25),
+  // texel 8 of 32. Shape 2 starts at column 32: column 40, row 8, so
+  // 8 * 128 + 40 = 1064.
+  const u = 10.25 - Math.floor(10.25);
+  const v = -3.75 - Math.floor(-3.75);
+  assert.equal(v, 0.25);
+  assert.equal(getStainTexelIndex(2, u, v), 1064);
+  // Shape 1 at the cell corner is texel 0; shape 4 just under the far corner is
+  // the last texel of the strip, row 31 and column 127
+  assert.equal(getStainTexelIndex(1, 0, 0), 0);
+  assert.equal(getStainTexelIndex(4, 0.999, 0.999), 31 * 128 + 127);
+});
+
+test("D-39e: a stain texel covers the tile by its alpha, with the floor shading", () => {
+  const applyStain = getGlobal("applyStain");
+  // The tile color and then the stain over it, as the floor casting does
+  const colorWithStain = (x, y, rowDistance, lights, shape) => applyStain(
+    getFloorTextureColor(x, y, false, rowDistance, lights), shape, x - Math.floor(x), y - Math.floor(y));
+  const texels = new Uint8ClampedArray(128 * 32 * 4);
+  // Texel 1064 is opaque red 100, 0, 0. Every other texel is transparent.
+  texels.set([100, 0, 0, 255], 1064 * 4);
+  const setStainFactors = getGlobal("(function (value) { stainFactors = value; })");
+  const stainFactorsBefore = getGlobal("stainFactors");
+  try {
+    getGlobal("useLighting = false");
+    setStainFactors(getGlobal("createStainFactors")(texels));
+    const tile = getFloorTextureColor(10.25, -3.75, false, 1, []);
+    const stained = colorWithStain(10.25, -3.75, 1, [], 2);
+    // Band 1 keeps the tile at 166: red 166 * 0.94 = 156, green 166, blue
+    // 169. The stain covers 0.85 of it. Red lets through
+    // 1 + (100 / 156.04 - 1) * 0.85 = 0.6947, and 156 * 0.6947 = 108.4. Green
+    // and blue let through 1 - 0.85 = 0.15: 166 * 0.15 = 24.9, 169 * 0.15 = 25.35
+    assert.equal(tile, (156 << 16) | (166 << 8) | 169);
+    assert.equal(stained, (108 << 16) | (24 << 8) | 25);
+    // Farther away the stain darkens with the floor, by the same band
+    const farStained = colorWithStain(10.25, -3.75, 20, [], 2);
+    assert.ok(getRed(farStained) < getRed(stained));
+    // A transparent texel of the stain leaves the tile as it was
+    assert.equal(colorWithStain(10.9, -3.1, 1, [], 2), getFloorTextureColor(10.9, -3.1, false, 1, []));
+  } finally {
+    setStainFactors(stainFactorsBefore);
+    getGlobal("useLighting = true");
+  }
+});
+
+test("D-39e: the floor casting stains the samples of a stained cell, never the ceiling", () => {
+  const drawFloorCasting = getGlobal("drawFloorCasting");
+  const getStain = getGlobal("getStain");
+  const surface = createFakeFloorSurface(screenHeight);
+  const player = { posX: 3.5, posY: 0.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66 };
+  getGlobal("addStain")(5, 0);
+  const originalTile = getGlobal("getFloorTextureColor");
+  const originalApply = getGlobal("applyStain");
+  const setStainFactors = getGlobal("(function (value) { stainFactors = value; })");
+  const stainFactorsBefore = getGlobal("stainFactors");
+  setStainFactors(getGlobal("createStainFactors")(new Uint8ClampedArray(128 * 32 * 4)));
+  // Each sample is recorded with stain 0; applyStain sets the stain of the
+  // last one, the sample it was called for
+  getGlobal("stainSamples = []");
+  getGlobal(`getFloorTextureColor = function (x, y, isCeiling) {
+    stainSamples.push({ x, y, isCeiling, stainShape: 0 });
+    return 0;
+  }`);
+  getGlobal(`applyStain = function (color, stainShape) {
+    stainSamples[stainSamples.length - 1].stainShape = stainShape;
+    return color;
+  }`);
+  try {
+    drawFloorCasting(surface, player);
+    const samples = getGlobal("stainSamples");
+    const inStainedCell = (sample) => Math.floor(sample.x) === 5 && Math.floor(sample.y) === 0;
+    const floorInCell = samples.filter((sample) => !sample.isCeiling && inStainedCell(sample));
+    assert.ok(floorInCell.length > 0);
+    assert.ok(floorInCell.every((sample) => sample.stainShape === getStain(5, 0)));
+    assert.ok(samples.every((sample) => sample.isCeiling || inStainedCell(sample) || sample.stainShape === 0));
+    assert.ok(samples.every((sample) => !sample.isCeiling || sample.stainShape === 0));
+  } finally {
+    getGlobal(`getFloorTextureColor = ${originalTile.toString()}`);
+    getGlobal(`applyStain = ${originalApply.toString()}`);
+    setStainFactors(stainFactorsBefore);
+    getGlobal("clearStains")();
+  }
+});
+
+// D-39g: the blood drops in 3D, projected like the enemies
+test("D-39g: a drop straight ahead lands on the center column, its height above the floor line", () => {
+  resetSpriteDepthBuffer();
+  const getBloodDropView = getSpriteGlobal("getBloodDropView");
+  // 3 cells ahead at eye height: the screen center. One cell is 720 / 3 =
+  // 240 px, so the size is 0.03 * 240 = 7.2 px.
+  const atEye = getBloodDropView({ posX: 3.5, posY: 0.5, z: 0.5 }, spriteCamera);
+  assert.equal(atEye.x, 640);
+  assert.equal(atEye.y, 360);
+  assert.ok(Math.abs(atEye.size - 7.2) < 1e-9);
+  assert.equal(atEye.tint, getSpriteGlobal("bloodDropColor"));
+  // On the floor it sits on the floor line of the enemies, 360 + 240 / 2 = 480
+  assert.equal(getBloodDropView({ posX: 3.5, posY: 0.5, z: 0 }, spriteCamera).y, 480);
+  // Far away it keeps 2 px: at 20 cells it would be 0.03 * 36 = 1.08 px
+  assert.equal(getBloodDropView({ posX: 20.5, posY: 0.5, z: 0.3 }, spriteCamera).size, 2);
+});
+
+test("D-39g: a drop behind a wall or behind the camera is not drawn", () => {
+  const getBloodDropView = getSpriteGlobal("getBloodDropView");
+  resetSpriteDepthBuffer();
+  spriteDepthBuffer.fill(2);
+  assert.equal(getBloodDropView({ posX: 3.5, posY: 0.5, z: 0.4 }, spriteCamera), null);
+  // A wall farther than the drop does not hide it
+  assert.notEqual(getBloodDropView({ posX: 2, posY: 0.5, z: 0.4 }, spriteCamera), null);
+  resetSpriteDepthBuffer();
+  assert.equal(getBloodDropView({ posX: -2.5, posY: 0.5, z: 0.4 }, spriteCamera), null);
+});
+
+test("D-39g: each particle follows its drop, hidden with alpha 0, and none in flat mode", () => {
+  resetSpriteDepthBuffer();
+  const drawBloodDrops = getSpriteGlobal("drawBloodDrops");
+  const bloodDrops = getSpriteGlobal("bloodDrops");
+  const spriteSettings = getSpriteGlobal("gameSettings");
+  const flatColorsBefore = spriteSettings.flatColors;
+  spriteSettings.flatColors = false;
+  const particles = bloodDrops.map(() => ({ alpha: 1 }));
+  Object.assign(bloodDrops[0], { active: true, posX: 3.5, posY: 0.5, z: 0.5 });
+  Object.assign(bloodDrops[1], { active: false, posX: 3.5, posY: 0.5, z: 0.5 });
+  try {
+    drawBloodDrops({ particles }, spriteCamera);
+    assert.equal(particles[0].alpha, 1);
+    assert.equal(particles[0].x, 640);
+    assert.equal(particles[0].y, 360);
+    // The 4 px texture is scaled to 7.2 px
+    assert.ok(Math.abs(particles[0].scaleX - 1.8) < 1e-9);
+    assert.ok(particles.slice(1).every((particle) => particle.alpha === 0));
+
+    spriteSettings.flatColors = true;
+    drawBloodDrops({ particles }, spriteCamera);
+    assert.equal(particles[0].alpha, 0);
+  } finally {
+    spriteSettings.flatColors = flatColorsBefore;
+    bloodDrops[0].active = false;
+  }
+});

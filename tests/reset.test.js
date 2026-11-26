@@ -2,14 +2,16 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const { loadScripts } = require("./load-scripts.js");
 
-// Loads a fresh world and dirties it: a far chunk, enemies, a falling one, a
-// projectile in flight and a hurt, mid-reload player. Returns the world accessor.
+// Loads a fresh world and dirties it: a far chunk, enemies, a falling one with
+// its stain, blood drops in the air, a projectile in flight and a hurt,
+// mid-reload player. Returns the world accessor.
 function makeDirtyWorld() {
   const world = loadScripts();
   const player = world("player");
   world("getChunkCells")(5, 5);
   world("placeGameEnemies")(player, 10);
   world("startEnemyDeath")({ posX: 3.5, posY: 3.5, height: 0.6 });
+  world("sprayBlood")({ posX: 3.5, posY: 3.5, height: 0.6 }, player, 24);
   world("fireProjectile")(player);
   player.health = 2;
   player.ammo = 1;
@@ -20,9 +22,11 @@ function makeDirtyWorld() {
   return world;
 }
 
-test("resetGame clears the old chunks, enemies, falls and projectiles (D-17a, D-39c, D-42b)", () => {
+test("resetGame clears the old chunks, enemies, falls, stains, drops and projectiles (D-17a, D-39c to D-39f, D-42b)", () => {
   const world = makeDirtyWorld();
   const getChunkKey = world("getChunkKey");
+  assert.notEqual(world("getStain")(3, 3), 0);
+  assert.equal(world("getActiveBloodDropCount")(), 24);
 
   world("resetGame")();
 
@@ -35,6 +39,9 @@ test("resetGame clears the old chunks, enemies, falls and projectiles (D-17a, D-
   assert.equal(world("enemiesByCell").size, 0);
   assert.equal(world("dyingEnemies").length, 0);
   assert.equal(world("projectiles").length, 0);
+  assert.equal(world("stainsByChunk").size, 0);
+  assert.equal(world("getStain")(3, 3), 0);
+  assert.equal(world("getActiveBloodDropCount")(), 0);
 });
 
 test("resetGame respawns the player with full health and a full magazine (D-17a)", () => {

@@ -390,14 +390,16 @@ function removeEnemyFromChunk(enemy) {
 
 // D-13b / D-42: one projectile hit (TDD 2.3.1). The enemy loses one point of
 // health and, at zero, it leaves play, starts to fall and is counted (or wins
-// the game).
+// the game). D-39f: a hit sprays a few drops and a death sprays more.
 function damageEnemy(target, player) {
   target.health -= 1;
   if (target.health > 0) {
+    sprayBlood(target, player, bloodDropsPerHit);
     return;
   }
   removeEnemy(target);
   startEnemyDeath(target);
+  sprayBlood(target, player, bloodDropsPerDeath);
   if (target.isBoss) {
     // D-19d / D-39c: killing the boss wins the game. updateDyingEnemies shows
     // the victory screen once the boss lies on the floor.
@@ -428,8 +430,10 @@ const enemyCorpseTicks = 2 * ticksPerSecond;
 const enemyCorpseFadeTicks = 0.5 * ticksPerSecond;
 const dyingEnemies = [];
 
+// D-39d: the enemy leaves a stain in the cell where it dies, kept for the session
 function startEnemyDeath(enemy) {
   dyingEnemies.push({ enemy, time: 0 });
+  addStain(Math.floor(enemy.posX), Math.floor(enemy.posY));
 }
 
 // D-39c: the death frame for the time since the kill, held on the last one
