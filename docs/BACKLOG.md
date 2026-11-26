@@ -157,11 +157,11 @@ Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added i
 | D-39e | Blood stain drawn on the floor by the floor casting and marked on the minimap | P1 | 4 | D-39d, D-28c | done |
 | D-39f | Blood particle simulation: a spray on each hit and on death, gravity with an Euler step, fixed pool | P1 | 4 | D-39c | done |
 | D-39g | Blood drops drawn in 3D with z-buffer occlusion | P1 | 4 | D-39f | done |
-| D-40a | Specify in the TDD: limited vertical look with the mouse (y-shearing), shot height along the crosshair, footstep bob | P1 | 4 | D-38c | pending |
-| D-40b | Vertical look: the mouse moves the horizon up and down within a limit, walking or standing | P1 | 4 | D-40a, D-12c, D-28c | pending |
-| D-40c | The projectile follows the crosshair height: it climbs or drops with the aim and hits only across a body | P1 | 4 | D-40b, D-42b | pending |
-| D-40d | Footstep bob: each left and right step moves the camera up and down and side to side, like running | P1 | 4 | D-40b | pending |
-| D-40e | Shotgun bob: the gun dips and swings side to side with each left and right step | P1 | 4 | D-40d, D-07c | pending |
+| D-40a | Specify in the TDD: limited vertical look with the mouse (y-shearing), shot height along the crosshair, footstep bob | P1 | 4 | D-38c | done |
+| D-40b | Vertical look: the mouse moves the horizon up and down within a limit, walking or standing | P1 | 4 | D-40a, D-12c, D-28c | done |
+| D-40c | The projectile follows the crosshair height: it climbs or drops with the aim and hits only across a body | P1 | 4 | D-40b, D-42b | done |
+| D-40d | Footstep bob: each left and right step moves the camera up and down and side to side, like running | P1 | 4 | D-40b | done |
+| D-40e | Shotgun bob: the gun dips and swings side to side with each left and right step | P1 | 4 | D-40d, D-07c | done |
 | D-41a | Pick the sound and music sources and specify the audio in the TDD | P1 | 4 | D-38c | pending |
 | D-41b | Audio engine: one AudioContext, sounds decoded once from data URIs, silent fallback | P1 | 4 | D-41a | pending |
 | D-41c | Master, music and effects volume in the admin panel, and a mute key | P1 | 4 | D-41b, D-16c1b | pending |
@@ -264,7 +264,7 @@ Open questions, to settle before each story (proposed default in parentheses):
 - D-39c: what stays after the animation (the body lies on the last death frame for 2 s and fades out, and only the stain stays, so the infinite map does not fill up with bodies). Boss death (the same frames, tinted and larger; the victory screen waits until its animation ends, about 1 s).
 - D-39d, D-39e: stain look (a dark red blob drawn by code on a hidden canvas, TDD 6.2, one of four shapes picked from the world seed and the cell, so the same seed gives the same stains; centered in its cell). One stain per cell (a second death in a stained cell keeps the first). On the minimap (yes, a dark red dot: the visible proof that the cell is stored, as the minimap is for the DDA). Flat color mode (no stains: that mode shows the bare algorithm). A new game or a new world clears every stain.
 - D-39f, D-39g: particles yes or no (yes for the spray, no for the stain: the spray lives under a second and is a particle system with gravity, integrated with an Euler step and `deltaTime`, which is simulation material for the course; the stain stays for the session, so it is stored data that the floor casting draws). Amount (6 drops per hit, 24 on death, a pool of 256 created once). A landed drop adds no stain (the stain comes from the death cell, one per cell, as the professor asked).
-- D-40, settled by Juanma (2026-11-24): the view looks up and down with the mouse (y-shearing), walking or standing, and the steps bob the camera like running. The shot follows the crosshair height (D-40c). The shotgun bobs with the same steps (D-40e, required): that is the sway the professor meant. Still open: vertical limit (the horizon moves at most 30% of the screen height either way; Lode's example allows more, but the shear shows beyond that). Mouse Y speed (the same sensitivity as the turn: one mouse pixel moves the view the same angle up as sideways; the look is stored as an angle and turned into `pitch` pixels each frame, `pitch = screenHeight * tan(angle)`, so a resize keeps it; mouse up looks up, with no invert option). Footsteps (one step per cell walked, about 3 per second at full speed; the eye dips 0.03 cells at each foot strike and the camera shifts 0.03 cells toward the foot in support, so one stride, left then right, is one side to side cycle; render only, well inside the 0.2 cell player radius). No roll (the walls of a raycaster stay vertical; tilting needs the view drawn larger than the screen and rotated). Running (no run key: the bob follows the real speed, so backing and strafing bob too). Admin toggles (yes, one for the vertical look and one for the bob, on by default, to compare in the defense and for players prone to motion sickness). Shotgun bob size (a dip of 1.5% of the screen height at each foot strike and a sideways swing of 2% per stride, in step with the camera).
+- D-40, settled by Juanma (2026-11-24): the view looks up and down with the mouse (y-shearing), walking or standing, and the steps bob the camera like running. The shot follows the crosshair height (D-40c). The shotgun bobs with the same steps (D-40e, required): that is the sway the professor meant. Still open: vertical limit (the horizon moves at most 30% of the screen height either way; Lode's example allows more, but the shear shows beyond that). Mouse Y speed (the same sensitivity as the turn: one mouse pixel moves the view the same angle up as sideways; the look is stored as an angle and turned into `pitch` pixels each frame, `pitch = screenHeight * tan(angle)`, so a resize keeps it; mouse up looks up, with no invert option). Footsteps (one step per cell walked, about 3 per second at full speed; the eye dips 0.03 cells at each foot strike and the camera shifts 0.03 cells toward the foot in support, so one stride, left then right, is one side to side cycle; render only, well inside the 0.2 cell player radius). No roll (the walls of a raycaster stay vertical; tilting needs the view drawn larger than the screen and rotated). Running (no run key: the bob follows the real speed, so backing and strafing bob too). Admin toggles (yes, one for the vertical look and one for the bob, on by default, to compare in the defense and for players prone to motion sickness). Shotgun bob size (a dip of 1.5% of the screen height at each foot strike and a sideways swing of 2% per stride, in step with the camera). Settled with these defaults on 2026-11-26 (D-40a decisions).
 - D-42: `shootCenterRay` (removed with `tests/shoot.test.js`, and the boss tests fire projectiles instead, since the game no longer uses it). Minimap dots for projectiles (yes, as in D-13d).
 - D-41: sources (CC0 files from OpenGameArt or Kenney, picked by the team like the sprite in D-21a, embedded as MP3 data URIs because every browser decodes MP3, Safari included for the portfolio; effects synthesized by code are possible, like the textures, but take longer and sound worse). Music (one 30 to 60 s loop for the menu and one for the arena, under 1 MB each at 96 kbps; base64 adds a third). Mute key (M, not defined by the TDD). Footsteps (optional, one sound at each foot strike of the D-40d bob, added to D-41d if the team wants them).
 
@@ -2380,6 +2380,11 @@ Acceptance criteria:
 
 Files: `docs/TDD.md`, `docs/BACKLOG.md`.
 
+Decisions:
+- Settled on 2026-11-26 with the defaults proposed in the 2026-11-24 feedback section, like D-39 (Juanma asked to go on with the backlog): the horizon moves at most 30% of the screen height (atan 0.3, about 16.7 degrees either way); the mouse Y uses the turn sensitivity, mouse up looks up, no invert option; one step per cell walked, the eye dips 0.03 cells at each foot strike and the camera moves up to 0.03 cells toward the foot in support; no roll and no run key; two admin toggles, on by default; the shotgun dips 1.5% of the screen height and swings 2%.
+- Written in TDD 2.2 (vertical mouse), 2.3.1 (shot height, range to the floor and the ceiling, hit inside the body), 2.3.3 (a new paragraph for the shotgun view model, which the TDD did not describe, and its bob), 2.3.4 (Controls list), 2.3.5 (the two toggles), 3.4 (pitch and posZ, Lode's drawStart and drawEnd, one screen row rule for everything drawn, pitch = screenHeight * tan(angle), y-shearing, why the look is limited, and the restriction from the class presentation it lifts), 6.3, 6.4, 6.5 (flat ceiling and floor drawn past the edges, floor casting from the moved horizon and eye), 6.6 (footstep bob), 6.8 (three more player numbers that only change the drawing, and the drawing camera) and 7.2 (a risk row for the distortion and the motion sickness).
+- The player keeps its six camera numbers and adds `lookAngle`, `stepPhase` and `bobAmount`. The drawing uses a separate object, the drawing camera (D-40b), so the six numbers of the player stay the ones the collisions, the minimap and the shot use.
+
 ## D-40b: Vertical look
 
 Acceptance criteria:
@@ -2390,6 +2395,16 @@ Acceptance criteria:
 - Tests: drawStart and drawEnd for a given perpWallDist and pitch against hand computed values; pitch 0 gives today's values; the angle never passes the limit; the floor row distance with pitch against a hand computed value.
 
 Files: `js/player.js`, `js/renderer.js`, `js/main.js`, `tests/renderer.test.js`.
+
+Decisions:
+- The drawing camera (`createDrawingCamera`, `updateDrawingCamera` in `js/player.js`) is one object created once (TDD 6.4) with eight numbers: the six of the player plus `pitch` and `posZ`. Every frame it copies the player, adds the look and the step (D-40d) and goes to `updateFloorCasting`, `drawWalls`, `drawEnemies`, `drawBloodDrops` and `drawProjectiles`; `drawMinimap` keeps the player. The draw functions that read pitch or posZ name their parameter `camera`.
+- `getScreenYAtHeight(z, depth, camera)` in `js/renderer.js` is the one rule: screenHeight / 2 + pitch + (posZ + screenHeight * (eyeHeight - z)) / depth. Wall tops (z 1) and feet (z 0), the enemy floor line, the blood drops and the projectiles use it. It equals Lode's drawStart = -lineHeight / 2 + screenHeight / 2 + pitch + posZ / perpWallDist. Written as one division, a wall at distance 0 still gives -Infinity and Infinity and fills the column; Lode's separate posZ / perpWallDist would give 0 / 0 = NaN with posZ 0.
+- `eyeHeight` (0.5) joins `js/config.js`, with `maxPitchShare` and `maxLookAngle`.
+- The flat ceiling and floor are drawn 216 px (30% of 720) past the top and bottom edges, and the ticker sets `ceilingAndFloor.y = pitch`, so nothing is redrawn.
+- Floor casting: the horizon row is computed once per frame and `getRowDistance(y, camera)` takes eyeHeight * screenHeight + posZ for the floor and the rest of the wall minus posZ for the ceiling, like Lode's camZ.
+- The vertical mouse adds up in `createMouseTurnInput` next to the turn, spent with `consumeLook()`. With the toggle off `lookPlayerWithMouse` does nothing, and changing the toggle levels the view (`applySetting`).
+- The renderer test cameras got `pitch: 0, posZ: 0` (`levelView` for the plain helpers), so every older test checks that a level view keeps today's values.
+- Checked in headless Chrome: looking up and down at the limit, textured and flat, with no console errors; the flat ceiling and floor cover the screen at both limits.
 
 ## D-40c: The projectile follows the crosshair height
 
@@ -2402,6 +2417,14 @@ Acceptance criteria:
 
 Files: `js/projectiles.js`, `js/renderer.js`, `tests/projectiles.test.js`.
 
+Decisions:
+- `fireProjectile(player, aimSlope = 0)`: the slope defaults to a level shot, so the boss and reset tests keep firing as before. `js/main.js` passes `getLookSlope(player)`, the tangent of the look angle.
+- The projectile carries `z` (from `eyeHeight`) and `slope`; each tick adds `slope * step` to `z`.
+- `getFloorOrCeilingRange(slope)` is eyeHeight / |slope|. A level shot gives 0.5 / 0 = Infinity, like deltaDist for a ray along one axis (TDD 3.3), so `Math.min` keeps the wall with no special case. One formula serves the floor and the ceiling because the eye is at mid wall.
+- The height is checked where the shot crosses the enemy center (`along`), against `enemy.height`.
+- The shot leaves from the real player, without the footstep bob (D-40a), so while walking it can pass up to 0.03 cells from the drawn crosshair. Standing still it is exact.
+- Headless Chrome: looking all the way down, a shot gets 0.5 / 0.3 = 1.67 cells of range.
+
 ## D-40d: Footstep bob
 
 Acceptance criteria:
@@ -2412,6 +2435,12 @@ Acceptance criteria:
 - Tests: the phase after walking a given distance; the eye height at a foot strike against a hand computed value; the sideways shift changes sign between the left and the right step; at rest both return to zero.
 
 Files: `js/player.js`, `js/renderer.js`, `js/main.js`, `tests/player.test.js`.
+
+Decisions:
+- `updatePlayer` returns the distance walked after the collisions (`Math.hypot` of the real move), and `updateFootstepBob(player, walked, deltaTime)` advances `stepPhase` by walked / `footstepLength`, wrapped at 2 (one stride).
+- `bobAmount` moves linearly toward 1 while walking and toward 0 standing, in `footstepEaseTime` (0.2 s) with `deltaTime`. The dip is `bobAmount * cos²(pi * phase)` and the sway `bobAmount * sin(pi * phase)` (`getStepDip`, `getStepSway`); the drawing camera turns them into posZ = -0.03 * dip * screenHeight and a shift of 0.03 * sway cells along (-dirY, dirX).
+- With the toggle off the phase and the amount are set to 0 every frame, so the view is the one without bob at once.
+- Headless Chrome: 0.6 s walking gave a phase of about 1.5 and an amount of 1; 0.4 s after stopping the amount was 0.
 
 ## D-40e: Shotgun bob
 
@@ -2424,6 +2453,12 @@ Acceptance criteria:
 - Tests: the offset at a foot strike against a hand computed value; the sideways offset changes sign between the left and the right step; back to zero when the player stops.
 
 Files: `js/weapon.js`, `js/main.js`, `tests/weapon.test.js`.
+
+Decisions:
+- `getShotgunBobX` and `getShotgunBobY` read `getStepSway` and `getStepDip` (D-40d), so the gun needs no easing of its own: it fades with `bobAmount`, never passes 2% and 1.5% of 720 px (14.4 and 10.8 px), and the bob toggle turns it off too. `shotgunBobDip` and `shotgunBobSway` live in `js/weapon.js` with the other shotgun constants.
+- `placeShotgun` runs every playing frame after `updateShotgun`; the window resize still places the gun at its aimed x.
+- The tests went to `tests/gun.test.js`, where the D-07c shotgun tests live; `tests/weapon.test.js` holds the fire input tests.
+- Tests: 304 before D-40, 336 after (`node --test "tests/*.test.js"`).
 
 ## D-41: Sound and music (split in six)
 
@@ -2491,4 +2526,4 @@ Open questions to settle before each story:
 - D-06: settled in the 2026-11-20 review. The victory is killing the boss (D-14b, D-19).
 - D-08: settled in D-08a. The reload key is R.
 - D-12: split on 2026-11-22. The arrow keys and the mouse were requested (D-12a to D-12d), and strafing too, later the same day (D-12e).
-- D-39, D-40, D-41: requested by the professor on 2026-11-24, and D-42 by Juanma the same day. The diagnosis and the open questions are in the 2026-11-24 feedback section. D-39 was settled with the proposed defaults on 2026-11-26 (D-39a decisions).
+- D-39, D-40, D-41: requested by the professor on 2026-11-24, and D-42 by Juanma the same day. The diagnosis and the open questions are in the 2026-11-24 feedback section. D-39 was settled with the proposed defaults on 2026-11-26 (D-39a decisions), and D-40 the same day (D-40a decisions).

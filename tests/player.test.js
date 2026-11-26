@@ -435,3 +435,175 @@ test("a click on a menu screen does not ask for the capture", () => {
   gameTarget.dispatch("mousedown", { button: 0, target: { closest: () => null } });
   assert.equal(gameTarget.captureRequests, 1);
 });
+
+// D-40b: the vertical look with the mouse (TDD 2.2 and 3.4)
+const lookPlayerWithMouse = getGlobal("lookPlayerWithMouse");
+const createDrawingCamera = getGlobal("createDrawingCamera");
+const updateDrawingCamera = getGlobal("updateDrawingCamera");
+const updateFootstepBob = getGlobal("updateFootstepBob");
+
+function createWalker(overrides = {}) {
+  return createPlayer({ lookAngle: 0, stepPhase: 0, bobAmount: 0, ...overrides });
+}
+
+function drawWith(walker) {
+  const camera = createDrawingCamera();
+  updateDrawingCamera(camera, walker);
+  return camera;
+}
+
+test("D-40b: moving the mouse up looks up, with the same sensitivity as the turn", () => {
+  const walker = createWalker();
+  // 10 px up (movementY -10) at 20 degrees per 100 px: 2 degrees up
+  lookPlayerWithMouse(walker, -10);
+  assertClose(walker.lookAngle, 2 * Math.PI / 180);
+  // 20 px down: 2 degrees under the horizon
+  lookPlayerWithMouse(walker, 20);
+  assertClose(walker.lookAngle, -2 * Math.PI / 180);
+  // dir and plane stay as they were: every ray stays in the 2D plane
+  assert.deepEqual([walker.dirX, walker.dirY, walker.planeX, walker.planeY], [1, 0, 0, 0.66]);
+});
+
+test("D-40b: the look angle never passes the limit, so pitch stops at 30% of the screen", () => {
+  const walker = createWalker();
+  lookPlayerWithMouse(walker, -100000);
+  assertClose(walker.lookAngle, Math.atan(0.3));
+  // pitch = 720 * tan(angle) = 720 * 0.3 = 216 px
+  assertClose(drawWith(walker).pitch, 216);
+
+  lookPlayerWithMouse(walker, 100000);
+  assertClose(walker.lookAngle, -Math.atan(0.3));
+  assertClose(drawWith(walker).pitch, -216);
+});
+
+test("D-40b: with the vertical look off the mouse does not tilt the view", () => {
+  const world = loadScripts();
+  world("gameSettings.verticalLook = false");
+  const walker = createWalker();
+  world("lookPlayerWithMouse")(walker, -50);
+  assert.equal(walker.lookAngle, 0);
+});
+
+test("D-40b: turning the vertical look on or off in the panel levels the view", () => {
+  const world = loadScripts();
+  const worldPlayer = world("player");
+  const storage = { getItem: () => null, setItem() {} };
+  worldPlayer.lookAngle = 0.2;
+  world("changeSetting")(worldPlayer, storage, "verticalLook", false);
+  assert.equal(worldPlayer.lookAngle, 0);
+});
+
+test("D-40b: while captured the vertical mouse movement adds up and is cleared after use", () => {
+  const { page, gameTarget } = createMouseSetup();
+  const mouseInput = getGlobal("createMouseTurnInput")(page, gameTarget);
+  page.pointerLockElement = gameTarget;
+
+  gameTarget.dispatch("mousemove", { movementX: 5, movementY: -30 });
+  gameTarget.dispatch("mousemove", { movementX: 0, movementY: 10 });
+  assert.equal(mouseInput.consumeLook(), -20);
+  assert.equal(mouseInput.consumeLook(), 0);
+  assert.equal(mouseInput.consumeTurn(), 5);
+});
+
+test("D-40b: a new game levels the view and stands the player still", () => {
+  const world = loadScripts();
+  const worldPlayer = world("player");
+  worldPlayer.lookAngle = 0.2;
+  worldPlayer.stepPhase = 1.3;
+  worldPlayer.bobAmount = 1;
+  world("resetPlayer")();
+  assert.equal(worldPlayer.lookAngle, 0);
+  assert.equal(worldPlayer.stepPhase, 0);
+  assert.equal(worldPlayer.bobAmount, 0);
+});
+
+test("D-40b: level and standing still, the drawing camera is the player", () => {
+  const walker = createWalker({ dirX: 0.6, dirY: 0.8, planeX: -0.528, planeY: 0.396 });
+  const camera = drawWith(walker);
+  assert.equal(camera.posX, walker.posX);
+  assert.equal(camera.posY, walker.posY);
+  assert.deepEqual(
+    [camera.dirX, camera.dirY, camera.planeX, camera.planeY],
+    [walker.dirX, walker.dirY, walker.planeX, walker.planeY],
+  );
+  assertClose(camera.pitch, 0);
+  assertClose(camera.posZ, 0);
+});
+
+// D-40d: the footstep bob (TDD 6.6)
+test("D-40d: updatePlayer returns the distance actually walked", () => {
+  const walker = createWalker();
+  assertClose(updatePlayerInOpenWorld(walker, new Set(["forward"]), 1), moveSpeed);
+  // Forward and strafe together are normalized, so the distance is the same
+  assertClose(updatePlayerInOpenWorld(walker, new Set(["forward", "strafeRight"]), 1), moveSpeed);
+  // Turning in place walks nothing
+  assert.equal(updatePlayerInOpenWorld(walker, new Set(["turnLeft"]), 1), 0);
+});
+
+test("D-40d: sliding along a wall walks less, and pushing into it walks nothing", () => {
+  const diagonal = Math.SQRT1_2;
+  // Facing down and right, against the wall at y 2: only x moves
+  const slider = createWalker({ posY: 1.79, dirX: diagonal, dirY: diagonal, planeX: -0.66 * diagonal, planeY: 0.66 * diagonal });
+  assertClose(updatePlayerWithCollisionWorld(slider, new Set(["forward"]), 1), diagonal * moveSpeed);
+  // Facing straight down into the wall: nothing moves
+  const pusher = createWalker({ posY: 1.79, dirX: 0, dirY: 1, planeX: -0.66, planeY: 0 });
+  assert.equal(updatePlayerWithCollisionWorld(pusher, new Set(["forward"]), 1), 0);
+});
+
+test("D-40d: the step phase follows the distance walked, one step per cell, one stride is 2", () => {
+  const walker = createWalker();
+  updateFootstepBob(walker, 0.5, 1);
+  assertClose(walker.stepPhase, 0.5);
+  // 0.5 + 1.75 = 2.25 steps: one full stride and a quarter step
+  updateFootstepBob(walker, 1.75, 1);
+  assertClose(walker.stepPhase, 0.25);
+});
+
+test("D-40d: at a foot strike the eye is 0.03 cells lower, posZ -21.6 px", () => {
+  // posZ = -0.03 * cos²(pi) * 720 = -21.6
+  const walker = createWalker({ stepPhase: 1, bobAmount: 1 });
+  assertClose(drawWith(walker).posZ, -21.6);
+  // Halfway between two strikes the eye is back at its rest height
+  walker.stepPhase = 0.5;
+  assertClose(drawWith(walker).posZ, 0);
+});
+
+test("D-40d: the sideways shift changes sign between the left and the right step", () => {
+  // Facing east, the right of the camera is +y, where plane points
+  const walker = createWalker({ stepPhase: 0.5, bobAmount: 1 });
+  const rightStep = drawWith(walker);
+  assertClose(rightStep.posX, 7.5);
+  assertClose(rightStep.posY, 1.5 + 0.03);
+  walker.stepPhase = 1.5;
+  const leftStep = drawWith(walker);
+  assertClose(leftStep.posY, 1.5 - 0.03);
+  // Only the drawing camera moves: the player stays where it is
+  assert.equal(walker.posY, 1.5);
+});
+
+test("D-40d: standing still, the bob fades back to zero in 0.2 seconds", () => {
+  const walker = createWalker();
+  // 12 ticks of deltaTime 1 are 0.2 s: walking that long brings the bob to full
+  for (let tick = 0; tick < 12; tick += 1) {
+    updateFootstepBob(walker, moveSpeed, 1);
+  }
+  assertClose(walker.bobAmount, 1);
+  // 0.2 s standing still brings it back to rest, wherever the step stopped
+  for (let tick = 0; tick < 12; tick += 1) {
+    updateFootstepBob(walker, 0, 1);
+  }
+  assertClose(walker.bobAmount, 0);
+  const camera = drawWith(walker);
+  assertClose(camera.posZ, 0);
+  assertClose(camera.posX, walker.posX);
+  assertClose(camera.posY, walker.posY);
+});
+
+test("D-40d: with the bob off the view never bobs", () => {
+  const world = loadScripts();
+  world("gameSettings.footstepBob = false");
+  const walker = createWalker({ stepPhase: 0.5, bobAmount: 1 });
+  world("updateFootstepBob")(walker, 0.4, 1);
+  assert.equal(walker.stepPhase, 0);
+  assert.equal(walker.bobAmount, 0);
+});

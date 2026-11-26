@@ -19,14 +19,27 @@ function getWallStripCount() {
   return screenWidth / gameSettings.stripWidth;
 }
 
+// D-40 / TDD 3.4 (Lode's floor casting, with pitch and posZ): the screen row
+// of a point z cells above the floor, depth cells away along dir. The horizon
+// sits at screenHeight / 2 + pitch. The point is eyeHeight - z cells under the
+// eye, plus posZ pixels when the eye is higher, and one cell at this depth is
+// screenHeight / depth pixels (similar triangles). Walls (z 1 and 0), enemies
+// (z 0), blood drops and projectiles are all placed with it.
+function getScreenYAtHeight(z, depth, camera) {
+  return screenHeight / 2 + camera.pitch + (camera.posZ + screenHeight * (eyeHeight - z)) / depth;
+}
+
 // TDD 3.4: a strip is the rect drawn for one ray, x is its left edge in pixels.
 // A wall at perpWallDist is screenHeight / perpWallDist pixels tall (similar
-// triangles), centered on the horizon and clipped to the screen.
-// perpWallDist 0 gives Infinity, and the clip turns it into the full column.
-function getWallStrip(x, perpWallDist) {
+// triangles), from its top (z 1) to its foot (z 0), clipped to the screen.
+// It is Lode's drawStart = -lineHeight / 2 + screenHeight / 2 + pitch +
+// posZ / perpWallDist, and the same for drawEnd with + lineHeight / 2.
+// perpWallDist 0 gives -Infinity and Infinity, and the clip turns them into
+// the full column.
+function getWallStrip(x, perpWallDist, camera) {
   const lineHeight = screenHeight / perpWallDist;
-  const drawStart = Math.max(0, -lineHeight / 2 + screenHeight / 2);
-  const drawEnd = Math.min(screenHeight, lineHeight / 2 + screenHeight / 2);
+  const drawStart = Math.max(0, getScreenYAtHeight(1, perpWallDist, camera));
+  const drawEnd = Math.min(screenHeight, getScreenYAtHeight(0, perpWallDist, camera));
   return { x, lineHeight, drawStart, drawEnd };
 }
 
@@ -160,11 +173,15 @@ function getWallStripColor(player, stripX, ray) {
 
 // TDD 6.4 and 6.5: runs once, outside the ticker, and again only when the
 // canvas width changes (D-16a). Ceiling above the horizon, floor below it.
+// D-40b: both reach maxPitchShare of the screen height past the screen edges,
+// so the ticker only moves the Graphics pitch pixels down to move the horizon,
+// and the edge never shows.
 function drawCeilingAndFloor(graphics) {
   const horizonY = screenHeight / 2;
+  const margin = maxPitchShare * screenHeight;
   graphics.clear();
-  graphics.rect(0, 0, screenWidth, horizonY).fill(ceilingColor);
-  graphics.rect(0, horizonY, screenWidth, screenHeight - horizonY).fill(floorColor);
+  graphics.rect(0, -margin, screenWidth, horizonY + margin).fill(ceilingColor);
+  graphics.rect(0, horizonY, screenWidth, screenHeight - horizonY + margin).fill(floorColor);
 }
 
 // D-09 / D-28b: a procedural wall texture on a hidden canvas, in light neutral
@@ -209,8 +226,15 @@ function createWallTextureCanvas(variant = 0) {
 // D-28c (Lode's floor casting): the eye is half a wall above the floor, so a
 // floor point seen at screen row y is at this distance along dir (similar
 // triangles, like the wall height of TDD 3.4). The ceiling is the mirror image.
-function getRowDistance(y) {
-  return 0.5 * screenHeight / Math.abs(y - screenHeight / 2);
+// D-40b / D-40d: rows are measured from the moved horizon, and posZ (pixels)
+// brings the eye closer to the floor when it dips and farther from the
+// ceiling, so the floor and the ceiling are no longer symmetrical.
+function getRowDistance(y, camera) {
+  const horizonY = screenHeight / 2 + camera.pitch;
+  const eyeToFloor = eyeHeight * screenHeight + camera.posZ;
+  const eyeToCeiling = (1 - eyeHeight) * screenHeight - camera.posZ;
+  const eyeToPlane = y < horizonY ? eyeToCeiling : eyeToFloor;
+  return eyeToPlane / Math.abs(y - horizonY);
 }
 
 // D-28c: the floor point under the ray of this cameraX, at that row distance.
@@ -474,7 +498,7 @@ function writeColorPixel(data, index, color) {
 // right edge (cameraX +1), so after the first one each sample only adds a step.
 // Past maxRayDistance the row is the background color, like a ray without a
 // hit (TDD 5.2).
-function drawFloorCasting(surface, player) {
+function drawFloorCasting(surface, camera) {
   const stripWidth = gameSettings.stripWidth;
   const columns = getWallStripCount();
   const rows = Math.min(surface.canvas.height, screenHeight / stripWidth);
@@ -489,11 +513,13 @@ function drawFloorCasting(surface, player) {
   let hasChunk = false;
   let chunkFirstX = 0;
   let chunkFirstY = 0;
+  // D-40b: rows above the moved horizon show the ceiling
+  const horizonY = screenHeight / 2 + camera.pitch;
 
   for (let row = 0; row < rows; row++) {
     const y = (row + 0.5) * stripWidth;
-    const isCeiling = y < screenHeight / 2;
-    const rowDistance = getRowDistance(y);
+    const isCeiling = y < horizonY;
+    const rowDistance = getRowDistance(y, camera);
     let index = row * canvasWidth * 4;
 
     if (rowDistance > maxRayDistance) {
@@ -506,9 +532,9 @@ function drawFloorCasting(surface, player) {
 
     // The center of the first sample, and the step from one sample to the next
     const firstCameraX = 1 / columns - 1;
-    const first = getFloorWorldPoint(player, firstCameraX, rowDistance);
-    const stepX = rowDistance * 2 * player.planeX / columns;
-    const stepY = rowDistance * 2 * player.planeY / columns;
+    const first = getFloorWorldPoint(camera, firstCameraX, rowDistance);
+    const stepX = rowDistance * 2 * camera.planeX / columns;
+    const stepY = rowDistance * 2 * camera.planeY / columns;
     let floorX = first.x;
     let floorY = first.y;
 
@@ -566,9 +592,9 @@ function drawFloorCasting(surface, player) {
 
 // D-16d / D-28c: flat mode hides the casting sprite; texture mode redraws it
 // before showing it, so returning to textures never exposes stale pixels.
-function updateFloorCasting(surface, player, enabled) {
+function updateFloorCasting(surface, camera, enabled) {
   surface.sprite.visible = enabled;
-  if (enabled) drawFloorCasting(surface, player);
+  if (enabled) drawFloorCasting(surface, camera);
 }
 
 // D-28b: the texture variant of a wall cell, stable for any cell
@@ -701,14 +727,15 @@ function getWallTextureX(player, stripX, ray) {
 // painted with a single fill(). With useWallTextures the sprites replace this
 // path, but missed strips still use the background fill. The depth buffer
 // keeps perpWallDist even in fisheye mode, for the enemies (D-16e2).
-function drawWalls(graphics, player, wallStrips) {
+// D-40: camera is the drawing camera of js/player.js, with pitch and posZ.
+function drawWalls(graphics, camera, wallStrips) {
   graphics.clear();
 
   if (wallStrips?.container) {
     wallStrips.container.visible = useWallTextures && !gameSettings.flatColors;
   }
   if (useWallTextures && !gameSettings.flatColors && wallStrips) {
-    drawTexturedWalls(graphics, player, wallStrips);
+    drawTexturedWalls(graphics, camera, wallStrips);
     return;
   }
 
@@ -719,17 +746,17 @@ function drawWalls(graphics, player, wallStrips) {
 
   for (let index = 0; index < stripCount; index++) {
     const x = index * stripWidth;
-    const ray = castRayForColumn(player, x);
+    const ray = castRayForColumn(camera, x);
     if (!ray.hit) {
       // TDD 5.2: nothing within maxRayDistance. The background color takes the
       // place a wall at maxRayDistance would have, so it reads as darkness.
       wallDepthBuffer[index] = maxRayDistance;
-      missedStrips.push(getWallStrip(x, getProjectionDistance(player, x, maxRayDistance)));
+      missedStrips.push(getWallStrip(x, getProjectionDistance(camera, x, maxRayDistance), camera));
     } else {
       wallDepthBuffer[index] = ray.perpWallDist;
-      const color = getWallStripColor(player, x, ray);
-      const distance = getProjectionDistance(player, x, ray.perpWallDist);
-      addStripToColorGroup(stripsByColor, color, getWallStrip(x, distance));
+      const color = getWallStripColor(camera, x, ray);
+      const distance = getProjectionDistance(camera, x, ray.perpWallDist);
+      addStripToColorGroup(stripsByColor, color, getWallStrip(x, distance, camera));
     }
   }
 
@@ -741,8 +768,9 @@ function drawWalls(graphics, player, wallStrips) {
 // stretched to the wall height and tinted with the same color the flat mode
 // uses, so chunk color and shading still apply. The sprite keeps its unclipped
 // height and lets the canvas edge do the clipping, which keeps the texture
-// aligned when a wall is bigger than the screen.
-function drawTexturedWalls(graphics, player, wallStrips) {
+// aligned when a wall is bigger than the screen. D-40: its middle, half a wall
+// up, is where pitch and posZ place it (TDD 3.4).
+function drawTexturedWalls(graphics, camera, wallStrips) {
   const stripWidth = gameSettings.stripWidth;
   const stripCount = getWallStripCount();
   const missedStrips = [];
@@ -755,22 +783,23 @@ function drawTexturedWalls(graphics, player, wallStrips) {
       sprite.visible = false;
       continue;
     }
-    const ray = castRayForColumn(player, x);
+    const ray = castRayForColumn(camera, x);
     if (!ray.hit) {
       wallDepthBuffer[index] = maxRayDistance;
       sprite.visible = false;
-      missedStrips.push(getWallStrip(x, getProjectionDistance(player, x, maxRayDistance)));
+      missedStrips.push(getWallStrip(x, getProjectionDistance(camera, x, maxRayDistance), camera));
       continue;
     }
 
     wallDepthBuffer[index] = ray.perpWallDist;
-    const distance = getProjectionDistance(player, x, ray.perpWallDist);
+    const distance = getProjectionDistance(camera, x, ray.perpWallDist);
     const lineHeight = Math.min(screenHeight / distance, wallSpriteMaxHeight);
-    sprite.texture = wallTextureColumns[getWallVariant(ray.mapX, ray.mapY)][getWallTextureX(player, x, ray)];
-    sprite.position.set(x, screenHeight / 2 - lineHeight / 2);
+    const wallMiddleY = getScreenYAtHeight(0.5, distance, camera);
+    sprite.texture = wallTextureColumns[getWallVariant(ray.mapX, ray.mapY)][getWallTextureX(camera, x, ray)];
+    sprite.position.set(x, wallMiddleY - lineHeight / 2);
     sprite.width = stripWidth;
     sprite.height = lineHeight;
-    sprite.tint = getWallStripColor(player, x, ray);
+    sprite.tint = getWallStripColor(camera, x, ray);
     sprite.visible = true;
   }
 
@@ -832,11 +861,12 @@ function isEnemyInViewRange(enemy, player) {
 // screenHeight / depth pixels. The eye is half a wall above the floor, so the
 // floor line is screenHeight / (2 * depth) below the horizon, where a wall strip
 // ends (Lode part 3 moves sprites down the same way, with vMove). Unclipped.
-function getStandingSpriteBox(transformX, depth, worldWidth, worldHeight) {
+// D-40: the floor line is height 0 for the drawing camera, with pitch and posZ.
+function getStandingSpriteBox(transformX, depth, worldWidth, worldHeight, camera) {
   const screenX = (screenWidth / 2) * (1 + transformX / depth);
   const width = screenHeight * worldWidth / depth;
   const height = screenHeight * worldHeight / depth;
-  const bottom = screenHeight / 2 + screenHeight / (2 * depth);
+  const bottom = getScreenYAtHeight(0, depth, camera);
   return { left: screenX - width / 2, width, top: bottom - height, height };
 }
 
@@ -935,20 +965,21 @@ function getVisibleEnemies(player, includeDying = false) {
 // it draws the Husk Mutant sprite; otherwise an amber rectangle, the flat color
 // mode, with one fill() for all of them. D-39c: the flat mode shows the bare
 // algorithm, so a killed enemy vanishes there in the frame it dies.
-function drawEnemies(graphics, player, enemyStrips) {
+// D-40: camera is the drawing camera of js/player.js, with pitch and posZ.
+function drawEnemies(graphics, camera, enemyStrips) {
   graphics.clear();
 
   if (enemyStrips?.container) {
     enemyStrips.container.visible = useEnemySprites && !gameSettings.flatColors;
   }
   if (useEnemySprites && !gameSettings.flatColors && enemyStrips) {
-    drawTexturedEnemies(player, enemyStrips);
+    drawTexturedEnemies(camera, enemyStrips);
     return;
   }
 
   const rectsByColor = new Map();
-  for (const { enemy, transformX, depth } of getVisibleEnemies(player)) {
-    const box = getStandingSpriteBox(transformX, depth, enemy.width, enemy.height);
+  for (const { enemy, transformX, depth } of getVisibleEnemies(camera)) {
+    const box = getStandingSpriteBox(transformX, depth, enemy.width, enemy.height, camera);
     const drawStart = Math.max(0, box.top);
     const drawEnd = Math.min(screenHeight, box.top + box.height);
     if (drawEnd <= drawStart) {
@@ -978,14 +1009,14 @@ function drawEnemies(graphics, player, enemyStrips) {
 // a container are drawn on top. If the pool runs out, the farthest are left out.
 // D-39c: the falling enemies join the same list, so they are hidden by walls
 // and by nearer enemies the same way, and shaded by the same distance bands.
-function drawTexturedEnemies(player, enemyStrips) {
+function drawTexturedEnemies(camera, enemyStrips) {
   const stripWidth = gameSettings.stripWidth;
   const sprites = enemyStrips.sprites;
   let nextSprite = sprites.length - 1;
 
-  for (const { enemy, transformX, depth, dying } of getVisibleEnemies(player, true)) {
+  for (const { enemy, transformX, depth, dying } of getVisibleEnemies(camera, true)) {
     const look = getEnemySpriteLook(enemy, dying);
-    const box = getStandingSpriteBox(transformX, depth, look.worldWidth, look.worldHeight);
+    const box = getStandingSpriteBox(transformX, depth, look.worldWidth, look.worldHeight, camera);
     const baseTint = enemy.isBoss ? bossColor : 0xffffff;
     const tint = shadeColor(baseTint, getDistanceBrightness(depth));
     for (const x of getVisibleStripXs(box, depth)) {
@@ -1019,17 +1050,18 @@ const projectileSize = 0.05;
 const projectileColor = 0xff5a1f;
 const projectileMinDepth = 0.75;
 
-// D-13c: each projectile is a small square centered on the horizon (it flies
-// at eye height), projected like the enemies (Lode part 3) and hidden strip by
-// strip behind nearer walls (D-04c1). getEnemyProjection only reads posX and
-// posY, so it projects a projectile too.
-function drawProjectiles(graphics, player) {
+// D-13c: each projectile is a small square, projected like the enemies (Lode
+// part 3) and hidden strip by strip behind nearer walls (D-04c1).
+// getEnemyProjection only reads posX and posY, so it projects a projectile too.
+// D-40c: the square is centered on its height z, so it climbs or drops on
+// screen with the aim; a shot along the look stays on the crosshair.
+function drawProjectiles(graphics, camera) {
   graphics.clear();
 
   const stripWidth = gameSettings.stripWidth;
   const projectileStrips = [];
   for (const projectile of projectiles) {
-    const { transformX, depth } = getEnemyProjection(projectile, player);
+    const { transformX, depth } = getEnemyProjection(projectile, camera);
     if (depth < projectileMinDepth || depth > maxRayDistance) {
       continue;
     }
@@ -1037,8 +1069,12 @@ function drawProjectiles(graphics, player) {
     // One cell at this depth is screenHeight / depth pixels tall
     const size = screenHeight * projectileSize / depth;
     const screenX = (screenWidth / 2) * (1 + transformX / depth);
-    const top = Math.max(0, screenHeight / 2 - size / 2);
-    const bottom = Math.min(screenHeight, screenHeight / 2 + size / 2);
+    const centerY = getScreenYAtHeight(projectile.z, depth, camera);
+    const top = Math.max(0, centerY - size / 2);
+    const bottom = Math.min(screenHeight, centerY + size / 2);
+    if (bottom <= top) {
+      continue;
+    }
 
     const firstColumn = Math.max(0, screenX - size / 2);
     const lastColumn = Math.min(screenWidth - 1, screenX + size / 2);
@@ -1102,10 +1138,11 @@ function createBloodDropParticles() {
 // D-39g (Lode part 3): a drop is projected like an enemy, and its height
 // moves it up from the floor line. The eye is half a cell above the floor, so
 // a point z cells high is (0.5 - z) cells under eye level, screenHeight / depth
-// pixels per cell. It is drawn only when it is nearer than the wall depth of
-// its column (D-04c1). Returns null when it is not drawn.
-function getBloodDropView(drop, player) {
-  const { transformX, depth } = getEnemyProjection(drop, player);
+// pixels per cell (getScreenYAtHeight, which adds pitch and posZ for D-40).
+// It is drawn only when it is nearer than the wall depth of its column
+// (D-04c1). Returns null when it is not drawn.
+function getBloodDropView(drop, camera) {
+  const { transformX, depth } = getEnemyProjection(drop, camera);
   if (depth < bloodDropMinDepth || depth > maxRayDistance) {
     return null;
   }
@@ -1118,7 +1155,7 @@ function getBloodDropView(drop, player) {
   }
   return {
     x,
-    y: screenHeight / 2 + screenHeight * (0.5 - drop.z) / depth,
+    y: getScreenYAtHeight(drop.z, depth, camera),
     size: Math.max(bloodDropMinPixels, screenHeight * bloodDropSize / depth),
     tint: shadeColor(bloodDropColor, getDistanceBrightness(depth)),
   };
@@ -1126,12 +1163,12 @@ function getBloodDropView(drop, player) {
 
 // D-39g: every frame, each particle follows its drop of the pool. Like the
 // falling enemies and the stains, the flat color mode shows no drops.
-function drawBloodDrops(dropParticles, player) {
+function drawBloodDrops(dropParticles, camera) {
   const show = !gameSettings.flatColors;
   for (let index = 0; index < bloodDrops.length; index++) {
     const drop = bloodDrops[index];
     const particle = dropParticles.particles[index];
-    const view = show && drop.active ? getBloodDropView(drop, player) : null;
+    const view = show && drop.active ? getBloodDropView(drop, camera) : null;
     if (view === null) {
       particle.alpha = 0;
       continue;

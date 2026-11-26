@@ -288,3 +288,95 @@ test("an enemy with two points survives one projectile and dies on the second (D
   assert.equal(getEnemiesAtCell(6, 5).length, 0);
   assert.equal(getKillCount(), 1);
 });
+
+// D-40c: the shot follows the crosshair height. It starts at eye height, half
+// a cell up, and climbs slope cells per cell along dir.
+test("D-40c: a level shot flies at eye height and keeps the wall range", () => {
+  reset();
+  setWall(8);
+  const player = makePlayer(3.5, 5.5, 1, 0);
+
+  const projectile = fireProjectile(player, 0);
+  assert.equal(projectile.z, 0.5);
+  assert.ok(Math.abs(projectile.range - 4.5) < 1e-9);
+
+  updateProjectiles(ticksFor(2), player);
+  assert.equal(projectile.z, 0.5);
+});
+
+test("D-40c: aiming down stops on the floor, at a hand computed distance", () => {
+  reset();
+  setWall(12);
+  const player = makePlayer(3.5, 5.5, 1, 0);
+
+  // Slope -0.25: the floor is 0.5 / 0.25 = 2 cells away, nearer than the wall (8.5)
+  const projectile = fireProjectile(player, -0.25);
+  assert.equal(projectile.range, 2);
+
+  flyUntilDone(player);
+  assert.ok(Math.abs(projectile.posX - 5.5) < 1e-9);
+  assert.ok(Math.abs(projectile.z) < 1e-9);
+  assert.equal(projectiles.length, 0);
+});
+
+test("D-40c: aiming up stops on the ceiling, unless the wall is nearer", () => {
+  reset();
+  setWall(12);
+  // Slope 0.125: the ceiling is 0.5 / 0.125 = 4 cells away
+  assert.equal(fireProjectile(makePlayer(3.5, 5.5, 1, 0), 0.125).range, 4);
+  // A wall 2.5 cells away is nearer than the ceiling
+  setWall(6);
+  assert.ok(Math.abs(fireProjectile(makePlayer(3.5, 5.5, 1, 0), 0.125).range - 2.5) < 1e-9);
+});
+
+test("D-40c: a shot over an enemy's head misses it and hits the tall one behind", () => {
+  reset();
+  setWall(12);
+  // Slope 0.1. Two cells ahead the shot is 0.5 + 0.2 = 0.7 high, over the
+  // 0.6 of a regular enemy. Three cells ahead it is 0.8, inside a body of 0.9
+  // (the boss height).
+  const regular = addEnemy(5.5, 5.5);
+  const tall = addEnemy(6.5, 5.5, 5);
+  tall.height = 0.9;
+
+  const player = makePlayer(3.5, 5.5, 1, 0);
+  fireProjectile(player, 0.1);
+  flyUntilDone(player);
+
+  assert.equal(regular.health, 1);
+  assert.equal(tall.health, 4);
+  assert.equal(projectiles.length, 0);
+});
+
+test("D-40c: aimed at the boss body, a shot hits above the height of a regular enemy", () => {
+  reset();
+  setWall(12);
+  // 2.5 cells ahead with slope 0.1 the shot is 0.75 high: inside the 0.9 of
+  // the boss, over the 0.6 of a regular enemy
+  const boss = addEnemy(6, 5.5, 5);
+  boss.height = 0.9;
+  boss.width = 0.45;
+  const player = makePlayer(3.5, 5.5, 1, 0);
+  fireProjectile(player, 0.1);
+  flyUntilDone(player);
+  assert.equal(boss.health, 4);
+
+  reset();
+  setWall(12);
+  const regular = addEnemy(6, 5.5);
+  fireProjectile(player, 0.1);
+  flyUntilDone(player);
+  assert.equal(regular.health, 1);
+});
+
+test("D-40c: aiming down still hits an enemy at its feet before the floor", () => {
+  reset();
+  setWall(12);
+  // Slope -0.2: 2 cells ahead the shot is 0.5 - 0.4 = 0.1 high, at the
+  // enemy's feet; the floor would be at 2.5 cells
+  const enemy = addEnemy(5.5, 5.5);
+  const player = makePlayer(3.5, 5.5, 1, 0);
+  fireProjectile(player, -0.2);
+  flyUntilDone(player);
+  assert.equal(enemy.health, 0);
+});

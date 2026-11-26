@@ -57,8 +57,13 @@ async function startGame() {
   fitGameFrame(gameFrame);
   createMenuNavigation(document);
 
+  // D-40 / TDD 6.4: the camera the 3D view is drawn with, created once; the
+  // ticker copies the player into it and adds the look and the step
+  const drawingCamera = createDrawingCamera();
+
   // TDD 6.4: Graphics objects are created once, outside the ticker.
   // The flat ceiling and floor never change, so they are drawn here, once.
+  // D-40b: the ticker only moves them up and down with pitch.
   const ceilingAndFloor = new PIXI.Graphics();
   drawCeilingAndFloor(ceilingAndFloor);
   gameLayer.addChild(ceilingAndFloor);
@@ -314,7 +319,9 @@ async function startGame() {
     updateDamageFlash(damageFlash, ticker.deltaTime);
     // D-12c: the mouse movement since the last frame. It is taken every frame,
     // also while defeated, so a frozen game does not pile up a turn.
+    // D-40b: the same for the vertical movement, the look.
     const mouseTurnPixels = mouseTurnInput.consumeTurn();
+    const mouseLookPixels = mouseTurnInput.consumeLook();
     // D-17b: zero health switches to defeat. D-16c1: new hit points from the
     // admin panel bring the player back, so defeat returns to playing when the
     // health is restored.
@@ -334,7 +341,10 @@ async function startGame() {
     // D-19d: the game time advances only while playing
     addGameTime(ticker.deltaTime);
     turnPlayerWithMouse(player, mouseTurnPixels);
-    updatePlayer(player, pressedControls, ticker.deltaTime);
+    lookPlayerWithMouse(player, mouseLookPixels);
+    // D-40d: the distance actually walked moves the footstep bob
+    const walked = updatePlayer(player, pressedControls, ticker.deltaTime);
+    updateFootstepBob(player, walked, ticker.deltaTime);
     // D-25: enemies left far behind come back near the player's new chunk
     gatherFarEnemies(player);
     updateEnemies(player, ticker.deltaTime);
@@ -344,9 +354,10 @@ async function startGame() {
     updateReload(player, ticker.deltaTime);
     updateShotCooldown(player, ticker.deltaTime);
     // D-13c / TDD 2.3.1: a shot launches a projectile along the center ray;
-    // the hit happens later, when the projectile reaches an enemy
+    // the hit happens later, when the projectile reaches an enemy. D-40c: it
+    // climbs or drops with the look, along the line through the crosshair.
     if (fireInput.consumeShot() && tryFire(player)) {
-      fireProjectile(player);
+      fireProjectile(player, getLookSlope(player));
       triggerShotgun(shotgun);
     }
     updateProjectiles(ticker.deltaTime, player);
@@ -356,17 +367,23 @@ async function startGame() {
     // D-39f / TDD 3.5: one Euler step for every drop in the air
     updateBloodDrops(ticker.deltaTime);
     updateShotgun(shotgun, ticker.deltaTime);
+    // D-40e: the gun bobs with the steps
+    placeShotgun(shotgun, player);
     // D-27c: whole hits. The flash starts and the bar drops in this same frame.
     if (damagePlayer(player, getContactDamage(player, ticker.deltaTime))) {
       triggerDamageFlash(damageFlash);
     }
     updateHudBars();
+    // D-40 / TDD 3.4 and 6.6: the 3D view is drawn with the look (pitch) and
+    // the step (posZ and the sideways bob); the minimap keeps the real player
+    updateDrawingCamera(drawingCamera, player);
+    ceilingAndFloor.y = drawingCamera.pitch;
     // D-28c: the textured floor and ceiling follow the Textures toggle (D-16d)
-    updateFloorCasting(floorCastingSurface, player, useWallTextures && !gameSettings.flatColors);
-    drawWalls(walls, player, wallStrips);
-    drawEnemies(enemies, player, enemyStrips);
-    drawBloodDrops(bloodDropParticles, player);
-    drawProjectiles(projectileGraphics, player);
+    updateFloorCasting(floorCastingSurface, drawingCamera, useWallTextures && !gameSettings.flatColors);
+    drawWalls(walls, drawingCamera, wallStrips);
+    drawEnemies(enemies, drawingCamera, enemyStrips);
+    drawBloodDrops(bloodDropParticles, drawingCamera);
+    drawProjectiles(projectileGraphics, drawingCamera);
     drawMinimap(minimap, player);
   });
 }

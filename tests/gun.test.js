@@ -167,3 +167,66 @@ test("the aimed shotgun sits right of center, about 155 px", () => {
 
   assert.ok(Math.abs(spriteX - 794.6) < 0.1);
 });
+
+// D-40e: the shotgun bobs with the steps of D-40d. A walker only needs the
+// step phase and how much of the bob shows.
+const getShotgunBobX = getGlobal("getShotgunBobX");
+const getShotgunBobY = getGlobal("getShotgunBobY");
+const placeShotgun = getGlobal("placeShotgun");
+
+function assertNearly(actual, expected) {
+  assert.ok(Math.abs(actual - expected) < 1e-9, `${actual} is not close to ${expected}`);
+}
+
+function makeRecordingSprite() {
+  const sprite = { x: null, y: null };
+  sprite.position = {
+    set(x, y) {
+      sprite.x = x;
+      sprite.y = y;
+    },
+  };
+  return sprite;
+}
+
+test("D-40e: at a foot strike the gun dips 1.5% of the screen height, centered", () => {
+  // 0.015 * 720 = 10.8 px down, and no sideways swing at the strike
+  const walker = { stepPhase: 1, bobAmount: 1 };
+  assertNearly(getShotgunBobY(walker), 10.8);
+  assertNearly(getShotgunBobX(walker), 0);
+});
+
+test("D-40e: the gun swings 2% to one side on one step and to the other on the next", () => {
+  // 0.02 * 720 = 14.4 px, right during the first step, left during the second
+  assertNearly(getShotgunBobX({ stepPhase: 0.5, bobAmount: 1 }), 14.4);
+  assertNearly(getShotgunBobX({ stepPhase: 1.5, bobAmount: 1 }), -14.4);
+});
+
+test("D-40e: the offsets never pass their limits along a whole stride", () => {
+  for (let stepPhase = 0; stepPhase < 2; stepPhase += 0.05) {
+    const walker = { stepPhase, bobAmount: 1 };
+    assert.ok(Math.abs(getShotgunBobX(walker)) <= 14.4 + 1e-9);
+    assert.ok(getShotgunBobY(walker) >= 0 && getShotgunBobY(walker) <= 10.8 + 1e-9);
+  }
+});
+
+test("D-40e: standing still the gun is back where D-07c aims it", () => {
+  const sprite = makeRecordingSprite();
+  // Walking, it moves by the bob
+  placeShotgun({ sprite }, { stepPhase: 0.5, bobAmount: 1 });
+  assertNearly(sprite.x, getGlobal("getAimedShotgunX()") + 14.4);
+  // Stopped (the bob faded out), it is exactly at its aimed place, so the
+  // barrel still crosses the crosshair
+  placeShotgun({ sprite }, { stepPhase: 0.7, bobAmount: 0 });
+  assert.equal(sprite.x, getGlobal("getAimedShotgunX()"));
+  assert.equal(sprite.y, getGlobal("screenHeight"));
+});
+
+test("D-40e: the bob moves the gun only, so the fire frames keep playing", () => {
+  const shotgun = makeShotgun();
+  shotgun.sprite.position = makeRecordingSprite().position;
+  triggerShotgun(shotgun);
+  placeShotgun(shotgun, { stepPhase: 0.5, bobAmount: 1 });
+  updateShotgun(shotgun, oneFrame);
+  assert.equal(shotgun.sprite.texture, "f1");
+});

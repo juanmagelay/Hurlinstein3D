@@ -29,11 +29,13 @@ const ambientLight = getGlobal("ambientLight");
 const getRowDistance = getGlobal("getRowDistance");
 const getFloorWorldPoint = getGlobal("getFloorWorldPoint");
 const getFloorTextureColor = getGlobal("getFloorTextureColor");
+// D-40: the drawing camera with the view level and the eye at rest
+const levelView = { pitch: 0, posZ: 0 };
 
 test("D-28c row distance and center-column floor point match Lode's projection", () => {
   // At y=540, rowDistance = (720 / 2) / (540 - 360) = 2.
-  assert.equal(getRowDistance(540), 2);
-  const player = { posX: 3.25, posY: -2.5, dirX: 0.6, dirY: 0.8, planeX: -0.528, planeY: 0.396 };
+  assert.equal(getRowDistance(540, levelView), 2);
+  const player = { posX: 3.25, posY: -2.5, dirX: 0.6, dirY: 0.8, planeX: -0.528, planeY: 0.396, pitch: 0, posZ: 0 };
   const point = getFloorWorldPoint(player, 0, 2);
   assert.ok(Math.abs(point.x - 4.45) < 1e-12);
   assert.ok(Math.abs(point.y + 0.9) < 1e-12);
@@ -86,14 +88,14 @@ test("D-28c floor casting takes one sample per strip width square, stretched to 
   const getWallStripCount = getGlobal("getWallStripCount");
   const getRowDistance = getGlobal("getRowDistance");
   const surface = createFakeFloorSurface(screenHeight);
-  const player = { posX: 0.5, posY: 0.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66 };
+  const player = { posX: 0.5, posY: 0.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66, pitch: 0, posZ: 0 };
   try {
     gameSettings.stripWidth = 4;
     const columns = getWallStripCount();
     const rows = screenHeight / 4;
     let texturedRows = 0;
     for (let row = 0; row < rows; row++) {
-      if (getRowDistance((row + 0.5) * 4) <= maxRayDistance) {
+      if (getRowDistance((row + 0.5) * 4, levelView) <= maxRayDistance) {
         texturedRows += 1;
       }
     }
@@ -123,7 +125,7 @@ test("D-28c each floor sample is Lode's floor point of its strip center ray", ()
   const drawFloorCasting = getGlobal("drawFloorCasting");
   const getWallStripCount = getGlobal("getWallStripCount");
   const surface = createFakeFloorSurface(screenHeight);
-  const player = { posX: 3.25, posY: -2.5, dirX: 0.6, dirY: 0.8, planeX: -0.528, planeY: 0.396 };
+  const player = { posX: 3.25, posY: -2.5, dirX: 0.6, dirY: 0.8, planeX: -0.528, planeY: 0.396, pitch: 0, posZ: 0 };
   withRecordedFloorSamples("0x000000", (samples) => {
     drawFloorCasting(surface, player);
     const columns = getWallStripCount();
@@ -145,14 +147,14 @@ test("D-28c rows past maxRayDistance are the background, like a ray without a hi
   const drawFloorCasting = getGlobal("drawFloorCasting");
   const getRowDistance = getGlobal("getRowDistance");
   const surface = createFakeFloorSurface(screenHeight);
-  const player = { posX: 0.5, posY: 0.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66 };
+  const player = { posX: 0.5, posY: 0.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66, pitch: 0, posZ: 0 };
   withRecordedFloorSamples("0x2c3742", (samples) => {
     drawFloorCasting(surface, player);
     assert.ok(samples.every((sample) => sample.rowDistance <= maxRayDistance));
   });
   // With 2 px strips, row 179 is centered 1 px above the horizon: far past the cap
   const horizonRow = screenHeight / 2 / stripWidth - 1;
-  assert.ok(getRowDistance((horizonRow + 0.5) * stripWidth) > maxRayDistance);
+  assert.ok(getRowDistance((horizonRow + 0.5) * stripWidth, levelView) > maxRayDistance);
   const background = [(backgroundColor >> 16) & 0xff, (backgroundColor >> 8) & 0xff, backgroundColor & 0xff, 255];
   assert.deepEqual(readPixel(surface, 0, horizonRow), background);
   assert.deepEqual(readPixel(surface, 0, horizonRow + 1), background);
@@ -283,7 +285,7 @@ function createRecordingGraphics() {
 
 test("a wall 2 cells away is half the screen tall, centered on the horizon", () => {
   // lineHeight = 720 / 2 = 360, from 360 - 180 to 360 + 180
-  const strip = getWallStrip(screenWidth / 2, 2);
+  const strip = getWallStrip(screenWidth / 2, 2, levelView);
   assert.equal(strip.x, screenWidth / 2);
   assert.equal(strip.lineHeight, 360);
   assert.equal(strip.drawStart, 180);
@@ -291,7 +293,7 @@ test("a wall 2 cells away is half the screen tall, centered on the horizon", () 
 });
 
 test("a wall 1 cell away fills the column exactly", () => {
-  const strip = getWallStrip(0, 1);
+  const strip = getWallStrip(0, 1, levelView);
   assert.equal(strip.lineHeight, screenHeight);
   assert.equal(strip.drawStart, 0);
   assert.equal(strip.drawEnd, screenHeight);
@@ -299,7 +301,7 @@ test("a wall 1 cell away fills the column exactly", () => {
 
 test("a closer wall is clipped to the screen", () => {
   // lineHeight = 1440 extends beyond both screen edges
-  const strip = getWallStrip(0, 0.5);
+  const strip = getWallStrip(0, 0.5, levelView);
   assert.equal(strip.lineHeight, 1440);
   assert.equal(strip.drawStart, 0);
   assert.equal(strip.drawEnd, screenHeight);
@@ -307,14 +309,14 @@ test("a closer wall is clipped to the screen", () => {
 
 test("a wall at distance 0 fills the column instead of breaking", () => {
   // 720 / 0 is Infinity, and the clip treats it like any wall taller than the screen
-  const strip = getWallStrip(0, 0);
+  const strip = getWallStrip(0, 0, levelView);
   assert.equal(strip.drawStart, 0);
   assert.equal(strip.drawEnd, screenHeight);
 });
 
 test("a wall at maxRayDistance is 30 px tall", () => {
   // 720 / 24 = 30, from 360 - 15 to 360 + 15. Missed rays use this strip.
-  const strip = getWallStrip(0, maxRayDistance);
+  const strip = getWallStrip(0, maxRayDistance, levelView);
   assert.equal(strip.lineHeight, 30);
   assert.equal(strip.drawStart, 345);
   assert.equal(strip.drawEnd, 375);
@@ -389,7 +391,7 @@ test("D-16e1: the strip width sets the rays per frame", () => {
 });
 
 test("D-16e1: each strip starts at index times the width and has that width", () => {
-  const camera = { posX: 7.5, posY: 1.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66 };
+  const camera = { posX: 7.5, posY: 1.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66, pitch: 0, posZ: 0 };
   try {
     for (const width of [1, 2, 4, 8]) {
       gameSettings.stripWidth = width;
@@ -408,7 +410,7 @@ test("D-16e1: each strip starts at index times the width and has that width", ()
 
 test("from the spawn, wall strips share color fills and stay on screen", () => {
   // Spawn view: the center hits a side 0 face, the edges hit side 1 faces
-  const camera = { posX: 7.5, posY: 1.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66 };
+  const camera = { posX: 7.5, posY: 1.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66, pitch: 0, posZ: 0 };
   const graphics = createRecordingGraphics();
   drawWalls(graphics, camera);
 
@@ -434,18 +436,18 @@ const wallTextureSize = getGlobal("wallTextureSize");
 test("the texture column follows the wallX offset and stays inside the sheet", () => {
   // Center ray runs along +X and hits a side 0 face at posY 2.5: wallX 0.5.
   // rayDirX > 0 flips it to 0.5, so texX = floor(0.5 * 64) = 32.
-  const camera = { posX: 2.5, posY: 2.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66 };
+  const camera = { posX: 2.5, posY: 2.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66, pitch: 0, posZ: 0 };
   assert.equal(getWallTextureX(camera, screenWidth / 2, { side: 0, perpWallDist: 4 }), 32);
 
   // Moving toward -X does not flip: wallX 0.25 stays 0.25, texX = 16.
-  const leftward = { posX: 5, posY: 2.25, dirX: -1, dirY: 0, planeX: 0, planeY: 0.66 };
+  const leftward = { posX: 5, posY: 2.25, dirX: -1, dirY: 0, planeX: 0, planeY: 0.66, pitch: 0, posZ: 0 };
   assert.equal(getWallTextureX(leftward, screenWidth / 2, { side: 0, perpWallDist: 3 }), 16);
 });
 
 test("a side 1 face maps the X offset and flips when looking up the wall", () => {
   // Center ray runs along -Y and hits a side 1 face at posX 2.25: wallX 0.25.
   // rayDirY < 0 flips it to 0.75, so texX = floor(0.75 * 64) = 48.
-  const camera = { posX: 2.25, posY: 5, dirX: 0, dirY: -1, planeX: 0.66, planeY: 0 };
+  const camera = { posX: 2.25, posY: 5, dirX: 0, dirY: -1, planeX: 0.66, planeY: 0, pitch: 0, posZ: 0 };
   assert.equal(getWallTextureX(camera, screenWidth / 2, { side: 1, perpWallDist: 3 }), 48);
   assert.equal(wallTextureSize, 64);
 });
@@ -457,7 +459,7 @@ getOpenFloorGlobal("getCell = function (x, y) { return 0; }");
 const drawWallsOnOpenFloor = getOpenFloorGlobal("drawWalls");
 
 test("rays that hit nothing draw a background strip as tall as a wall at maxRayDistance", () => {
-  const camera = { posX: 0.5, posY: 0.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66 };
+  const camera = { posX: 0.5, posY: 0.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66, pitch: 0, posZ: 0 };
   const graphics = createRecordingGraphics();
   drawWallsOnOpenFloor(graphics, camera);
 
@@ -472,7 +474,7 @@ test("rays that hit nothing draw a background strip as tall as a wall at maxRayD
 test("the wall depth buffer stores the DDA perpendicular distance per strip", () => {
   // Same spawn view as above: the center ray runs along +X and hits the wall a
   // cell 14 face, 6.5 cells from posX 7.5.
-  const camera = { posX: 7.5, posY: 1.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66 };
+  const camera = { posX: 7.5, posY: 1.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66, pitch: 0, posZ: 0 };
   drawWalls(createRecordingGraphics(), camera);
 
   // D-16a / D-16e1: sized for the widest canvas (21:9, 1680 px) with 1 px
@@ -487,7 +489,7 @@ test("the wall depth buffer stores the DDA perpendicular distance per strip", ()
 test("missed rays store the max ray distance as their occlusion depth", () => {
   // The open floor context has its own renderer state, so read its buffer.
   const getOpenFloorDepth = getOpenFloorGlobal("getWallDepthAtColumn");
-  const camera = { posX: 0.5, posY: 0.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66 };
+  const camera = { posX: 0.5, posY: 0.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66, pitch: 0, posZ: 0 };
   drawWallsOnOpenFloor(createRecordingGraphics(), camera);
 
   for (let x = 0; x < screenWidth; x += stripWidth) {
@@ -505,7 +507,7 @@ const getEnemyChunkKey = getEnemyGlobal("getChunkKey");
 const enemyChunks = getEnemyGlobal("enemiesByChunk");
 const enemyWorldBuffer = getEnemyGlobal("wallDepthBuffer");
 const enemyColor = getEnemyGlobal("enemyColor");
-const enemyCamera = { posX: 0.5, posY: 0.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66 };
+const enemyCamera = { posX: 0.5, posY: 0.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66, pitch: 0, posZ: 0 };
 
 test("an enemy straight ahead projects onto the screen center at its cell depth", () => {
   const projection = getEnemyProjection({ posX: 3.5, posY: 0.5 }, enemyCamera);
@@ -553,14 +555,14 @@ const lightRadius = getLightGlobal("lightRadius");
 const lightIntensity = getLightGlobal("lightIntensity");
 
 test("the hit point and normal are read from the ray direction", () => {
-  const camera = { posX: 2.5, posY: 2.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66 };
+  const camera = { posX: 2.5, posY: 2.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66, pitch: 0, posZ: 0 };
   const hit = getWallHitPoint(camera, screenWidth / 2, { side: 0, perpWallDist: 3 });
   assert.equal(hit.x, 5.5);
   assert.equal(hit.y, 2.5);
   assert.equal(hit.normalX, -1);
   assert.equal(hit.normalY, 0);
 
-  const downward = { posX: 5, posY: 5, dirX: 0, dirY: -1, planeX: 0.66, planeY: 0 };
+  const downward = { posX: 5, posY: 5, dirX: 0, dirY: -1, planeX: 0.66, planeY: 0, pitch: 0, posZ: 0 };
   const sideHit = getWallHitPoint(downward, screenWidth / 2, { side: 1, perpWallDist: 2 });
   assert.equal(sideHit.x, 5);
   assert.equal(sideHit.y, 3);
@@ -629,7 +631,7 @@ const getFisheyeGlobal = loadScripts();
 getFisheyeGlobal("getCell = function (x, y) { return x >= 5 ? 1 : 0; }");
 const fisheyeSettings = getFisheyeGlobal("gameSettings");
 const drawFisheyeWalls = getFisheyeGlobal("drawWalls");
-const fisheyeCamera = { posX: 0.5, posY: 0.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66 };
+const fisheyeCamera = { posX: 0.5, posY: 0.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66, pitch: 0, posZ: 0 };
 
 function getStripHeights() {
   const graphics = createRecordingGraphics();
@@ -687,7 +689,7 @@ const getEnemyTextureX = getSpriteGlobal("getEnemyTextureX");
 const spriteEnemyChunks = getSpriteGlobal("enemiesByChunk");
 const spriteChunkKey = getSpriteGlobal("getChunkKey");
 const spriteDepthBuffer = getSpriteGlobal("wallDepthBuffer");
-const spriteCamera = { posX: 0.5, posY: 0.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66 };
+const spriteCamera = { posX: 0.5, posY: 0.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66, pitch: 0, posZ: 0 };
 
 function createFakeSpritePool(count) {
   const sprites = [];
@@ -903,7 +905,7 @@ test("D-39e: the floor casting stains the samples of a stained cell, never the c
   const drawFloorCasting = getGlobal("drawFloorCasting");
   const getStain = getGlobal("getStain");
   const surface = createFakeFloorSurface(screenHeight);
-  const player = { posX: 3.5, posY: 0.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66 };
+  const player = { posX: 3.5, posY: 0.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66, pitch: 0, posZ: 0 };
   getGlobal("addStain")(5, 0);
   const originalTile = getGlobal("getFloorTextureColor");
   const originalApply = getGlobal("applyStain");
@@ -991,5 +993,132 @@ test("D-39g: each particle follows its drop, hidden with alpha 0, and none in fl
   } finally {
     spriteSettings.flatColors = flatColorsBefore;
     bloodDrops[0].active = false;
+  }
+});
+
+// D-40b / D-40d: the drawing camera with the horizon moved by pitch and the
+// eye moved by posZ (TDD 3.4). levelView above is pitch 0 and posZ 0, and the
+// tests that use it check that a level view keeps today's values.
+function assertNear(actual, expected) {
+  assert.ok(Math.abs(actual - expected) < 1e-9, `${actual} is not close to ${expected}`);
+}
+
+test("D-40b: pitch slides the wall strip by pitch pixels, computed by hand", () => {
+  // Looking up, pitch 100 puts the horizon at 460. lineHeight = 720 / 2 = 360,
+  // drawStart = -180 + 360 + 100 = 280 and drawEnd = 180 + 360 + 100 = 640
+  const up = getWallStrip(0, 2, { pitch: 100, posZ: 0 });
+  assert.equal(up.lineHeight, 360);
+  assert.equal(up.drawStart, 280);
+  assert.equal(up.drawEnd, 640);
+  // Looking down, pitch -100: from 80 to 440, the same height
+  const down = getWallStrip(0, 2, { pitch: -100, posZ: 0 });
+  assert.equal(down.drawStart, 80);
+  assert.equal(down.drawEnd, 440);
+});
+
+test("D-40d: posZ moves a near wall more than a far one (posZ / perpWallDist)", () => {
+  // The eye dips 0.03 cells: posZ = -0.03 * 720 = -21.6 px. A wall 2 cells
+  // away moves 21.6 / 2 = 10.8 px up, one 8 cells away only 2.7 px
+  const posZ = -0.03 * screenHeight;
+  const near = getWallStrip(0, 2, { pitch: 0, posZ });
+  assertNear(near.drawStart, 180 - 10.8);
+  assertNear(near.drawEnd, 540 - 10.8);
+  const far = getWallStrip(0, 8, { pitch: 0, posZ });
+  assertNear(far.drawStart, 315 - 2.7);
+  assertNear(far.drawEnd, 405 - 2.7);
+});
+
+test("D-40b / D-40d: the floor row distance, from the moved horizon and the moved eye", () => {
+  // pitch 100: the horizon is at 460, row 640 is 180 px under it, so the
+  // floor point is 360 / 180 = 2 cells away along dir
+  assert.equal(getRowDistance(640, { pitch: 100, posZ: 0 }), 2);
+  // The eye 36 px lower: the floor is (360 - 36) / 180 = 1.8 cells away at
+  // row 540, and the ceiling (360 + 36) / 180 = 2.2 cells at row 180
+  assertNear(getRowDistance(540, { pitch: 0, posZ: -36 }), 1.8);
+  assertNear(getRowDistance(180, { pitch: 0, posZ: -36 }), 2.2);
+});
+
+test("D-40b: with pitch the floor casting splits ceiling and floor at the moved horizon", () => {
+  const drawFloorCasting = getGlobal("drawFloorCasting");
+  const getWallStripCount = getGlobal("getWallStripCount");
+  const surface = createFakeFloorSurface(screenHeight);
+  const camera = { posX: 0.5, posY: 0.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66, pitch: 100, posZ: 0 };
+  withRecordedFloorSamples("0x000000", (samples) => {
+    drawFloorCasting(surface, camera);
+    const columns = getWallStripCount();
+    // 2 px rows: rows 0 to 229 lie over 460 (ceiling), rows 230 to 359 under it.
+    // Rows near the horizon are past maxRayDistance and record no sample.
+    const ceilingSamples = samples.filter((sample) => sample.isCeiling).length;
+    const floorSamples = samples.length - ceilingSamples;
+    assert.ok(ceilingSamples > floorSamples);
+    assert.equal(ceilingSamples % columns, 0);
+    assert.equal(floorSamples % columns, 0);
+    assert.equal(samples[0].isCeiling, true);
+    assert.equal(samples[samples.length - 1].isCeiling, false);
+    // The bottom row, y = 719, is 259 px under the horizon: 360 / 259 cells
+    assertNear(samples[samples.length - 1].rowDistance, 360 / 259);
+  });
+});
+
+test("D-40b: the flat ceiling and floor reach past the screen by the largest pitch", () => {
+  const graphics = createRecordingGraphics();
+  // drawCeilingAndFloor chains rect().fill(), like the Pixi v8 Graphics
+  const recordRect = graphics.rect;
+  graphics.rect = (...args) => {
+    recordRect(...args);
+    return graphics;
+  };
+  getGlobal("drawCeilingAndFloor")(graphics);
+  // margin = 0.3 * 720 = 216: the ceiling goes from -216 to 360, the floor
+  // from 360 to 936
+  assert.equal(graphics.rects.length, 2);
+  const [ceiling, floor] = graphics.rects;
+  assertNear(ceiling.y, -216);
+  assertNear(ceiling.y + ceiling.height, 360);
+  assert.equal(floor.y, 360);
+  assertNear(floor.y + floor.height, 936);
+  // Moved by the largest pitch either way, they still cover the whole screen
+  for (const pitch of [216, -216]) {
+    assert.ok(ceiling.y + pitch <= 1e-9);
+    assert.ok(floor.y + floor.height + pitch >= screenHeight - 1e-9);
+  }
+});
+
+test("D-40b: an enemy stands on the floor line moved by pitch", () => {
+  // 3 cells ahead with pitch 60: the floor line is 360 + 60 + 360 / 3 = 540
+  const box = getGlobal("getStandingSpriteBox")(0, 3, 0.3, 0.6, { pitch: 60, posZ: 0 });
+  assert.equal(box.top + box.height, 540);
+  assert.equal(box.height, 144);
+});
+
+test("D-40c: a projectile is drawn at its height and stays on the crosshair along the look", () => {
+  const drawProjectiles = getGlobal("drawProjectiles");
+  const projectiles = getGlobal("projectiles");
+  const savedDepths = wallDepthBuffer.slice();
+  wallDepthBuffer.fill(maxRayDistance);
+  // Fired with slope 0.1, two cells along dir: z = 0.5 + 0.1 * 2 = 0.7.
+  // Its square is 720 * 0.05 / 2 = 18 px.
+  projectiles.length = 0;
+  projectiles.push({ posX: 2.5, posY: 0.5, z: 0.7 });
+  const camera = { posX: 0.5, posY: 0.5, dirX: 1, dirY: 0, planeX: 0, planeY: 0.66, pitch: 0, posZ: 0 };
+  try {
+    // Looking along the shot, pitch = 720 * 0.1 = 72: the center is
+    // 360 + 72 + 720 * (0.5 - 0.7) / 2 = 360, the crosshair
+    camera.pitch = 72;
+    const aimed = createRecordingGraphics();
+    drawProjectiles(aimed, camera);
+    assert.ok(aimed.rects.length > 0);
+    assertNear(aimed.rects[0].y, 351);
+    assertNear(aimed.rects[0].height, 18);
+    // Looking level again, the same projectile shows 72 px higher
+    camera.pitch = 0;
+    const level = createRecordingGraphics();
+    drawProjectiles(level, camera);
+    assertNear(level.rects[0].y, 351 - 72);
+  } finally {
+    projectiles.length = 0;
+    savedDepths.forEach((depth, index) => {
+      wallDepthBuffer[index] = depth;
+    });
   }
 });

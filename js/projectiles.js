@@ -17,18 +17,33 @@ function clearProjectiles() {
 // Walls never change during the session (TDD 4.4), so that distance is the
 // projectile range. dir has length 1, so perpWallDist is also the distance
 // travelled along the ray. No wall within maxRayDistance: the range is the max.
-function fireProjectile(player) {
+// D-40c: aimSlope is the look slope (getLookSlope, js/player.js), the cells of
+// height the shot gains per cell along dir; 0 is a level shot. It starts at
+// eye height, so it follows the line through the crosshair, and its range is
+// also cut where that line meets the floor or the ceiling.
+function fireProjectile(player, aimSlope = 0) {
   const ray = castRay(player.posX, player.posY, player.dirX, player.dirY);
+  const wallRange = ray.hit ? ray.perpWallDist : maxRayDistance;
   const projectile = {
     posX: player.posX,
     posY: player.posY,
+    z: eyeHeight,
     dirX: player.dirX,
     dirY: player.dirY,
+    slope: aimSlope,
     travelled: 0,
-    range: ray.hit ? ray.perpWallDist : maxRayDistance,
+    range: Math.min(wallRange, getFloorOrCeilingRange(aimSlope)),
   };
   projectiles.push(projectile);
   return projectile;
+}
+
+// D-40c: the distance along dir at which a shot from eye height, half a cell
+// over the floor and half a cell under the ceiling, meets one of them. A level
+// shot never does: 0.5 / 0 is Infinity, like deltaDist for a ray along one
+// axis (TDD 3.3), so the wall always wins the Math.min.
+function getFloorOrCeilingRange(slope) {
+  return eyeHeight / Math.abs(slope);
 }
 
 // Moves every projectile and drops the ones that are done. The loop walks the
@@ -56,6 +71,7 @@ function advanceProjectile(projectile, distance, player) {
 
   projectile.posX += projectile.dirX * step;
   projectile.posY += projectile.dirY * step;
+  projectile.z += projectile.slope * step;
   projectile.travelled += step;
   return distance >= remaining;
 }
@@ -93,7 +109,9 @@ function findEnemyOnSegment(projectile, length) {
 // along is the dot product of the offset with dir: how far down the segment
 // the enemy center sits. lateral is the distance from the enemy center to the
 // line. A hit needs along inside the segment and lateral within half the enemy
-// width. Returns along, or null on a miss.
+// width. D-40c: it also needs the shot's height where it crosses the enemy
+// center inside the body, from the floor to enemy.height (0.6 cells, 0.9 for
+// the boss). Returns along, or null on a miss.
 function getHitDistance(projectile, enemy, length) {
   const offsetX = enemy.posX - projectile.posX;
   const offsetY = enemy.posY - projectile.posY;
@@ -106,6 +124,10 @@ function getHitDistance(projectile, enemy, length) {
     offsetY - along * projectile.dirY,
   );
   if (lateral > enemy.width / 2) {
+    return null;
+  }
+  const height = projectile.z + projectile.slope * along;
+  if (height < 0 || height > enemy.height) {
     return null;
   }
   return along;

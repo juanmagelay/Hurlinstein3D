@@ -35,6 +35,9 @@ const defaults = {
   turnSpeed: 120,
   mouseSensitivity: 20,
   godMode: false,
+  // D-40b and D-40d: on by default, off to compare in the defense
+  verticalLook: true,
+  footstepBob: true,
   stripWidth: 2,
   fisheye: false,
   minimapRays: false,

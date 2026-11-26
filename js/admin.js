@@ -95,6 +95,9 @@ function applySetting(player, name) {
     useWallTextures = gameSettings.useWallTextures;
   } else if (name === "useLighting") {
     useLighting = gameSettings.useLighting;
+  } else if (name === "verticalLook") {
+    // D-40b: turned on or off, the view starts level
+    player.lookAngle = 0;
   } else if (name === "enemyHealth" || name === "bossHealth") {
     // Existing enemies receive the new configured maximum immediately.
     for (const enemies of enemiesByChunk.values()) {
