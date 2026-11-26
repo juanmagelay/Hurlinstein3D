@@ -90,10 +90,10 @@ function findEnemyOnSegment(projectile, length) {
   return target;
 }
 
-// Same math as the D-07a shot. along is the dot product of the offset with dir:
-// how far down the segment the enemy center sits. lateral is the distance from
-// the enemy center to the line. A hit needs along inside the segment and
-// lateral within half the enemy width. Returns along, or null on a miss.
+// along is the dot product of the offset with dir: how far down the segment
+// the enemy center sits. lateral is the distance from the enemy center to the
+// line. A hit needs along inside the segment and lateral within half the enemy
+// width. Returns along, or null on a miss.
 function getHitDistance(projectile, enemy, length) {
   const offsetX = enemy.posX - projectile.posX;
   const offsetY = enemy.posY - projectile.posY;

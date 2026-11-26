@@ -385,42 +385,8 @@ function removeEnemyFromChunk(enemy) {
   }
 }
 
-// TDD 2.3.1 / D-07a: the shot is the center ray (cameraX 0, rayDir equal to dir).
-// The DDA gives the distance to the first wall once; the nearest enemy whose body
-// crosses the ray, closer than that wall, dies instantly. No projectile flies.
-function shootCenterRay(player) {
-  const ray = castRay(player.posX, player.posY, player.dirX, player.dirY);
-  const wallDistance = ray.hit ? ray.perpWallDist : maxRayDistance;
-
-  let target = null;
-  let targetDistance = Infinity;
-  for (const enemies of enemiesByChunk.values()) {
-    for (const enemy of enemies) {
-      const offsetX = enemy.posX - player.posX;
-      const offsetY = enemy.posY - player.posY;
-      const along = offsetX * player.dirX + offsetY * player.dirY;
-      if (along <= 0 || along >= wallDistance || along >= targetDistance) {
-        continue;
-      }
-      const lateral = Math.hypot(
-        offsetX - along * player.dirX,
-        offsetY - along * player.dirY,
-      );
-      if (lateral <= enemy.width / 2) {
-        target = enemy;
-        targetDistance = along;
-      }
-    }
-  }
-
-  if (target !== null) {
-    damageEnemy(target, player);
-  }
-  return target;
-}
-
-// D-13b / D-31: one hit from the center ray or a projectile. The enemy loses
-// one point of health and, at zero, it is removed and counted (or wins the game).
+// D-13b / D-42: one projectile hit (TDD 2.3.1). The enemy loses one point of
+// health and, at zero, it is removed and counted (or wins the game).
 function damageEnemy(target, player) {
   target.health -= 1;
   if (target.health > 0) {

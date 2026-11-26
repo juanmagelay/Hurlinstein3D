@@ -149,7 +149,7 @@ Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added i
 | D-38b | Hidden enemies left behind come back one door away on every chunk change | P1 | 4 | D-38a, D-25 | done |
 | D-38c | Boss spawns with the same rules; the admin button always shows it | P1 | 4 | D-38a, D-19c | done |
 | D-42a | Flying shotgun projectile restored (ce1e26a, outside the story flow) | P1 | 4 | D-31 | done |
-| D-42b | Sync the TDD, the tests and the minimap with the restored projectile; retire the unused instant shot | P1 | 4 | D-42a | pending |
+| D-42b | Sync the TDD, the tests and the minimap with the restored projectile; retire the unused instant shot | P1 | 4 | D-42a | done |
 | D-39a | Specify in the TDD: death animation, blood stain stored per cell, blood particles | P1 | 4 | D-38c | pending |
 | D-39b | Death frames of the Husk Mutant, packed offline into one strip and embedded | P1 | 4 | D-39a, D-21b | pending |
 | D-39c | Death animation: the killed enemy leaves play at once and falls where it died | P1 | 4 | D-39b | pending |
@@ -2294,6 +2294,15 @@ Acceptance criteria:
 - `shootCenterRay` and `tests/shoot.test.js` are removed, and the boss tests fire projectiles, if the open question is settled that way.
 
 Files: `docs/TDD.md`, `README.md`, `js/minimap.js`, `tests/projectiles.test.js`. The removal of `shootCenterRay` (`js/enemies.js`, `tests/shoot.test.js`, `tests/boss.test.js`) may go in a story of its own if this one grows.
+
+Decisions:
+- Open question settled with the proposed default (2026-11-26): `shootCenterRay` and `tests/shoot.test.js` are gone, since the game no longer called them. The boss tests fire a projectile and fly it until it is done, so they cover the path the game uses (`fireProjectile`, `updateProjectiles`, `damageEnemy`). The removal stayed in this story: it was small.
+- TDD 2.3.1 describes the projectile again, with what the code does today: the one second cooldown (D-35a), the range from the center ray DDA computed once, 20 cells per second times `deltaTime`, the segment search widened by half an enemy width, the hit test with the dot product and the lateral distance, the nearest enemy first, one hit point per impact (the boss needs several), the wall that stops it, and its look in 3D and on the minimap. 2.3.2 says the DDA gives the projectile range; 2.3.4 says a new game discards the projectiles in flight and that they only update while playing; the 6.3 table gets its `projectiles` row back.
+- README: a gameplay sentence about the projectile and the reset, a `js/projectiles.js` row in the project map, and projectiles in the renderer, minimap and tests rows. The enemies row now says it applies the damage of a hit.
+- `tests/projectiles.test.js` is the D-13b file adapted to `damageEnemy`: enemies carry `health`, and `updateProjectiles` gets the player (a kill can spawn the boss next to it). The old "nearest of two" test fired toward +x, where the cell search finds the nearer enemy first anyway, so it passed without comparing distances. It now fires toward -x, where the farther enemy is found first. The kill count and two hit point cases of `tests/shoot.test.js` (D-19a, D-19b) moved here.
+- The minimap dots are the D-13d code: a 2 px circle per projectile inside the window, all in one `fill()` with `projectileColor` from the renderer, drawn over the enemies and under the player. A test checks the position by hand and that a projectile outside the window is skipped.
+- `tests/reset.test.js` fires a projectile again before `resetGame` and checks that none is left.
+- Checked: 278 of 278 tests pass (270 before: 10 shot tests out, 17 projectile tests and 1 minimap test in). Headless Chrome on `file://`: Start game, then Space fires a projectile whose range is the DDA wall distance; it shows as a red-orange square on the crosshair and as a dot ahead of the player on the minimap, disappears at the wall, the ammo drops to 5, and the console has no errors.
 
 ## D-40: Vertical look and footstep bob (split in five)
 

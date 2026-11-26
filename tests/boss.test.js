@@ -6,7 +6,7 @@ function findBoss(world) {
   return world("[...enemiesByChunk.values()].flat().find((enemy) => enemy.isBoss) || null");
 }
 
-// Registers one enemy straight ahead of the player, on its ray
+// Registers one enemy straight ahead of the player, on its center ray
 function addEnemyAhead(world, player, overrides = {}) {
   const enemy = {
     posX: player.posX + 2,
@@ -39,6 +39,14 @@ function makeShotWorld() {
   const world = loadScripts();
   world("getCell = function (x, y) { return 0; }");
   return world;
+}
+
+// D-42b: fires a projectile and flies it until it hits or reaches its range
+function shoot(world, player) {
+  world("fireProjectile")(player);
+  for (let tick = 0; tick < 1000 && world("projectiles").length > 0; tick += 1) {
+    world("updateProjectiles")(1, player);
+  }
 }
 
 test("spawnBoss places one boss on an air cell with its hit points", () => {
@@ -102,7 +110,7 @@ test("D-38: a regular kill past the target leaves the live boss where it is", ()
   const cellY = boss.cellY;
   addEnemyAhead(world, player);
 
-  world("shootCenterRay")(player);
+  shoot(world, player);
 
   assert.equal(boss.cellX, cellX);
   assert.equal(boss.cellY, cellY);
@@ -115,7 +123,7 @@ test("no boss spawns before the kill target", () => {
   world("gameSettings.enemiesPerGame = 5");
   addEnemyAhead(world, player);
 
-  world("shootCenterRay")(player);
+  shoot(world, player);
 
   assert.equal(world("getKillCount")(), 1);
   assert.equal(findBoss(world), null);
@@ -127,7 +135,7 @@ test("the boss spawns when the kill count reaches the target", () => {
   world("gameSettings.enemiesPerGame = 1");
   addEnemyAhead(world, player);
 
-  world("shootCenterRay")(player);
+  shoot(world, player);
 
   assert.equal(world("getKillCount")(), 1);
   assert.notEqual(findBoss(world), null);
@@ -139,7 +147,7 @@ test("killing the boss sets the victory state", () => {
   world("setGameState")(world("gameStatePlaying"));
   addEnemyAhead(world, player, { isBoss: true, health: 1, color: world("bossColor") });
 
-  world("shootCenterRay")(player);
+  shoot(world, player);
 
   assert.equal(world("getGameState")(), world("gameStateVictory"));
 });
@@ -150,7 +158,7 @@ test("killing a regular enemy does not set victory", () => {
   world("setGameState")(world("gameStatePlaying"));
   addEnemyAhead(world, player);
 
-  world("shootCenterRay")(player);
+  shoot(world, player);
 
   assert.equal(world("getGameState")(), world("gameStatePlaying"));
 });

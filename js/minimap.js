@@ -14,6 +14,8 @@ const minimapBackgroundColor = 0x0d1117;
 const minimapWallColor = 0x2c4a7c;
 // D-37b: cyan, like the crosshair and the live values of the retro UI
 const minimapPlayerColor = 0x00e5ff;
+// D-13d: radius in pixels of a projectile dot
+const minimapProjectileRadius = 2;
 // D-16e3: every eighth ray of the wall pass, faint, so the fan reads clearly
 const minimapRayStep = 8;
 const minimapRayAlpha = 0.35;
@@ -173,6 +175,24 @@ function drawMinimap(graphics, player) {
       graphics.rect(marker.x, marker.y, marker.width, marker.height);
     }
     graphics.fill(color);
+  }
+
+  // D-13d / D-42b: each projectile in flight is a small dot, only inside the
+  // window, in the same red-orange as in the 3D view
+  let projectileDots = 0;
+  for (const projectile of projectiles) {
+    if (!isInsideMinimapWindow(projectile.posX, projectile.posY, firstMapX, firstMapY)) {
+      continue;
+    }
+    graphics.circle(
+      minimapX + (projectile.posX - firstMapX) * minimapCellSize,
+      minimapY + (projectile.posY - firstMapY) * minimapCellSize,
+      minimapProjectileRadius,
+    );
+    projectileDots += 1;
+  }
+  if (projectileDots > 0) {
+    graphics.fill(projectileColor);
   }
 
   const playerX = minimapX + (player.posX - firstMapX) * minimapCellSize;

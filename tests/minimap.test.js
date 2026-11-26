@@ -155,3 +155,29 @@ test("D-16f: the borders are drawn as lines across the minimap window", () => {
   assert.ok(moves.some((move) => move.x === borderMinimapX + 100 && move.y === 10));
   assert.ok(moves.some((move) => move.x === borderMinimapX && move.y === 10 + 100));
 });
+
+// D-13d / D-42b: projectiles in flight are dots, only inside the window
+test("D-42b: a projectile is a red-orange dot at its minimap position", () => {
+  const dotsWorld = loadScripts();
+  dotsWorld("getCell = function () { return 0; }");
+  const dotsMinimapX = dotsWorld("getMinimapX()");
+  const projectileColor = dotsWorld("projectileColor");
+  const player = { posX: 10.5, posY: 10.5, dirX: 1, dirY: 0 };
+
+  // With nothing in flight the projectile color is never filled
+  const empty = createRecordingGraphics();
+  dotsWorld("drawMinimap")(empty, player);
+  assert.equal(empty.fillColors.includes(projectileColor), false);
+
+  // One projectile inside the window (cells 0 to 20) and one outside it
+  dotsWorld("projectiles").push({ posX: 13.25, posY: 9.5 });
+  dotsWorld("projectiles").push({ posX: 40.5, posY: 10.5 });
+  const graphics = createRecordingGraphics();
+  dotsWorld("drawMinimap")(graphics, player);
+
+  // (13.25, 9.5) sits 132.5 px right and 95 px down from the window corner.
+  // The player dot has radius 3, so radius 2 picks the projectile dots.
+  const dots = graphics.circles.filter((circle) => circle.radius === 2);
+  assert.deepEqual(dots, [{ x: dotsMinimapX + 132.5, y: 10 + 95, radius: 2 }]);
+  assert.ok(graphics.fillColors.includes(projectileColor));
+});
