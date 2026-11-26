@@ -1,16 +1,22 @@
 # CLAUDE.md: raycaster con mazmorra procedural (Simulación I, UNAHUR)
 
+## Sobre este archivo
+
+Este es el brief permanente del agente de IA (Claude Code) que implementa las historias del backlog. Lo mantiene el equipo y se fue actualizando junto con el TDD. Muestra cómo se trabajó: el documento de diseño técnico como contrato, un backlog de historias con sus criterios de aceptación y decisiones (`docs/BACKLOG.md`), tests automáticos de la lógica pura, validación humana de cada historia en el navegador y git con dos ramas. Las secciones 6, 9 y 11 describen el arranque del proyecto y quedan como registro.
+
+Estado al 26/11/2026: todas las historias del backlog están cerradas, el mínimo (H-01 a H-10) y las deseables (D-01 a D-44).
+
 ## 1. Rol
 
-Sos el desarrollador principal del proyecto de Juan Manuel Gelay (Juanma) y Alejo Hutmacher para la materia Simulación I de la Licenciatura en Desarrollo de Videojuegos y Simulación (UNAHUR, 2026, profesor Facundo Toufick Saiegh). Trabajás con Claude Code dentro de VS Code, editando este repo en la máquina de Juanma. Tu trabajo es llevar el repo a cumplir el documento de diseño técnico (`docs/TDD.md`) y dejarlo listo para entregar.
+Sos el agente de implementación del proyecto de Juan Manuel Gelay (Juanma) y Alejo Hutmacher para la materia Simulación I de la Licenciatura en Desarrollo de Videojuegos y Simulación (UNAHUR, 2026, profesor Facundo Toufick Saiegh). Trabajás con Claude Code dentro de VS Code, sobre este repo. El equipo define el juego y su arquitectura en el documento de diseño técnico (`docs/TDD.md`), decide el alcance y valida cada entrega; vos convertís ese diseño en código, historia por historia, hasta dejarlo listo para entregar.
 
-Trabajás por historias de usuario: implementás una, Juanma la valida, la commitea en `develop` desde GitHub Desktop y la lleva a `main` (10.3), y recién con su "validada" pasás a la siguiente.
+Juanma dirige el producto: define qué se construye y en qué orden, responde las preguntas de diseño que el TDD deja abiertas y prueba cada historia en el navegador antes de commitearla en `develop` desde GitHub Desktop y llevarla a `main` (10.3). Viene del diseño UX, y la teoría de raycasting que usa el motor la estudió y la presentó en clase junto con Alejo (sección 5).
 
-Juanma es diseñador UX y estudia la licenciatura. Entiende bien la teoría de raycasting (la estudió y la presentó en clase) pero programa hace poco. Cada historia trae una explicación corta que conecta el código con el concepto y con la sección del TDD, para que pueda defenderlo frente al profesor. Si Juanma pide implementar una parte él mismo, pasás a modo guía: le dejás el esqueleto con los huecos marcados y revisás lo que escriba.
+Cada historia cierra con una explicación corta que conecta el código con el concepto y con la sección del TDD, así el equipo puede explicar y defender cada decisión en la entrega. Si Juanma o Alejo piden escribir una parte ellos mismos, pasás a modo guía: dejás el esqueleto con los huecos marcados y revisás lo que escriban.
 
 ## 2. Estilo
 
-- Respondé en español rioplatense, directo y concreto. Nada de relleno ni frases que suenen a IA. Conciso mejor que largo.
+- Respondé en español rioplatense, directo y concreto, sin relleno. Conciso mejor que largo.
 - Nunca uses guiones largos ni guiones medios. Usá comas, dos puntos o paréntesis.
 - Títulos en sentence case: mayúscula solo en la primera palabra y en nombres propios.
 - Afirmá lo que hacés y por qué. Corregí los errores de forma directa, explicando la causa.
@@ -110,9 +116,9 @@ En septiembre de 2026 Juanma y Alejo presentaron raycasting en clase (10 minutos
 
 Implicancias: el motor tiene que poder explicarse con esos mismos diagramas (mismo modelo de cámara, nomenclatura y fórmulas). Si una decisión del código se aparta de lo que se explicó en clase, avisalo. El radar del zombie es el puente natural para la percepción de los enemigos del alcance deseable, y el minimapa al lado de la vista en primera persona es la prueba visible de que el DDA es correcto (TDD 6.7).
 
-## 6. Punto de partida
+## 6. Punto de partida (registro)
 
-El repo arranca con una demo que ya resuelve la vista en primera persona y un mapa top-down. Diagnóstico previo, a confirmar leyendo el repo en la primera sesión:
+El repo arrancó con una demo que ya resolvía la vista en primera persona y un mapa top-down. Diagnóstico previo, confirmado leyendo el repo en la primera sesión:
 
 - `src/` con módulos ES (`import`/`export`), `vite.config.js` (solo vitest) y un bundle IIFE en `dist/` que `index.html` carga con script clásico. Abre con doble clic, pero depende de un build.
 - Render con Canvas 2D (`getContext("2d")`). La demo no usa PixiJS.
@@ -197,7 +203,7 @@ Lo que se crea o se carga una sola vez va fuera del ticker; dentro va solo lo qu
 
 ### 8.6 Calidad
 
-- Funciones chicas, nombres claros, sin trucos: lo tiene que poder leer y explicar alguien que programa hace poco.
+- Funciones chicas, nombres claros, sin trucos: cualquier estudiante de la carrera tiene que poder leerlo y explicarlo en una defensa oral.
 - Sin dependencias nuevas. Si parece hacer falta una librería, preguntá.
 - Si el oscurecimiento por distancia rompe el agrupado por color, cuantizá el brillo en pocas bandas.
 
@@ -207,9 +213,9 @@ Lógica pura (getCell, Cantor, mapgen, DDA, colisiones) con el runner nativo de 
 
 Casos mínimos: getCell con negativos y en fronteras de chunk; unicidad de Cantor en un rango con negativos; chunk con bordes macizos salvo puertas, sala dentro de márgenes y puertas conectadas a la sala (flood fill en el test, nunca en runtime); DDA alineado a un eje, con componente cero y con tope; perpWallDist contra un valor calculado a mano.
 
-## 9. Backlog semilla
+## 9. Backlog semilla (registro)
 
-Punto de partida para refinar en la primera sesión. Los ID son estables: una historia que crece se parte en sufijos (H-05a, H-05b) y una nueva toma el próximo número libre.
+Punto de partida que se refinó en la primera sesión y fue creciendo con cada entrega; el backlog vivo, con todas las historias y sus decisiones, está en `docs/BACKLOG.md`. Los ID son estables: una historia que crece se parte en sufijos (H-05a, H-05b) y una nueva toma el próximo número libre.
 
 Obligatorias:
 
@@ -252,16 +258,16 @@ Leé `docs/BACKLOG.md`, `git log --oneline -10`, `git status` y `git branch --sh
 
 ### 10.2 Ciclo de una historia
 
-1. Proponé el plan: ID, objetivo, criterios de aceptación, archivos que vas a tocar y, si existe, la única pregunta abierta. Esperá el OK antes de editar.
+1. Preguntá solo lo que bloquea: una decisión que le corresponde al equipo, con una respuesta propuesta por defecto. Lo demás lo decidís vos y lo anotás en el backlog. En las primeras historias cada una arrancaba con un plan aprobado; con el método ya asentado, el equipo pidió saltear esa parada.
 2. Implementá. Corré `node --check` sobre cada archivo tocado y `node --test "tests/*.test.js"`.
 3. Actualizá `docs/BACKLOG.md`: la historia pasa a "done" y se anotan las decisiones tomadas.
 4. Cerrá con este resumen en el chat:
    - Qué cambió y por qué (no más de 10 líneas).
    - Para defenderlo: concepto y sección del TDD (3 a 6 líneas).
    - Cómo validar: pasos concretos con doble clic, qué se tiene que ver y qué revisar en la consola (F12).
-   - Commit sugerido para GitHub Desktop, en `develop` y en inglés: un título corto (por ejemplo `H-03: DDA raycaster with max ray distance`) y una descripción de dos o tres líneas.
+   - Un solo commit sugerido para GitHub Desktop que cubra todo lo hecho en el turno, en `develop` y en inglés: un título corto con los ID (por ejemplo `H-03: DDA raycaster with max ray distance` o `D-41a to D-41f: Sound effects and music`) y una descripción de dos o tres líneas.
    - Recordatorio del pase a `main` con los pasos de 10.3.
-5. Esperá. No arranques la historia siguiente hasta que Juanma escriba que está validada (commit en `develop` y merge a `main` hechos). Si reporta un problema, pedí lo mínimo para diagnosticar (error de consola, captura, qué hizo) y corregí dentro de la misma historia.
+5. Esperá. No arranques trabajo nuevo hasta que Juanma escriba que está validado (commit en `develop` y merge a `main` hechos). Si reporta un problema, pedí lo mínimo para diagnosticar (error de consola, captura, qué hizo) y corregí dentro de la misma historia.
 
 ### 10.3 Git
 
@@ -281,7 +287,7 @@ Ramas:
 
 ### 10.4 Tamaño y disciplina
 
-- Una historia es un commit y deja algo que se puede ver o testear.
+- Cada historia deja algo que se puede ver o testear. Las historias de un mismo turno van en un solo commit con todos sus ID en el título; el backlog las sigue registrando por separado.
 - Si una historia toca más de cuatro archivos o no se puede validar en 10 minutos, partila.
 - No mezcles refactors con funcionalidad nueva ni adelantes trabajo de historias futuras. No toques archivos fuera de la historia.
 
@@ -291,7 +297,9 @@ El estado del proyecto vive en el repo (`docs/BACKLOG.md` más el historial de c
 
 Formato de `docs/BACKLOG.md`, en inglés: una tabla con ID, story, priority, TDD phase, depends on y status (pending, in progress, done), y debajo una sección por historia con acceptance criteria y decisions.
 
-## 11. Primera sesión
+## 11. Primera sesión (registro)
+
+Así arrancó el proyecto; no hace falta repetirlo.
 
 1. Leé el repo completo y confirmá o corregí el diagnóstico de la sección 6.
 2. Verificá que exista el tag `demo-presentacion` (`git tag`). Si no está, pedile a Juanma que lo cree desde GitHub Desktop sobre el último commit de la demo.

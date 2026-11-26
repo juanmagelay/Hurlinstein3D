@@ -169,6 +169,7 @@ Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added i
 | D-41e | Music and UI sounds: menu and arena tracks, button focus and click, victory and defeat | P1 | 4 | D-41b, D-17b | done |
 | D-41f | Enemy sounds by distance and side, with the dot product of the presentation (optional) | P3 | 4 | D-41d | done |
 | D-43 | Sync the README, the TDD, the credits screen and the asset licenses with the finished game | P1 | 4 | D-41f | done |
+| D-44 | `CLAUDE.md` as a public record of the development process | P2 | 4 | D-43 | done |
 
 ## Backlog review (2026-11-20)
 
@@ -2577,6 +2578,24 @@ Decisions:
 - The TDD header keeps the 2026-10-13 line and adds the 2026-11-26 one; the TDD content does not change otherwise.
 - The tests row of the README project map pointed to section 8.7, which only exists in `CLAUDE.md` (TDD chapter 8 is the references). It now points to TDD 7.2 and 7.3.
 - The network error of the ranking was the only text in Spanish in the English UI ("No se pudo contactar la API"); it is now "Could not reach the ranking server".
+- Tests: 358, unchanged.
+
+## D-44: CLAUDE.md as a public record of the development process
+
+Requested by Juanma on 2026-11-26: `CLAUDE.md` stays public in the repo, so it should describe the team's roles accurately and show the real workflow.
+
+Acceptance criteria:
+- An opening section says what the file is (the brief of the AI agent that implements the stories), what the process is (TDD as the contract, story backlog, automated tests, human validation in the browser, two branches) and the project status.
+- Section 1 describes the roles: the team owns the TDD, the scope and the validation; the agent turns the design into code story by story; Juanma leads the product and answers the design questions the TDD leaves open.
+- Sections 6, 9 and 11 are marked as a record of how the project started.
+- Section 10 matches the workflow the team actually followed: only blocking questions instead of a plan approval stop, and one commit per turn with every story ID in its title.
+
+Files: `CLAUDE.md`, `docs/BACKLOG.md`.
+
+Decisions:
+- The game does not read `CLAUDE.md`, so nothing in `index.html`, `js/` or the portfolio copy changes.
+- A search of the tracked files, the binary assets and the whole git history found no personal account names or work email addresses.
+- The professor's name stays: the README, the TDD and the credits screen already show it.
 - Tests: 358, unchanged.
 
 ## Desirables
