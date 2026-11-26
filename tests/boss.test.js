@@ -141,15 +141,43 @@ test("the boss spawns when the kill count reaches the target", () => {
   assert.notEqual(findBoss(world), null);
 });
 
-test("killing the boss sets the victory state", () => {
+test("D-39c: killing the boss sets the victory state once it lies on the floor", () => {
   const world = makeShotWorld();
   const player = world("player");
   world("setGameState")(world("gameStatePlaying"));
-  addEnemyAhead(world, player, { isBoss: true, health: 1, color: world("bossColor") });
+  const boss = addEnemyAhead(world, player, { isBoss: true, health: 1, color: world("bossColor") });
 
   shoot(world, player);
 
+  // The boss left play in the frame it died, but the screen waits for its fall
+  assert.equal(findBoss(world), null);
+  assert.equal(world("getGameState")(), world("gameStatePlaying"));
+  const deathTicks = world("enemyDeathTicks");
+  world("updateDyingEnemies")(deathTicks - 1);
+  assert.equal(world("getGameState")(), world("gameStatePlaying"));
+  world("updateDyingEnemies")(1);
   assert.equal(world("getGameState")(), world("gameStateVictory"));
+  // It stays on its last frame behind the victory screen
+  assert.equal(world("dyingEnemies")[0].enemy, boss);
+});
+
+test("D-39c: while the boss falls no enemy hits the player", () => {
+  const world = makeShotWorld();
+  const player = world("player");
+  world("setGameState")(world("gameStatePlaying"));
+  // A regular enemy touching the player, as with a boss spawned early from the panel
+  addEnemyAhead(world, player, {
+    posX: player.posX + 0.5,
+    cellX: Math.floor(player.posX + 0.5),
+    chunkX: Math.floor((player.posX + 0.5) / 16),
+  });
+  world("startEnemyDeath")({ isBoss: true, posX: player.posX + 3, posY: player.posY, height: world("bossHeight") });
+
+  assert.equal(world("getContactDamage")(player, 1), 0);
+
+  world("updateDyingEnemies")(world("enemyDeathTicks"));
+  world("clearDyingEnemies")();
+  assert.equal(world("getContactDamage")(player, 1), 1);
 });
 
 test("killing a regular enemy does not set victory", () => {

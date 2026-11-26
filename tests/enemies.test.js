@@ -428,3 +428,65 @@ test("D-38: with every free hidden cell of the door neighbors taken, an enemy ou
 
   assert.equal(enemy.chunkX, 6);
 });
+
+// D-39c: the death of an enemy
+test("D-39c: the last hit frees the cell and the chunk at once, counts the kill and starts the fall", () => {
+  const world = loadScripts();
+  world("getCell = function (x, y) { return 0; }");
+  const enemy = { posX: 5.5, posY: 5.5, cellX: 5, cellY: 5, chunkX: 0, chunkY: 0, width: 0.3, height: 0.6, health: 1 };
+  world("enemiesByChunk").set(world("getChunkKey")(0, 0), [enemy]);
+  world("registerEnemyAtCell")(enemy);
+
+  world("damageEnemy")(enemy, { posX: 1.5, posY: 1.5 });
+
+  assert.equal(world("getEnemiesAtCell")(5, 5).length, 0);
+  assert.equal(world("getEnemiesForChunk")(0, 0).length, 0);
+  assert.equal(world("getKillCount")(), 1);
+  // It falls where it died
+  const dying = world("dyingEnemies");
+  assert.equal(dying.length, 1);
+  assert.equal(dying[0].enemy, enemy);
+  assert.equal(dying[0].time, 0);
+  assert.equal(enemy.posX, 5.5);
+});
+
+test("D-39c: one death frame every 0.2 s, held on the last one", () => {
+  const getDeathFrame = getGlobal("getDeathFrame");
+  // 0.2 s is 12 ticker units at 60 Hz
+  assert.equal(getGlobal("enemyDeathFrameTicks"), 12);
+  assert.equal(getDeathFrame(0), 0);
+  assert.equal(getDeathFrame(11.9), 0);
+  assert.equal(getDeathFrame(12), 1);
+  assert.equal(getDeathFrame(30), 2);
+  assert.equal(getDeathFrame(59.9), 4);
+  assert.equal(getDeathFrame(200), 4);
+});
+
+test("D-39c: the corpse lies 2 s after the 1 s fall and fades out in the last half second", () => {
+  const getCorpseAlpha = getGlobal("getCorpseAlpha");
+  // The fall ends at 60 ticks, the corpse at 60 + 120 = 180, the fade starts at 150
+  assert.equal(getGlobal("enemyDeathTicks"), 60);
+  assert.equal(getCorpseAlpha(0), 1);
+  assert.equal(getCorpseAlpha(150), 1);
+  assert.equal(getCorpseAlpha(165), 0.5);
+  assert.equal(getCorpseAlpha(180), 0);
+  assert.equal(getCorpseAlpha(200), 0);
+});
+
+test("D-39c: a falling enemy leaves the list when its corpse fades out", () => {
+  const world = loadScripts();
+  const startEnemyDeath = world("startEnemyDeath");
+  const updateDyingEnemies = world("updateDyingEnemies");
+  const dying = world("dyingEnemies");
+  startEnemyDeath({ posX: 1.5, posY: 1.5, height: 0.6 });
+  updateDyingEnemies(100);
+  startEnemyDeath({ posX: 2.5, posY: 1.5, height: 0.6 });
+
+  updateDyingEnemies(79);
+  assert.equal(dying.length, 2);
+  // The first one reaches 180 ticks and leaves; the second one keeps falling
+  updateDyingEnemies(1);
+  assert.equal(dying.length, 1);
+  assert.equal(dying[0].enemy.posX, 2.5);
+  assert.equal(dying[0].time, 80);
+});

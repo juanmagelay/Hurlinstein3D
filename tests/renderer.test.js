@@ -798,3 +798,54 @@ test("D-21b: walls nearer than the enemy hide its sprite strips", () => {
   assert.equal(pool.sprites.filter((sprite) => sprite.visible).length, 0);
   resetSpriteDepthBuffer();
 });
+
+// D-39c: a falling enemy uses the same pool. Fake death columns hold
+// frame * 100 + texX, so a sprite's texture tells the frame and the column.
+getSpriteGlobal(
+  "enemyDeathTextureColumns = Array.from({ length: enemyDeathFrameCount }, (_, frame) =>" +
+  " Array.from({ length: enemyDeathFrameWidth }, (_, texX) => frame * 100 + texX))",
+);
+const spriteDyingEnemies = getSpriteGlobal("dyingEnemies");
+
+test("D-39c: a falling enemy shows its death frame standing on the floor, at the front frame scale", () => {
+  resetSpriteDepthBuffer();
+  setSpriteEnemies([]);
+  const dying = { enemy: { posX: 3.5, posY: 0.5, width: 0.3, height: 0.6 }, time: 0 };
+  spriteDyingEnemies.push(dying);
+  const pool = createFakeSpritePool(100);
+  drawSpriteEnemies(createRecordingGraphics(), spriteCamera, pool);
+
+  // 60 by 51 texture px at 0.6 / 57 cells each: 0.632 by 0.537 cells. At depth
+  // 3: 720 * 0.632 / 3 = 151.58 px tall up from the floor line at 480, and
+  // 128.84 px wide, from 575.58 to 704.42: the 66 strips from x 574 to x 704.
+  const drawn = pool.sprites.filter((sprite) => sprite.visible);
+  assert.equal(drawn.length, 66);
+  assert.ok(Math.abs(drawn[0].height - 151.58) < 0.01);
+  assert.ok(Math.abs(drawn[0].position.y + drawn[0].height - 480) < 1e-9);
+  assert.ok(drawn.every((sprite) => sprite.alpha === 1));
+  // The center strip (center 641) is 65.42 px in, 2.53 px per texture px: column 25
+  const byX = new Map(drawn.map((sprite) => [sprite.position.x, sprite]));
+  assert.equal(byX.get(640).texture, 25);
+
+  // After four frame times it shows the last frame, and a quarter second
+  // before the end the corpse is half faded
+  dying.time = 4 * getSpriteGlobal("enemyDeathFrameTicks");
+  drawSpriteEnemies(createRecordingGraphics(), spriteCamera, pool);
+  assert.equal(byX.get(640).texture, 425);
+  dying.time = getSpriteGlobal("enemyDeathTicks + enemyCorpseTicks") - 15;
+  drawSpriteEnemies(createRecordingGraphics(), spriteCamera, pool);
+  assert.equal(byX.get(640).alpha, 0.5);
+
+  spriteDyingEnemies.length = 0;
+});
+
+test("D-39c: the flat color mode draws no falling enemy", () => {
+  resetSpriteDepthBuffer();
+  setSpriteEnemies([]);
+  spriteDyingEnemies.push({ enemy: { posX: 3.5, posY: 0.5, width: 0.3, height: 0.6 }, time: 0 });
+  const graphics = createRecordingGraphics();
+  drawSpriteEnemies(graphics, spriteCamera, null);
+
+  assert.deepEqual(graphics.rects, []);
+  spriteDyingEnemies.length = 0;
+});

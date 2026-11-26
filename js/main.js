@@ -84,7 +84,8 @@ async function startGame() {
   gameLayer.addChild(enemies);
 
   // D-21b: the enemy sprite, cut into columns once, and its pool of strip
-  // sprites, created once, at the same layer as the flat enemies
+  // sprites, created once, at the same layer as the flat enemies. D-39c: the
+  // death strip is cut here too, and the falling enemies use the same pool.
   let enemyStrips = null;
   if (useEnemySprites) {
     await loadEnemyTextureColumns();
@@ -342,6 +343,9 @@ async function startGame() {
       triggerShotgun(shotgun);
     }
     updateProjectiles(ticker.deltaTime, player);
+    // D-39c: the killed enemies fall; the boss shows the victory screen when
+    // it lies on the floor
+    updateDyingEnemies(ticker.deltaTime);
     updateShotgun(shotgun, ticker.deltaTime);
     // D-27c: whole hits. The flash starts and the bar drops in this same frame.
     if (damagePlayer(player, getContactDamage(player, ticker.deltaTime))) {

@@ -455,16 +455,30 @@ function sliceTextureColumns(source, width, height) {
 // a data URI (js/enemy-sheet.js), so it loads under file:// and the canvas can
 // be read. Runs once, outside the ticker (TDD 6.4).
 let enemyTextureColumns = null;
+// D-39c: the death strip cut the same way, one list of columns per frame
+let enemyDeathTextureColumns = null;
 
-function loadEnemyTextureColumns() {
+function loadImage(dataUri) {
   return new Promise((resolve) => {
     const image = new Image();
-    image.onload = () => {
-      enemyTextureColumns = sliceTextureColumns(image, enemyTextureWidth, enemyTextureHeight);
-      resolve(enemyTextureColumns);
-    };
-    image.src = enemySpriteDataUri;
+    image.onload = () => resolve(image);
+    image.src = dataUri;
   });
+}
+
+async function loadEnemyTextureColumns() {
+  const image = await loadImage(enemySpriteDataUri);
+  enemyTextureColumns = sliceTextureColumns(image, enemyTextureWidth, enemyTextureHeight);
+
+  const deathImage = await loadImage(enemyDeathSheetDataUri);
+  const deathColumns = sliceTextureColumns(
+    deathImage, enemyDeathFrameCount * enemyDeathFrameWidth, enemyDeathFrameHeight);
+  enemyDeathTextureColumns = [];
+  for (let frame = 0; frame < enemyDeathFrameCount; frame++) {
+    const firstColumn = frame * enemyDeathFrameWidth;
+    enemyDeathTextureColumns.push(deathColumns.slice(firstColumn, firstColumn + enemyDeathFrameWidth));
+  }
+  return enemyTextureColumns;
 }
 
 // D-09 / D-21b: a pool of strip sprites created once and reused every frame
@@ -695,11 +709,12 @@ function getVisibleStripXs(box, depth) {
 
 // D-21b (Lode part 3, texX): the sprite column a strip shows. The strip center
 // is measured from the sprite's left edge and scaled from screen pixels to
-// sprite pixels, then kept inside the sprite.
-function getEnemyTextureX(stripX, spriteLeft, spriteWidth) {
+// sprite pixels, then kept inside the sprite. D-39c: textureWidth is 51 for a
+// death frame.
+function getEnemyTextureX(stripX, spriteLeft, spriteWidth, textureWidth = enemyTextureWidth) {
   const stripCenter = stripX + gameSettings.stripWidth / 2;
-  const texX = Math.floor((stripCenter - spriteLeft) * enemyTextureWidth / spriteWidth);
-  return Math.min(Math.max(texX, 0), enemyTextureWidth - 1);
+  const texX = Math.floor((stripCenter - spriteLeft) * textureWidth / spriteWidth);
+  return Math.min(Math.max(texX, 0), textureWidth - 1);
 }
 
 // D-21b: the sprite keeps the proportions of its image: as tall as the enemy,
@@ -708,20 +723,54 @@ function getEnemySpriteWorldWidth(enemy) {
   return enemy.height * enemyTextureWidth / enemyTextureHeight;
 }
 
-// D-04c2 / D-23: the active enemies in view range and in front of the camera,
-// with their camera space position. D-21b: sorted near to far.
-function getVisibleEnemies(player) {
+// D-21b / D-39c: what an enemy shows in 3D. Alive, the front frame; falling,
+// the death frame for its time, fading out at the end. Both keep the scale of
+// the front frame, 57 texture pixels for enemy.height, so the boss falls larger.
+function getEnemySpriteLook(enemy, dying) {
+  if (dying === null) {
+    return {
+      columns: enemyTextureColumns,
+      textureWidth: enemyTextureWidth,
+      worldWidth: getEnemySpriteWorldWidth(enemy),
+      worldHeight: enemy.height,
+      alpha: 1,
+    };
+  }
+  const cellsPerPixel = enemy.height / enemyTextureHeight;
+  return {
+    columns: enemyDeathTextureColumns[getDeathFrame(dying.time)],
+    textureWidth: enemyDeathFrameWidth,
+    worldWidth: enemyDeathFrameWidth * cellsPerPixel,
+    worldHeight: enemyDeathFrameHeight * cellsPerPixel,
+    alpha: getCorpseAlpha(dying.time),
+  };
+}
+
+// D-04c2: adds the enemy with its camera space position when it is in view
+// range and in front of the camera. dying is its D-39c entry, or null.
+function addVisibleEnemy(visible, enemy, player, dying) {
+  if (!isEnemyInViewRange(enemy, player)) {
+    return;
+  }
+  const { transformX, depth } = getEnemyProjection(enemy, player);
+  if (depth <= 0 || depth > maxRayDistance) {
+    return;
+  }
+  visible.push({ enemy, transformX, depth, dying });
+}
+
+// D-04c2 / D-23: the active enemies in view, and with includeDying the falling
+// ones too (D-39c), sorted near to far (D-21b)
+function getVisibleEnemies(player, includeDying = false) {
   const visible = [];
   for (const enemies of getActiveEnemyLists(player)) {
     for (const enemy of enemies) {
-      if (!isEnemyInViewRange(enemy, player)) {
-        continue;
-      }
-      const { transformX, depth } = getEnemyProjection(enemy, player);
-      if (depth <= 0 || depth > maxRayDistance) {
-        continue;
-      }
-      visible.push({ enemy, transformX, depth });
+      addVisibleEnemy(visible, enemy, player, null);
+    }
+  }
+  if (includeDying) {
+    for (const dying of dyingEnemies) {
+      addVisibleEnemy(visible, dying.enemy, player, dying);
     }
   }
   visible.sort((a, b) => a.depth - b.depth);
@@ -731,7 +780,8 @@ function getVisibleEnemies(player) {
 // D-04c2: draws every enemy in view, standing on the floor (D-21b) and hidden
 // strip by strip behind nearer walls. With useEnemySprites and the sprite pool
 // it draws the Husk Mutant sprite; otherwise an amber rectangle, the flat color
-// mode, with one fill() for all of them.
+// mode, with one fill() for all of them. D-39c: the flat mode shows the bare
+// algorithm, so a killed enemy vanishes there in the frame it dies.
 function drawEnemies(graphics, player, enemyStrips) {
   graphics.clear();
 
@@ -773,13 +823,16 @@ function drawEnemies(graphics, player, enemyStrips) {
 // Painter's algorithm: a nearer enemy must cover a farther one. Enemies come near
 // to far and take pool sprites from the last one down, and the last children of
 // a container are drawn on top. If the pool runs out, the farthest are left out.
+// D-39c: the falling enemies join the same list, so they are hidden by walls
+// and by nearer enemies the same way, and shaded by the same distance bands.
 function drawTexturedEnemies(player, enemyStrips) {
   const stripWidth = gameSettings.stripWidth;
   const sprites = enemyStrips.sprites;
   let nextSprite = sprites.length - 1;
 
-  for (const { enemy, transformX, depth } of getVisibleEnemies(player)) {
-    const box = getStandingSpriteBox(transformX, depth, getEnemySpriteWorldWidth(enemy), enemy.height);
+  for (const { enemy, transformX, depth, dying } of getVisibleEnemies(player, true)) {
+    const look = getEnemySpriteLook(enemy, dying);
+    const box = getStandingSpriteBox(transformX, depth, look.worldWidth, look.worldHeight);
     const baseTint = enemy.isBoss ? bossColor : 0xffffff;
     const tint = shadeColor(baseTint, getDistanceBrightness(depth));
     for (const x of getVisibleStripXs(box, depth)) {
@@ -788,11 +841,12 @@ function drawTexturedEnemies(player, enemyStrips) {
       }
       const sprite = sprites[nextSprite];
       nextSprite -= 1;
-      sprite.texture = enemyTextureColumns[getEnemyTextureX(x, box.left, box.width)];
+      sprite.texture = look.columns[getEnemyTextureX(x, box.left, box.width, look.textureWidth)];
       sprite.position.set(x, box.top);
       sprite.width = stripWidth;
       sprite.height = box.height;
       sprite.tint = tint;
+      sprite.alpha = look.alpha;
       sprite.visible = true;
     }
   }

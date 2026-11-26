@@ -150,9 +150,9 @@ Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added i
 | D-38c | Boss spawns with the same rules; the admin button always shows it | P1 | 4 | D-38a, D-19c | done |
 | D-42a | Flying shotgun projectile restored (ce1e26a, outside the story flow) | P1 | 4 | D-31 | done |
 | D-42b | Sync the TDD, the tests and the minimap with the restored projectile; retire the unused instant shot | P1 | 4 | D-42a | done |
-| D-39a | Specify in the TDD: death animation, blood stain stored per cell, blood particles | P1 | 4 | D-38c | pending |
-| D-39b | Death frames of the Husk Mutant, packed offline into one strip and embedded | P1 | 4 | D-39a, D-21b | pending |
-| D-39c | Death animation: the killed enemy leaves play at once and falls where it died | P1 | 4 | D-39b | pending |
+| D-39a | Specify in the TDD: death animation, blood stain stored per cell, blood particles | P1 | 4 | D-38c | done |
+| D-39b | Death frames of the Husk Mutant, packed offline into one strip and embedded | P1 | 4 | D-39a, D-21b | done |
+| D-39c | Death animation: the killed enemy leaves play at once and falls where it died | P1 | 4 | D-39b | done |
 | D-39d | Blood stain stored per cell, in the chunk of its cell, kept for the session | P1 | 4 | D-39c | pending |
 | D-39e | Blood stain drawn on the floor by the floor casting and marked on the minimap | P1 | 4 | D-39d, D-28c | pending |
 | D-39f | Blood particle simulation: a spray on each hit and on death, gravity with an Euler step, fixed pool | P1 | 4 | D-39c | pending |
@@ -2209,6 +2209,13 @@ Acceptance criteria:
 
 Files: `docs/TDD.md`, `docs/BACKLOG.md`.
 
+Decisions (2026-11-26, done with D-39b and D-39c in one batch, without a plan stop):
+- The open questions of D-39 are settled with the proposed defaults of the 2026-11-24 feedback section: the body lies on the last death frame for 2 s and fades out, so only the stain stays; the boss falls with the same frames, tinted and larger, and the victory screen waits for its fall; one stain per cell, a dark red blob drawn by code in one of four shapes picked from the world seed and the cell, a dark red dot on the minimap, none in flat color mode, all cleared by a new game or a new world; particles for the spray only (6 drops per hit, 24 on death, a fixed pool of 256), and a landed drop leaves no stain.
+- TDD 1.3 lists the death and the blood among the desirables. 2.3.1 gets a "Muerte de un enemigo" item: the enemy leaves play in the frame it dies, the frame time (0.2 s, 1 s in all), the 2 s corpse with its last half second of fade, the boss and the victory, and no contact hits while the boss falls (the kill already won). 2.3.2 describes the death strip next to the sprite, then the stain and the spray in two paragraphs, and its boss paragraph points to 2.3.1 for the wait. 2.3.4: a new game also discards the falling enemies, the stains and the drops.
+- 3.5 gets a paragraph on the spray as a second kind of simulation, in time: Euler's method with Δt = deltaTime, v = v + g · Δt and p = p + v · Δt, first order, enough for drops that live under a second.
+- 6.2: the stain texture drawn by code and the death strip as a data URI. 6.3: `blood` and `particles` rows, and the `enemies` and `enemy-sheet` rows widened. 6.4: the death columns, the stain texture and the 256 drops created once; the falls and the Euler step inside the ticker. 6.5: the stain over the floor tile with the fractional part of the floor point as texture coordinates. 6.8: the stains in a 16 by 16 `Uint8Array` per chunk, 0 for none and 1 to 4 for the shape, in another Cantor-keyed `Map`, created with the chunk's first stain.
+- The difference with class is small here: the death, the stain and the spray use the sprite projection and the z-buffer already in the TDD (Lode part 3), and the stain is drawn by the floor casting of 6.5.
+
 ## D-39b: Death frames of the Husk Mutant
 
 Acceptance criteria:
@@ -2218,6 +2225,15 @@ Acceptance criteria:
 - A test reads the strip size from the PNG header of the data URI and checks the frame count and size in `js/config.js`.
 
 Files: `assets/enemy-sprites/`, `js/enemy-sheet.js`, `js/config.js`, `tests/enemy-sheet.test.js` (new).
+
+Decisions:
+- The archive was downloaded again on 2026-11-26 from the OpenGameArt page; its sha256 matches `LICENSE.md`. The death frames are I0 to M0: rotation 0 means the same drawing from every angle, like the Doom sprite naming the archive uses. They show the hit, the arms thrown open, the body bending forward, sitting and lying. The frames with rotations (A to H) are walk, attack and pain frames and stay out.
+- The five 150 by 81 px files are copied unchanged, with their sha256 in `LICENSE.md`.
+- Anchor: each file carries a `grAb` chunk, the Doom offset of the feet. The bottoms do not sit on the same row against it (one row below in I, J and `ZOMBA1.png`, two in K and M, one above in L), so with the `grAb` y frame L would float two pixels, about 15 screen px at one cell. Each frame instead rests its lowest opaque row on the strip bottom, the floor line, as the live sprite does. Horizontally the `grAb` x anchor goes to column 27, 1.5 px right of the frame center, the same place as in `ZOMBA1.png` (column 18 of 33), so the body does not jump sideways when the live sprite turns into the first death frame.
+- Frame size 51 by 60: 60 rows for the tallest drawing (I, its head thrown back) and the width the anchor needs for the widest arms (25 px left and 23 px right of it). Strip 255 by 60, 4.7 KB as a PNG, 6.3 KB as base64. All 3,809 opaque pixels of the five files are in the strip, unchanged (counted by the packing script).
+- `js/config.js`: `enemyDeathFrameCount`, `enemyDeathFrameWidth` and `enemyDeathFrameHeight`. The data URI is `enemyDeathSheetDataUri` in `js/enemy-sheet.js`, next to the front frame.
+- `tests/enemy-sheet.test.js` reads the size from the PNG header of both data URIs, the front frame included, which had no test.
+- Made with a small Node script (zlib PNG decode and encode) outside the repo, like D-07e, D-08d and D-21a; the anchor rule is recorded in `LICENSE.md` so it can be made again.
 
 ## D-39c: Death animation
 
@@ -2230,6 +2246,16 @@ Acceptance criteria:
 - Tests: the kill frees the cell at once; the frame for a given elapsed time; the dying enemy leaves the list at the end; the victory waits for the boss animation.
 
 Files: `js/enemies.js`, `js/renderer.js`, `js/main.js`, `tests/enemies.test.js`.
+
+Decisions:
+- `damageEnemy` still calls `removeEnemy` on the last hit and then `startEnemyDeath`, which pushes `{ enemy, time }` to `dyingEnemies` (`js/enemies.js`). The enemy object keeps its last position, so it falls where it died. The kill counts and the boss spawns in that same frame, as before.
+- Timing in 60 Hz ticker units, like the rest of `js/enemies.js`: one frame every 12 ticks (0.2 s), the fall ends at 60, the corpse lies until 180 (2 s more), and its alpha drops from 1 to 0 between 150 and 180. `updateDyingEnemies` advances them with `deltaTime` and drops an entry at 180. The list is not split by chunk: an entry lives 3 s, so it stays short.
+- Boss: `updateDyingEnemies` sets the victory state when the falling boss reaches 60 ticks. Once the state changes the ticker stops updating, so the boss stays on its last frame behind the victory screen. While the boss falls `getContactDamage` returns 0: the kill already won the game, and a regular enemy alive at that moment (a boss spawned early from the admin panel) could otherwise turn the win into a defeat during the fall. The game time keeps running during that second, the same second for every victory.
+- Drawing: `getVisibleEnemies(player, true)` adds the falling enemies to the live ones, so the painter's sort, the z-buffer and the distance bands are shared. `getEnemySpriteLook` picks the front frame or the death frame columns, keeps 57 texture pixels per `enemy.height` (so the boss falls 1.5 times larger and tinted) and sets the sprite alpha for the fade. `getEnemyTextureX` takes the texture width (51 for a death frame). The death strip is cut into column textures once in `loadEnemyTextureColumns`, outside the ticker, and uses the same strip sprite pool.
+- Flat color mode: a killed enemy vanishes in the frame it dies, as before, since that mode shows the bare algorithm (the same rule as the stains).
+- `resetGame` calls `clearDyingEnemies`.
+- Tests: the kill frees the cell and the chunk at once and starts the fall (`tests/enemies.test.js`); the frame for a given time; the corpse alpha; an entry leaves the list at 180 ticks and the other keeps falling; the victory waits 60 ticks after the boss kill and the boss stays on the list (`tests/boss.test.js`, which replaces the old immediate victory test); no contact hit while the boss falls; the sprite box, column, last frame and half fade of a falling enemy, and nothing in flat mode (`tests/renderer.test.js`); `resetGame` empties the list (`tests/reset.test.js`).
+- Checked: 287 of 287 tests pass (278 before). Headless Chrome on `file://`: an enemy two cells ahead dies with one shot, leaves its cell in the same frame (KILLS 1), and the five frames stand on the floor line with the feet where the live sprite had them; the half faded corpse shows through. A boss killed with one shot keeps the state playing for 60 ticks, then victory, with the boss on its last frame. No console messages.
 
 ## D-39d: Blood stain stored per cell
 
@@ -2432,4 +2458,4 @@ Open questions to settle before each story:
 - D-06: settled in the 2026-11-20 review. The victory is killing the boss (D-14b, D-19).
 - D-08: settled in D-08a. The reload key is R.
 - D-12: split on 2026-11-22. The arrow keys and the mouse were requested (D-12a to D-12d), and strafing too, later the same day (D-12e).
-- D-39, D-40, D-41: requested by the professor on 2026-11-24, and D-42 by Juanma the same day. The diagnosis and the open questions are in the 2026-11-24 feedback section.
+- D-39, D-40, D-41: requested by the professor on 2026-11-24, and D-42 by Juanma the same day. The diagnosis and the open questions are in the 2026-11-24 feedback section. D-39 was settled with the proposed defaults on 2026-11-26 (D-39a decisions).

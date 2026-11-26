@@ -115,3 +115,9 @@ const enemyStopDistance = 0.5;
 let useEnemySprites = true;
 const enemyTextureWidth = 33;
 const enemyTextureHeight = 57;
+// D-39b: the death strip of the Husk Mutant (js/enemy-sheet.js), five frames of
+// 51 by 60 px. They keep the scale of the front frame (57 px are enemyHeight),
+// so a frame is 0.54 by 0.63 cells and the body keeps its size as it falls.
+const enemyDeathFrameCount = 5;
+const enemyDeathFrameWidth = 51;
+const enemyDeathFrameHeight = 60;

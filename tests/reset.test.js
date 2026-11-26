@@ -2,13 +2,14 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const { loadScripts } = require("./load-scripts.js");
 
-// Loads a fresh world and dirties it: a far chunk, enemies, a projectile in
-// flight and a hurt, mid-reload player. Returns the world accessor.
+// Loads a fresh world and dirties it: a far chunk, enemies, a falling one, a
+// projectile in flight and a hurt, mid-reload player. Returns the world accessor.
 function makeDirtyWorld() {
   const world = loadScripts();
   const player = world("player");
   world("getChunkCells")(5, 5);
   world("placeGameEnemies")(player, 10);
+  world("startEnemyDeath")({ posX: 3.5, posY: 3.5, height: 0.6 });
   world("fireProjectile")(player);
   player.health = 2;
   player.ammo = 1;
@@ -19,7 +20,7 @@ function makeDirtyWorld() {
   return world;
 }
 
-test("resetGame clears the old chunks, enemies and projectiles (D-17a, D-42b)", () => {
+test("resetGame clears the old chunks, enemies, falls and projectiles (D-17a, D-39c, D-42b)", () => {
   const world = makeDirtyWorld();
   const getChunkKey = world("getChunkKey");
 
@@ -29,9 +30,10 @@ test("resetGame clears the old chunks, enemies and projectiles (D-17a, D-42b)", 
   assert.equal(world("generatedChunks").has(getChunkKey(5, 5)), false);
   assert.equal(world("generatedChunks").size, 1);
   assert.equal(world("generatedChunks").has(getChunkKey(0, 0)), true);
-  // No enemies or projectiles are left
+  // No enemies, falling enemies or projectiles are left
   assert.equal(world("enemiesByChunk").size, 0);
   assert.equal(world("enemiesByCell").size, 0);
+  assert.equal(world("dyingEnemies").length, 0);
   assert.equal(world("projectiles").length, 0);
 });
 
