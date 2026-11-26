@@ -254,10 +254,12 @@ function choosePatrolNeighbour(enemy) {
   return options[Math.floor(gameRandom() * options.length)];
 }
 
+// D-41d: an enemy that spots the player growls once, as it starts the chase
 function updatePatrol(enemy, player, deltaTime) {
   if (hasLineOfSight(enemy, player)) {
     enemy.state = "chase";
     enemy.stateTime = 0;
+    playEnemySound("enemyAlert", enemy, player);
     return;
   }
   const target = enemy.patrolTargetIsB ? enemy.patrolB : enemy.patrolA;
@@ -391,15 +393,18 @@ function removeEnemyFromChunk(enemy) {
 // D-13b / D-42: one projectile hit (TDD 2.3.1). The enemy loses one point of
 // health and, at zero, it leaves play, starts to fall and is counted (or wins
 // the game). D-39f: a hit sprays a few drops and a death sprays more.
+// D-41d / D-41f: each plays its sound from where the enemy is.
 function damageEnemy(target, player) {
   target.health -= 1;
   if (target.health > 0) {
     sprayBlood(target, player, bloodDropsPerHit);
+    playEnemySound("enemyHit", target, player);
     return;
   }
   removeEnemy(target);
   startEnemyDeath(target);
   sprayBlood(target, player, bloodDropsPerDeath);
+  playEnemySound("enemyDeath", target, player);
   if (target.isBoss) {
     // D-19d / D-39c: killing the boss wins the game. updateDyingEnemies shows
     // the victory screen once the boss lies on the floor.
@@ -411,6 +416,12 @@ function damageEnemy(target, player) {
   if (getKillCount() >= gameSettings.enemiesPerGame && findBoss() === null) {
     spawnBoss(player);
   }
+}
+
+// D-41d / D-41f: an enemy sound placed at the enemy, quieter with distance and
+// panned to its side. The boss plays the same sounds slower, so deeper.
+function playEnemySound(name, enemy, player) {
+  playSoundAt(name, enemy.posX, enemy.posY, player, { rate: enemy.isBoss ? bossSoundRate : 1 });
 }
 
 // A hit removes the enemy from its cell and its chunk.

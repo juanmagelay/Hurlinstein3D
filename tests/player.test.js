@@ -604,6 +604,9 @@ test("D-40d: with the bob off the view never bobs", () => {
   world("gameSettings.footstepBob = false");
   const walker = createWalker({ stepPhase: 0.5, bobAmount: 1 });
   world("updateFootstepBob")(walker, 0.4, 1);
-  assert.equal(walker.stepPhase, 0);
   assert.equal(walker.bobAmount, 0);
+  assert.equal(world("getStepDip")(walker), 0);
+  assert.equal(world("getStepSway")(walker), 0);
+  // D-41d: the phase keeps counting steps, so the footsteps are still heard
+  assertClose(walker.stepPhase, 0.9);
 });

@@ -56,6 +56,10 @@ async function startGame() {
   gameFrame.appendChild(app.canvas);
   fitGameFrame(gameFrame);
   createMenuNavigation(document);
+  // D-41b / D-41e: the first click or key opens the audio; the screen buttons
+  // tick and click
+  initAudio(window, document);
+  createButtonSounds(gameFrame);
 
   // D-40 / TDD 6.4: the camera the 3D view is drawn with, created once; the
   // ticker copies the player into it and adds the look and the step
@@ -202,6 +206,9 @@ async function startGame() {
       return;
     }
     syncedState = gameState;
+    // D-41e: every state change crossfades to its track, after a sting on
+    // victory and defeat
+    playMusicForState(gameState);
     if (gameState === gameStateMenu) {
       showScreen("menu-screen");
     } else if (gameState === gameStateDefeat) {

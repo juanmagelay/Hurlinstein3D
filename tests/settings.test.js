@@ -42,6 +42,11 @@ const defaults = {
   fisheye: false,
   minimapRays: false,
   chunkBorders: false,
+  // D-41c: volumes from 0 to 100 and the mute
+  masterVolume: 80,
+  musicVolume: 60,
+  effectsVolume: 80,
+  soundMuted: false,
 };
 
 function createMemoryStorage(initialText) {
@@ -174,4 +179,15 @@ test("120 degrees per second turn a third of a full turn in 60 ticker units", ()
 test("unlimited reloads are Infinity, limited ones are the limit", () => {
   assert.equal(getReloadAllowance({ unlimitedReloads: true, reloadLimit: 3 }), Infinity);
   assert.equal(getReloadAllowance({ unlimitedReloads: false, reloadLimit: 3 }), 3);
+});
+
+test("D-41c: the three volumes go from 0 to 100 and the mute is a flag", () => {
+  for (const name of ["masterVolume", "musicVolume", "effectsVolume"]) {
+    assert.equal(formatSettingRange(name), "0 to 100");
+    assert.equal(normalizeSetting(name, -5), 0);
+    assert.equal(normalizeSetting(name, "150"), 100);
+    assert.equal(normalizeSetting(name, "42.4"), 42);
+  }
+  assert.equal(normalizeSetting("soundMuted", true), true);
+  assert.equal(normalizeSetting("soundMuted", "yes"), false);
 });

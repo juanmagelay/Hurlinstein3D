@@ -324,9 +324,11 @@ function addEnemyAtCell(cellX, cellY) {
 // D-19c and D-38 / TDD 2.3.2: one boss at a time. It appears like a regular
 // enemy, in a room of a door neighbor, hidden from the player. With a boss
 // already alive (the admin button) that same boss is brought there instead.
+// D-41d: the boss announces itself with a roar heard from anywhere.
 function spawnBoss(player) {
   const cell = takeBossSpawnCell(player);
   const liveBoss = findBoss();
+  playSound("bossAppear");
   if (liveBoss !== null) {
     moveEnemyToCell(liveBoss, cell.x, cell.y);
     return liveBoss;

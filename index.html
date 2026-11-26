@@ -818,6 +818,16 @@
       cursor: pointer;
     }
 
+    /* D-41c: the volume sliders, in the amber of the lamps */
+    .admin-field input[type="range"] {
+      height: 16px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      accent-color: var(--amber);
+      cursor: pointer;
+    }
+
     .admin-field input:disabled {
       opacity: 0.4;
       cursor: not-allowed;
@@ -973,6 +983,7 @@
           <li><span class="key">Space / Click</span>Fire</li>
           <li><span class="key">R / Right click</span>Reload</li>
           <li><span class="key">Esc</span>Release the mouse</li>
+          <li><span class="key">M</span>Mute sound</li>
           <li><span class="key">P</span>Admin panel</li>
         </ul>
         <button id="controls-back" class="menu-button" type="button">Back</button>
@@ -991,6 +1002,8 @@
           <li>Husk Mutant by HorrorMovieRei, CC0</li>
           <li>FPS Gun Sprites by Rekkimaru, free for any use</li>
           <li>UI BARS by guilemus, free for commercial use</li>
+          <li>Sounds by the Free Firearm Sound Library, JumboSizedFish, zer0_sol, artisticdude, qubodup, Fantozzi, trazzz123 and Kenney, CC0</li>
+          <li>Music: Menacing Otherworld by Ruskerdax and Boss Battle #7 by nene; stings by cynicmusic and Robin Lamb, CC0</li>
           <li>Hurlinstein3D logo by Juan Manuel Gelay, made with Gemini Pro</li>
         </ul>
         <button id="credits-back" class="menu-button" type="button">Back</button>
@@ -1102,6 +1115,28 @@
         </label>
       </fieldset>
       <fieldset class="admin-group">
+        <legend>Sound</legend>
+        <label class="admin-field">
+          <span>Master volume (%)</span>
+          <input type="range" data-setting="masterVolume">
+          <small data-setting-value="masterVolume"></small>
+        </label>
+        <label class="admin-field">
+          <span>Music (%)</span>
+          <input type="range" data-setting="musicVolume">
+          <small data-setting-value="musicVolume"></small>
+        </label>
+        <label class="admin-field">
+          <span>Effects (%)</span>
+          <input type="range" data-setting="effectsVolume">
+          <small data-setting-value="effectsVolume"></small>
+        </label>
+        <label class="admin-check">
+          <input type="checkbox" data-setting="soundMuted">
+          Mute (M)
+        </label>
+      </fieldset>
+      <fieldset class="admin-group">
         <legend>Raycasting</legend>
         <label class="admin-field">
           <span>Strip width</span>
@@ -1165,6 +1200,8 @@
   <script src="js/screens.js"></script>
   <script src="js/logo-sheet.js"></script>
   <script src="js/ranking.js"></script>
+  <script src="js/sound-sheet.js"></script>
+  <script src="js/audio.js"></script>
   <script src="js/main.js"></script>
 </body>
 </html>

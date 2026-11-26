@@ -80,12 +80,13 @@ function resetPlayer() {
 // D-06b: health never goes below zero, and zero health means defeat.
 // D-16c1: god mode, from the admin panel, ignores every damage.
 // D-27c: returns true when the health dropped, so the damage flash starts in
-// the same frame.
+// the same frame. D-41d: the player's grunt plays in that frame too.
 function damagePlayer(player, amount) {
   if (gameSettings.godMode || amount <= 0) {
     return false;
   }
   player.health = Math.max(0, player.health - amount);
+  playSound("playerHit");
   return true;
 }
 
@@ -98,12 +99,18 @@ function canFireShot(player) {
   return !player.reloading && player.ammo > 0 && player.shotCooldown <= 0;
 }
 
+// D-41d: a shot plays the blast; pulling the trigger on an empty magazine
+// plays a dry click instead (not while reloading: the reload is heard)
 function tryFire(player) {
   if (!canFireShot(player)) {
+    if (player.ammo === 0 && !player.reloading) {
+      playSound("dryFire");
+    }
     return false;
   }
   player.ammo -= 1;
   player.shotCooldown = shotCooldownDuration;
+  playSound("shot");
   return true;
 }
 
@@ -114,6 +121,7 @@ function updateShotCooldown(player, deltaTime) {
 
 // D-08: reload only tops up an incomplete magazine. D-16c1: it spends one
 // reload of the allowance, which is Infinity unless the admin panel limits it.
+// D-41d: the reload sound lasts about the 0.96 s of the reload.
 function startReload(player) {
   if (player.reloading || player.ammo >= gameSettings.magazineSize || player.reloadsLeft <= 0) {
     return false;
@@ -121,6 +129,7 @@ function startReload(player) {
   player.reloadsLeft -= 1;
   player.reloading = true;
   player.reloadTime = 0;
+  playSound("reload");
   return true;
 }
 
@@ -430,14 +439,20 @@ function updatePlayer(player, pressedControls, deltaTime) {
 // bobs less and pushing against it does not bob. It wraps at 2: one stride,
 // left step and right step. bobAmount grows to 1 while walking and drops to 0
 // standing still, both in footstepEaseTime seconds, so the bob never jumps.
-// With the setting off both stay at 0 and the view is the one without bob.
+// With the setting off bobAmount stays at 0 and the view is the one without
+// bob. D-41d: a foot strikes the floor at each whole phase, and plays its
+// step; the phase keeps counting with the bob off, so the steps are still heard.
 function updateFootstepBob(player, walked, deltaTime) {
+  const phase = player.stepPhase + walked / footstepLength;
+  if (Math.floor(phase) > Math.floor(player.stepPhase)) {
+    // Phase 1 ends the first step of the stride, so the left foot lands
+    playSound(Math.floor(phase) === 1 ? "footstepLeft" : "footstepRight");
+  }
+  player.stepPhase = phase % 2;
   if (!gameSettings.footstepBob) {
-    player.stepPhase = 0;
     player.bobAmount = 0;
     return;
   }
-  player.stepPhase = (player.stepPhase + walked / footstepLength) % 2;
   const target = walked > 0 ? 1 : 0;
   const change = deltaTime / 60 / footstepEaseTime;
   if (player.bobAmount < target) {

@@ -162,12 +162,12 @@ Priority: rows up to D-13d use the TDD scope (Required, Desirable). Rows added i
 | D-40c | The projectile follows the crosshair height: it climbs or drops with the aim and hits only across a body | P1 | 4 | D-40b, D-42b | done |
 | D-40d | Footstep bob: each left and right step moves the camera up and down and side to side, like running | P1 | 4 | D-40b | done |
 | D-40e | Shotgun bob: the gun dips and swings side to side with each left and right step | P1 | 4 | D-40d, D-07c | done |
-| D-41a | Pick the sound and music sources and specify the audio in the TDD | P1 | 4 | D-38c | pending |
-| D-41b | Audio engine: one AudioContext, sounds decoded once from data URIs, silent fallback | P1 | 4 | D-41a | pending |
-| D-41c | Master, music and effects volume in the admin panel, and a mute key | P1 | 4 | D-41b, D-16c1b | pending |
-| D-41d | Arena sounds: shot, dry fire, reload, enemy hit and death, player hit, boss | P1 | 4 | D-41b, D-39c | pending |
-| D-41e | Music and UI sounds: menu and arena tracks, button focus and click, victory and defeat | P1 | 4 | D-41b, D-17b | pending |
-| D-41f | Enemy sounds by distance and side, with the dot product of the presentation (optional) | P3 | 4 | D-41d | pending |
+| D-41a | Pick the sound and music sources and specify the audio in the TDD | P1 | 4 | D-38c | done |
+| D-41b | Audio engine: one AudioContext, sounds decoded once from data URIs, silent fallback | P1 | 4 | D-41a | done |
+| D-41c | Master, music and effects volume in the admin panel, and a mute key | P1 | 4 | D-41b, D-16c1b | done |
+| D-41d | Arena sounds: shot, dry fire, reload, enemy hit and death, player hit, boss | P1 | 4 | D-41b, D-39c | done |
+| D-41e | Music and UI sounds: menu and arena tracks, button focus and click, victory and defeat | P1 | 4 | D-41b, D-17b | done |
+| D-41f | Enemy sounds by distance and side, with the dot product of the presentation (optional) | P3 | 4 | D-41d | done |
 
 ## Backlog review (2026-11-20)
 
@@ -2473,6 +2473,14 @@ Acceptance criteria:
 
 Files: `docs/TDD.md`, `docs/BACKLOG.md`, `assets/sounds/`, `README.md`.
 
+Decisions:
+- Juanma asked on 2026-11-26 to do every sound story at once, with the sounds and the music picked by the team side (Claude) in a shooter, action and monster style, all with a free license, without asking him to validate them; he will swap any he does not like. The open questions of D-41 were settled with the proposed defaults: M mutes, the footsteps go in (D-41d), D-41f is done too.
+- 16 files, all CC0, from OpenGameArt and Kenney (sources, authors, sha256 and processing in `assets/sounds/LICENSE.md`): a Winchester Model 12 shot (The Free Firearm Sound Library), a toy shotgun trigger for the dry fire, a shell in and pump for the reload, three zombie voices of one pack for hit, death and alert, a male grunt for the player, a deep roar for the boss, left and right steps on stone, Kenney UI rollover and click, a heavy fanfare and a dark game over clip as stings, "Menacing Otherworld" (industrial) for the menu and "Boss Battle #7 (Metal)" for the arena. Every license was read on its page.
+- Format: AAC-LC in M4A, made with macOS `afconvert`, instead of the MP3 planned in the feedback section: this machine has no MP3 encoder (no ffmpeg or lame) and AAC is decoded by Chrome, Edge, Safari and Firefox too. Headless Chrome decoded every file with its exact length (the encoder priming is trimmed), so the loops have no gap. 96 kbps, the menu music 80 kbps; 1.43 MB of files, 1.9 MB of `js/sound-sheet.js`.
+- Effects in mono, trimmed and normalized to the same loudness (RMS 0.2, peak at most -1 dBFS); the shot and the dry fire get a soft saturation so they hit harder. The menu loop is 51.05 s of a 243 s track, the length picked by comparing onset envelopes, with a 0.6 s crossfade at the seam; the arena track loops whole (46.6 s, made to loop by its author).
+- TDD: a new 2.3.7 (sound and music); 2.2 and 2.3.4 (M key, credits of each sound); 2.3.5 (Sound box); 6.2 (sounds as data URIs, `decodeAudioData`, the gesture rule); 6.3 (`audio` and `sound-sheet`); 6.4 (the audio opens once outside the ticker; a source node per play is no Pixi object); 6.6 (a step at each whole phase); chapter 8 (MDN Web Audio API).
+- No generator script in the repo, like the sprite sheets: `assets/sounds/LICENSE.md` says how a new `.m4a` replaces one, and `tests/audio.test.js` fails if the sheet and the files differ.
+
 ## D-41b: Audio engine
 
 Acceptance criteria:
@@ -2484,6 +2492,14 @@ Acceptance criteria:
 
 Files: `js/audio.js` (new), `js/sound-sheet.js` (new), `index.html`, `tests/audio.test.js` (new).
 
+Decisions:
+- `base64ToBytes` reads base64 by hand with a lookup table, so the browser and the vm tests share it (the test context has no `atob`).
+- The game code calls `playSound`, `playSoundAt` and `playMusicForState`, which hand the call to `audioOutput`: null (silent) until the first `pointerdown` or `keydown` on the window, then the Web Audio output. The tests put a fake output there that records the names (`setAudioOutput`).
+- The AudioContext is created inside the first gesture, so Chrome never logs the autoplay warning. The sounds decode in parallel with `Promise.allSettled`: one that fails stays silent and the rest play. With the tab hidden the context is suspended, since the ticker stops too.
+- Music: a looping track with its own gain, faded in and out in 0.8 s (`linearRampToValueAtTime`, and `stop` at the end of the fade). A sting is a one shot on the music bus; its `onended` starts the plan's track unless another plan cut it first.
+- Script order: `js/sound-sheet.js` and `js/audio.js` load after `js/ranking.js`, before `main.js`; their functions are only called at run time.
+- Headless Chrome, muted with `--mute-audio` (a first unmuted test run played the menu music on Juanma's machine until it was stopped): before a gesture `audioOutput` is null; the first key started the 51.05 s menu loop; Start game played the click and the 46.6 s arena loop; no console warning.
+
 ## D-41c: Volume and mute
 
 Acceptance criteria:
@@ -2493,6 +2509,12 @@ Acceptance criteria:
 
 Files: `js/settings.js`, `js/admin.js`, `js/audio.js`, `index.html`.
 
+Decisions:
+- Four settings: `masterVolume` 80, `musicVolume` 60, `effectsVolume` 80 (0 to 100) and `soundMuted` false, saved with the rest and restored by Reset. The gain is the volume squared, (v / 100)², so 50 sounds about half as loud. Mute sets the master gain to 0 and keeps the three volumes.
+- A Sound box in the admin panel with three range sliders (amber `accent-color`) that apply while dragged (`input` event) and show their value, and a Mute (M) checkbox. It stays enabled on every screen, unlike the Game box.
+- M is handled by the admin panel keydown listener, next to P, so it flips the same setting as the checkbox, saves it and updates the checkbox; ignored while typing in a field. Added to Controls, the README and TDD 2.2.
+- Tests: ranges and defaults (`tests/settings.test.js`), mute keeps the volumes and each change reaches the output (`tests/audio.test.js`).
+
 ## D-41d: Arena sounds
 
 Acceptance criteria:
@@ -2500,6 +2522,13 @@ Acceptance criteria:
 - Tests, with a fake audio that records the names: each game event plays its sound once.
 
 Files: `js/enemies.js`, `js/weapon.js`, `js/player.js`, `tests/arena-sounds.test.js` (new).
+
+Decisions:
+- The sounds live in the game logic, so the tests cover them: `tryFire` plays the shot, or the dry fire on an empty magazine (not while reloading or cooling down); `startReload` the reload; `damagePlayer` the player's grunt when the health drops (not in god mode); `damageEnemy` the enemy hit or death; `updatePatrol` the alert growl when the chase starts; `spawnBoss` the roar (in `js/world.js`, also from the admin button). `js/weapon.js` was not touched: it only animates.
+- The boss plays the enemy sounds at a 0.7 playback rate, slower and deeper, instead of a second set of files.
+- Footsteps: `updateFootstepBob` plays `footstepLeft` when the phase crosses 1 and `footstepRight` when it crosses 2, so the step sounds at the dip of the bob. This changes D-40d: with the bob off, the phase keeps counting and only `bobAmount` stays at 0 (the view does not bob, since the dip and the sway are multiplied by it), so the steps are still heard. The D-40d test was updated to that.
+- Headless Chrome: the shot, the dry fire with 0 ammo, the reload, the boss roar, the player's grunt and an enemy alert each started one source of the expected length.
+- Tests: 10 in `tests/arena-sounds.test.js`.
 
 ## D-41e: Music and UI sounds
 
@@ -2510,6 +2539,11 @@ Acceptance criteria:
 
 Files: `js/screens.js`, `js/game-state.js`, `js/audio.js`, `tests/audio.test.js`.
 
+Decisions:
+- `getMusicPlan(state)` gives the track and the sting of each state; `syncScreenToState` in `js/main.js` calls `playMusicForState` on every state change. A plan asked before the first gesture is kept and starts when the audio opens. `js/game-state.js` was not touched.
+- `createButtonSounds` listens on the game frame: `pointerover` ticks when the pointer enters a new enabled screen button, `click` clicks (mouse, Enter or Space). The keyboard navigation of `createMenuNavigation` ticks when it moves the focus. The focus that `showScreen` gives the first button makes no sound, so opening a screen only plays its music. The admin panel buttons stay silent.
+- Headless Chrome: defeat played the 6.5 s sting and then the menu loop.
+
 ## D-41f: Enemy sounds by distance and side (optional)
 
 Acceptance criteria:
@@ -2517,6 +2551,12 @@ Acceptance criteria:
 - Tests: an enemy right of the camera gives a positive pan, straight ahead 0, left a negative one; the volume falls with distance.
 
 Files: `js/audio.js`, `js/enemies.js`, `tests/audio.test.js`.
+
+Decisions:
+- `getSoundPan` is the dot product of the unit vector from the player to the sound with plane over its length, clamped to [-1, 1], fed to a `StereoPannerNode` (skipped if the browser lacks it). `getDistanceGain` is the inverse distance law, min(1, 2 / distance): full volume up to 2 cells, half at 4.
+- Used for the enemy hit, death and alert, through `playEnemySound` in `js/enemies.js`. The boss roar stays centered, since it announces a boss one door away.
+- Tests: right +1, ahead 0, left -1, behind 0, 45 degrees cos(45°); the volume halves when the distance doubles.
+- Tests: 336 before D-41, 358 after (`node --test "tests/*.test.js"`).
 
 ## Desirables
 

@@ -42,7 +42,16 @@ const settingDefinitions = {
   minimapRays: { defaultValue: false },
   // Procedural generation (D-16f): chunk borders on the minimap
   chunkBorders: { defaultValue: false },
+  // Sound (D-41c, TDD 2.3.7): master, music and effects volume from 0 to 100,
+  // and the mute, also on the M key, which keeps the three volumes
+  masterVolume: { defaultValue: 80, min: 0, max: 100 },
+  musicVolume: { defaultValue: 60, min: 0, max: 100 },
+  effectsVolume: { defaultValue: 80, min: 0, max: 100 },
+  soundMuted: { defaultValue: false },
 };
+
+// D-41c: the settings that change the audio volumes
+const soundSettingNames = ["masterVolume", "musicVolume", "effectsVolume", "soundMuted"];
 
 function getDefaultSettings() {
   const settings = {};
